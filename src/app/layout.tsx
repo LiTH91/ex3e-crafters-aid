@@ -5,6 +5,9 @@ import { Toaster } from "@/components/ui/toaster"
 export const metadata: Metadata = {
   title: 'Exalted Crafter\'s Aid',
   description: 'An assistant for Exalted 3rd Edition crafting rolls.',
+  icons: {
+    icon: [],
+  },
 };
 
 export default function RootLayout({
