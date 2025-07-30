@@ -22,12 +22,15 @@ const calculateSuccesses = (roll: number, activeCharms: string[]) => {
   const smf3 = activeCharms.includes('supreme-masterwork-focus-3');
 
   if (roll >= 10) return 2;
-  if (smf3 && roll >= 7) return 2;
-  if (smf2 && roll >= 8) return 2;
-  if (smf1 && roll >= 9) return 2;
+  // Note: The SMF charms grant double successes on their respective numbers,
+  // AND cause them to explode. The base rule is 1 success on 7-9. So doubling them means they are worth 2.
+  if (smf3 && roll >= 7) return 2; // If you have level 3, 7s, 8s, 9s, 10s are all worth 2 successes.
+  if (smf2 && roll >= 8) return 2; // If you have level 2, 8s and 9s are worth 2.
+  if (smf1 && roll >= 9) return 2; // If you have level 1, only 9s are worth 2.
   if (roll >= 7) return 1;
   return 0;
 };
+
 
 // --- Main Logic Function ---
 
@@ -48,50 +51,47 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
     const initialRolls = Array.from({ length: dicePool }, rollDie);
     let diceHistories: number[][] = initialRolls.map(r => [r]);
 
-    // --- 2. Handle Explosions & Rerolls ---
+    onProgress({
+        diceHistories: diceHistories.map(h => [...h]),
+        totalSuccesses: 0,
+        automaticSuccesses: 0,
+        targetNumber: targetNumber,
+        activeCharmNames: [],
+    });
+    await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY));
+
+
+    // --- 2. Handle Explosions in "Rows" ---
+    let processedExplosionIndices = new Set<string>();
+
     while (true) {
         let explosionsInThisPass = 0;
         
-        for (const history of diceHistories) {
-            // Check only the last die in a chain that hasn't been processed yet for explosion
-            if (history.length > 0) {
-                const lastRoll = history[history.length - 1];
-                if (shouldDieExplode(lastRoll, activeCharms)) {
-                    // Check if this is the first time this specific die is exploding to avoid infinite loops on the same die
-                    if (!history.includes(-1)) { // Use a marker to indicate it has exploded once
-                        history.push(rollDie());
-                        explosionsInThisPass++;
-                    }
-                }
+        for (let i = 0; i < diceHistories.length; i++) {
+            const history = diceHistories[i];
+            const lastRoll = history[history.length - 1];
+            const historyKey = `${i}-${history.length - 1}`; // Unique key for each die roll position
+
+            if (shouldDieExplode(lastRoll, activeCharms) && !processedExplosionIndices.has(historyKey)) {
+                history.push(rollDie());
+                explosionsInThisPass++;
+                processedExplosionIndices.add(historyKey); // Mark this position as having been processed for explosion
             }
         }
-        
-        // This marks all dice that exploded in the pass so they don't re-explode infinitely.
-        // A better way would be to track indices, but for now, we'll reset this check marker
-        diceHistories.forEach(h => {
-             const markerIndex = h.indexOf(-1);
-             if (markerIndex > -1) h.splice(markerIndex, 1);
-             if(shouldDieExplode(h[h.length - 2], activeCharms)) h.splice(h.length-1, 0, -1);
-        });
 
         if (explosionsInThisPass > 0) {
-            const tempSuccesses = diceHistories.reduce((total, history) => total + calculateSuccesses(history[history.length - 1], activeCharms), 0);
             onProgress({
-                diceHistories: diceHistories.map(h => [...h.filter(n => n > 0)]),
-                totalSuccesses: tempSuccesses,
+                diceHistories: diceHistories.map(h => [...h]),
+                totalSuccesses: 0, // Don't calculate successes until the end
                 automaticSuccesses: 0,
                 targetNumber: targetNumber,
-                activeCharmNames: [], // We'll fill this at the end
+                activeCharmNames: [],
             });
             await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY * 2));
         } else {
-            break;
+            break; // No explosions in a full pass, so we're done.
         }
     }
-    
-    // Clean up any markers
-    diceHistories = diceHistories.map(h => h.filter(n => n > 0));
-
 
     // --- Handle Reroll Failures ---
     const willRerollFailures = activeCharms.includes("first-movement-of-the-demiurge");
@@ -123,9 +123,19 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
     }, 0);
 
     let automaticSuccesses = 0;
-    const activeCharmDetails = allCharms.filter(charm => activeCharms.includes(charm.id));
+    const activeCharmDetails = allCharms.flatMap(charm => {
+        const charms = [];
+        if (activeCharms.includes(charm.id)) charms.push(charm);
+        if (charm.subEffects) {
+            charm.subEffects.forEach(subCharm => {
+                if (activeCharms.includes(subCharm.id)) charms.push(subCharm);
+            });
+        }
+        return charms;
+    });
+
     activeCharmDetails.forEach((charm) => {
-        if (charm.effect.type === "add_successes") automaticSuccesses += charm.effect.value;
+        if (charm.effect.type === "add_successes") automaticSuccesses += charm.effect.value || 0;
     });
 
     const totalSuccesses = baseSuccesses + automaticSuccesses;
@@ -135,15 +145,6 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
         totalSuccesses,
         automaticSuccesses,
         targetNumber: targetNumber,
-        activeCharmNames: allCharms
-            .filter(c => activeCharms.includes(c.id) || c.subEffects?.some(s => activeCharms.includes(s.id)))
-            .flatMap(c => {
-                const names = [];
-                if (activeCharms.includes(c.id) && c.id !== 'supreme-masterwork-focus') names.push(c.name);
-                c.subEffects?.forEach(s => {
-                    if (activeCharms.includes(s.id)) names.push(s.name);
-                })
-                return names;
-            })
+        activeCharmNames: activeCharmDetails.map(c => c.name)
     };
 };
