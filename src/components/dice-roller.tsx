@@ -2,8 +2,9 @@
 "use client";
 
 import { useState } from "react";
-import type { DiceRoll, CraftingOutcome, Character, ProjectType, ActiveProject } from "@/lib/types";
+import type { DiceRoll, CraftingOutcome, Character, ProjectType, ActiveProject, Charm } from "@/lib/types";
 import { PROJECT_TYPES } from "@/lib/types";
+import { allCharms } from "@/lib/charms";
 import {
   Card,
   CardContent,
@@ -29,6 +30,7 @@ import {
   Sparkles,
   Hammer,
   ArrowRight,
+  Book,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
@@ -112,6 +114,11 @@ export default function DiceRoller({
       .map(capitalize)
       .join(" ");
   };
+  
+  const activeNarrativeCharms = allCharms.filter(
+    (charm) =>
+      diceRoll?.activeCharmIds.includes(charm.id) && charm.category === 'narrative'
+  );
 
   return (
     <Card className="bg-card/80 backdrop-blur-sm border-2 border-primary/20 shadow-lg">
@@ -259,9 +266,26 @@ export default function DiceRoller({
              )}
             {diceRoll.activeCharmNames && diceRoll.activeCharmNames.length > 0 && (
               <div className="text-center text-xs text-muted-foreground font-body">
-                  <p className="font-bold">Active Charms:</p>
+                  <p className="font-bold">Active Functional Charms:</p>
                   <p>{diceRoll.activeCharmNames.join(', ')}</p>
               </div>
+            )}
+            {activeNarrativeCharms.length > 0 && (
+                <div className="pt-4 space-y-2">
+                    <Separator />
+                    <h4 className="text-center font-headline text-lg text-primary flex items-center justify-center gap-2">
+                        <Book className="w-5 h-5"/>
+                        Narrative Effects
+                    </h4>
+                    <div className="space-y-3 text-sm font-body p-3 bg-secondary/30 rounded-lg">
+                        {activeNarrativeCharms.map(charm => (
+                            <div key={charm.id}>
+                                <p className="font-bold">{charm.name}</p>
+                                <p className="text-muted-foreground">{charm.description}</p>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             )}
           </div>
         )}

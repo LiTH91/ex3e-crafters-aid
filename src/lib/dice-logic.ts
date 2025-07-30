@@ -57,7 +57,7 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
         // Show the pre-reroll dice for a moment
         allRolls.push([...firstWaveRolls]);
         onProgress({
-            diceHistories: allRolls, totalSuccesses: 0, automaticSuccesses: 0, targetNumber, activeCharmNames: [],
+            diceHistories: allRolls, totalSuccesses: 0, automaticSuccesses: 0, targetNumber, activeCharmNames: [], activeCharmIds: []
         });
         await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY + 200));
 
@@ -84,6 +84,7 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
         automaticSuccesses: 0, 
         targetNumber,
         activeCharmNames: [],
+        activeCharmIds: []
     });
     await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY));
 
@@ -111,6 +112,7 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
             automaticSuccesses: 0,
             targetNumber,
             activeCharmNames: [],
+            activeCharmIds: []
         });
 
         if (diceForNextWave > 0) {
@@ -143,7 +145,8 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
         totalSuccesses: finalTotalSuccesses,
         automaticSuccesses,
         targetNumber: targetNumber,
-        activeCharmNames: activeCharmDetails.map(c => c.name)
+        activeCharmNames: activeCharmDetails.filter(c => c.category === 'functional').map(c => c.name),
+        activeCharmIds: activeCharms,
     };
 
     // Final progress update with all data

@@ -1,3 +1,4 @@
+
 export const ATTRIBUTES = [
   "intelligence",
   "wits",
@@ -96,6 +97,7 @@ export interface DiceRoll {
   automaticSuccesses: number;
   targetNumber: number;
   activeCharmNames: string[];
+  activeCharmIds: string[];
 }
 
 export interface CraftingOutcome {
