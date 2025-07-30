@@ -41,6 +41,15 @@ const essence1Charms: Charm[] = [
     minEssence: 1,
     effect: { type: "custom" },
   },
+   {
+    id: toId("Durability-Enhancing Technique"),
+    name: "Durability-Enhancing Technique",
+    cost: "5m",
+    description: "Doubles the object’s health levels and resistance to damage. A classic for any serious artisan.",
+    minCraft: 3,
+    minEssence: 1,
+    effect: { type: "custom" },
+  },
   {
     id: toId("Crack-Mending Technique"),
     name: "Crack-Mending Technique",
@@ -104,7 +113,7 @@ const essence1Charms: Charm[] = [
 // =================================================================
 
 const essence2Charms: Charm[] = [
-  {
+    {
     id: toId("First Movement of the Demiurge"),
     name: "First Movement of the Demiurge",
     cost: "5m",
