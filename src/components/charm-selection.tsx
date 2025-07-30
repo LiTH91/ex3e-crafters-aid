@@ -95,7 +95,6 @@ export default function CharmSelection({
 
   const availableCharms = useMemo(() => {
     return allCharms
-      .filter((charm) => knownCharms.includes(charm.id))
       .filter((charm) =>
         charm.name.toLowerCase().includes(searchTerm.toLowerCase())
       )
@@ -110,7 +109,7 @@ export default function CharmSelection({
         }
         return a.name.localeCompare(b.name);
       });
-  }, [knownCharms, searchTerm, sortBy]);
+  }, [searchTerm, sortBy]);
 
   return (
     <Card className="bg-card/80 backdrop-blur-sm border-2 border-primary/20 shadow-lg">
