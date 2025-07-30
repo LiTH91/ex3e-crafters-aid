@@ -220,13 +220,13 @@ export default function DiceRoller({
               </>
             )}
             <div className="text-center font-bold text-2xl font-headline flex items-center justify-center gap-2">
-              {diceRoll.totalSuccesses >= targetNumber ? (
+              {diceRoll.totalSuccesses >= diceRoll.targetNumber ? (
                 <CheckCircle2 className="w-8 h-8 text-green-500" />
               ) : (
                 <XCircle className="w-8 h-8 text-red-500" />
               )}
               <span>
-                {diceRoll.totalSuccesses} Successes vs TN {targetNumber}
+                {diceRoll.totalSuccesses} Successes vs TN {diceRoll.targetNumber}
               </span>
             </div>
           </div>

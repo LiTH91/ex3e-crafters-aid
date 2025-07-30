@@ -150,15 +150,15 @@ export default function Home() {
         finalRolls = [...successesFromInitial, ...rerolledDice];
       }
 
+      let tensToReroll = finalRolls.filter(r => r === 10).length;
+
+      // Handle reroll 10s
       if (willRerollTens) {
-        let tensToReroll = finalRolls.filter((r) => r === 10).length;
-        let bonusRolls: number[] = [];
-        while (tensToReroll > 0) {
-          const newRolls = rollDice(tensToReroll);
-          bonusRolls.push(...newRolls);
-          tensToReroll = newRolls.filter((r) => r === 10).length;
-        }
-        finalRolls.push(...bonusRolls);
+          while(tensToReroll > 0) {
+              const newRolls = rollDice(tensToReroll);
+              finalRolls.push(...newRolls);
+              tensToReroll = newRolls.filter(r => r === 10).length;
+          }
       }
 
       const calculateSuccesses = (rolls: number[]) =>
@@ -171,6 +171,7 @@ export default function Home() {
 
       const baseSuccesses = calculateSuccesses(finalRolls);
       const totalSuccesses = baseSuccesses + automaticSuccesses;
+      const finalTargetNumber = Math.max(1, targetNumber + tnModifier);
 
       setDiceRoll({
         initialRolls,
@@ -178,9 +179,8 @@ export default function Home() {
         rerolledIndices,
         totalSuccesses,
         automaticSuccesses,
+        targetNumber: finalTargetNumber
       });
-      
-      const finalTargetNumber = Math.max(1, targetNumber + tnModifier);
 
       const isExceptional =
         (projectDetails.type.startsWith("basic-") ||

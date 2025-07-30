@@ -78,6 +78,7 @@ export interface DiceRoll {
   rerolledIndices: number[];
   totalSuccesses: number;
   automaticSuccesses: number;
+  targetNumber: number;
 }
 
 export interface CraftingOutcome {
