@@ -109,7 +109,7 @@ export default function CharmSelection({
         }
         return a.name.localeCompare(b.name);
       });
-  }, [knownCharms, searchTerm, sortBy]);
+  }, [knownCharms, searchTerm, sortBy, character.craft, character.essence]);
 
   return (
     <Card className="bg-card/80 backdrop-blur-sm border-2 border-primary/20 shadow-lg">
@@ -151,13 +151,14 @@ export default function CharmSelection({
         <div className="space-y-4 max-h-[600px] overflow-y-auto">
           {availableCharms.length > 0 ? (
             availableCharms.map((charm) => {
+              const isDisabled = isCharmDisabled(charm);
               if (charm.id === 'supreme-masterwork-focus') {
                 const level1 = getSubCharm(charm, 1);
                 const level2 = getSubCharm(charm, 2);
                 const level3 = getSubCharm(charm, 3);
                 
                 return (
-                  <div key={charm.id} className="p-3 rounded-md transition-colors bg-secondary/30">
+                  <div key={charm.id} className={`p-3 rounded-md transition-colors ${isDisabled ? 'opacity-50' : 'bg-secondary/30'}`}>
                      <p className="font-bold text-base font-body flex items-center gap-2">
                       {charm.name}
                     </p>
@@ -167,7 +168,7 @@ export default function CharmSelection({
                     <div className="pl-4 border-l-2 border-primary/50 space-y-3">
                        {level1 && (
                          <div className="flex items-start gap-3">
-                            <Checkbox id={level1.id} checked={activeCharms.includes(level1.id)} onCheckedChange={() => handleCharmToggle(level1.id, true)} className="mt-1" disabled={isCharmDisabled(level1)} />
+                            <Checkbox id={level1.id} checked={activeCharms.includes(level1.id)} onCheckedChange={() => handleCharmToggle(level1.id, true)} className="mt-1" disabled={isDisabled || isCharmDisabled(level1)} />
                             <Label htmlFor={level1.id} className="grid gap-1.5 leading-none cursor-pointer">
                                 <span className="font-bold text-base font-body flex items-center gap-2">{level1.name} <Badge variant="secondary">{level1.cost}</Badge></span>
                                 <span className="text-sm text-muted-foreground font-body">{level1.description}</span>
@@ -176,7 +177,7 @@ export default function CharmSelection({
                        )}
                        {level2 && (
                          <div className="flex items-start gap-3">
-                            <Checkbox id={level2.id} checked={activeCharms.includes(level2.id)} onCheckedChange={() => handleCharmToggle(level2.id, true)} className="mt-1" disabled={isCharmDisabled(level2)} />
+                            <Checkbox id={level2.id} checked={activeCharms.includes(level2.id)} onCheckedChange={() => handleCharmToggle(level2.id, true)} className="mt-1" disabled={isDisabled || isCharmDisabled(level2)} />
                             <Label htmlFor={level2.id} className="grid gap-1.5 leading-none cursor-pointer">
                                 <span className="font-bold text-base font-body flex items-center gap-2">{level2.name} <Badge variant="secondary">{level2.cost}</Badge></span>
                                 <span className="text-sm text-muted-foreground font-body">{level2.description}</span>
@@ -185,7 +186,7 @@ export default function CharmSelection({
                        )}
                        {level3 && (
                          <div className="flex items-start gap-3">
-                            <Checkbox id={level3.id} checked={activeCharms.includes(level3.id)} onCheckedChange={() => handleCharmToggle(level3.id, true)} className="mt-1" disabled={isCharmDisabled(level3)} />
+                            <Checkbox id={level3.id} checked={activeCharms.includes(level3.id)} onCheckedChange={() => handleCharmToggle(level3.id, true)} className="mt-1" disabled={isDisabled || isCharmDisabled(level3)} />
                             <Label htmlFor={level3.id} className="grid gap-1.5 leading-none cursor-pointer">
                                <span className="font-bold text-base font-body flex items-center gap-2">{level3.name} <Badge variant="secondary">{level3.cost}</Badge></span>
                                 <span className="text-sm text-muted-foreground font-body">{level3.description}</span>
@@ -200,19 +201,19 @@ export default function CharmSelection({
               return (
               <div
                 key={charm.id}
-                className="flex items-start gap-3 p-3 rounded-md transition-colors hover:bg-secondary"
+                className={`flex items-start gap-3 p-3 rounded-md transition-colors ${isDisabled ? 'opacity-50' : 'hover:bg-secondary'}`}
               >
                 <Checkbox
                   id={charm.id}
                   checked={activeCharms.includes(charm.id)}
                   onCheckedChange={() => handleCharmToggle(charm.id)}
                   className="mt-1"
-                  disabled={isCharmDisabled(charm)}
+                  disabled={isDisabled}
                 />
                 <div className="grid gap-1.5 leading-none">
                   <Label
                     htmlFor={charm.id}
-                    className="font-bold text-base cursor-pointer font-body flex items-center gap-2"
+                    className={`font-bold text-base font-body flex items-center gap-2 ${isDisabled ? '' : 'cursor-pointer'}`}
                   >
                     {charm.name}
                     {charm.cost && <Badge variant="secondary">{charm.cost}</Badge>}
@@ -233,5 +234,3 @@ export default function CharmSelection({
     </Card>
   );
 }
-
-    
