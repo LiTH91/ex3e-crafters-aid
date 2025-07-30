@@ -102,7 +102,10 @@ export default function Home() {
       artifactRating: number;
       objectivesMet: number;
     },
-    assignedProjectId?: string
+    rollOptions: {
+      assignedProjectId?: string,
+      maxExplosions?: number,
+    }
   ) => {
     setIsLoading(true);
     setDiceRoll(null);
@@ -173,7 +176,8 @@ export default function Home() {
           targetNumber: finalTargetNumber,
           onProgress: (interimRoll) => {
               setDiceRoll(interimRoll);
-          }
+          },
+          maxExplosions: rollOptions.maxExplosions
       });
 
       setDiceRoll(rollResult);
@@ -190,10 +194,10 @@ export default function Home() {
           wxp: prev.wxp + result.experienceGained.wxp,
         }));
 
-        if (assignedProjectId) {
+        if (rollOptions.assignedProjectId) {
           handleStateChange('activeProjects', prevProjects => 
             prevProjects.map(p => {
-              if (p.id === assignedProjectId) {
+              if (p.id === rollOptions.assignedProjectId) {
                 const newProgress = p.progress + rollResult.totalSuccesses;
                 const isComplete = newProgress >= p.goal;
                 if(isComplete) {
