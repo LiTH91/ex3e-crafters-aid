@@ -1,6 +1,7 @@
 "use client";
 
-import type { Character } from "@/lib/types";
+import type { Character, Attribute } from "@/lib/types";
+import { ATTRIBUTES } from "@/lib/types";
 import {
   Card,
   CardContent,
@@ -16,22 +17,40 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UserCircle } from "lucide-react";
+import { UserCircle, Sparkles, BrainCircuit } from "lucide-react";
 
 interface CharacterSheetProps {
   character: Character;
   setCharacter: (character: Character) => void;
 }
 
-export default function CharacterSheet({ character, setCharacter }: CharacterSheetProps) {
+export default function CharacterSheet({
+  character,
+  setCharacter,
+}: CharacterSheetProps) {
   const handleStatChange = (stat: keyof Character, value: string) => {
+    const isAttribute = ATTRIBUTES.includes(stat as Attribute);
     const numValue = parseInt(value, 10);
+
     if (!isNaN(numValue)) {
-      setCharacter({ ...character, [stat]: numValue });
+      if (isAttribute) {
+        setCharacter({
+          ...character,
+          [stat]: numValue,
+          selectedAttribute: stat as Attribute, // Also update the selected attribute
+        });
+      } else {
+        setCharacter({ ...character, [stat]: numValue });
+      }
     }
   };
 
+  const handleAttributeChange = (value: string) => {
+    setCharacter({ ...character, selectedAttribute: value as Attribute });
+  };
+
   const statOptions = [1, 2, 3, 4, 5];
+  const essenceOptions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 
   return (
     <Card className="bg-card/80 backdrop-blur-sm border-2 border-primary/20 shadow-lg">
@@ -39,7 +58,9 @@ export default function CharacterSheet({ character, setCharacter }: CharacterShe
         <div className="flex items-center gap-3">
           <UserCircle className="w-8 h-8 text-primary" />
           <div className="flex-grow">
-            <CardTitle className="font-headline text-2xl text-primary">Character Stats</CardTitle>
+            <CardTitle className="font-headline text-2xl text-primary">
+              Character Stats
+            </CardTitle>
             <CardDescription className="font-body">
               Set your crafter's core traits.
             </CardDescription>
@@ -48,13 +69,55 @@ export default function CharacterSheet({ character, setCharacter }: CharacterShe
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="grid w-full items-center gap-2.5">
-          <Label htmlFor="intelligence" className="font-bold text-lg font-body">Intelligence</Label>
+          <Label htmlFor="attribute" className="font-bold text-lg font-body flex items-center gap-2">
+            <BrainCircuit className="w-5 h-5 text-blue-500" />
+            Primary Attribute
+          </Label>
+          <div className="flex gap-2">
+            <Select
+              value={character.selectedAttribute}
+              onValueChange={handleAttributeChange}
+            >
+              <SelectTrigger id="attribute" className="bg-background">
+                <SelectValue placeholder="Select Attribute" />
+              </SelectTrigger>
+              <SelectContent>
+                {ATTRIBUTES.map((attr) => (
+                  <SelectItem key={attr} value={attr}>
+                    {attr.charAt(0).toUpperCase() + attr.slice(1)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={character[character.selectedAttribute].toString()}
+              onValueChange={(value) =>
+                handleStatChange(character.selectedAttribute, value)
+              }
+            >
+              <SelectTrigger className="w-[80px] bg-background">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {statOptions.map((val) => (
+                  <SelectItem key={val} value={val.toString()}>
+                    {val}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="grid w-full items-center gap-2.5">
+          <Label htmlFor="craft" className="font-bold text-lg font-body">
+            Craft Skill
+          </Label>
           <Select
-            value={character.intelligence.toString()}
-            onValueChange={(value) => handleStatChange("intelligence", value)}
+            value={character.craft.toString()}
+            onValueChange={(value) => handleStatChange("craft", value)}
           >
-            <SelectTrigger id="intelligence" className="bg-background">
-              <SelectValue placeholder="Select Intelligence" />
+            <SelectTrigger id="craft" className="bg-background">
+              <SelectValue placeholder="Select Craft Skill" />
             </SelectTrigger>
             <SelectContent>
               {statOptions.map((val) => (
@@ -66,16 +129,19 @@ export default function CharacterSheet({ character, setCharacter }: CharacterShe
           </Select>
         </div>
         <div className="grid w-full items-center gap-2.5">
-          <Label htmlFor="craft" className="font-bold text-lg font-body">Craft Skill</Label>
+          <Label htmlFor="essence" className="font-bold text-lg font-body flex items-center gap-2">
+            <Sparkles className="w-5 h-5 text-yellow-500" />
+            Essence Level
+          </Label>
           <Select
-            value={character.craft.toString()}
-            onValueChange={(value) => handleStatChange("craft", value)}
+            value={character.essence.toString()}
+            onValueChange={(value) => handleStatChange("essence", value)}
           >
-            <SelectTrigger id="craft" className="bg-background">
-              <SelectValue placeholder="Select Craft Skill" />
+            <SelectTrigger id="essence" className="bg-background">
+              <SelectValue placeholder="Select Essence" />
             </SelectTrigger>
             <SelectContent>
-              {statOptions.map((val) => (
+              {essenceOptions.map((val) => (
                 <SelectItem key={val} value={val.toString()}>
                   {val}
                 </SelectItem>

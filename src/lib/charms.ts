@@ -1,28 +1,488 @@
-import type { Charm } from './types';
+import type { Charm } from "./types";
+
+const toId = (name: string) =>
+  name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
 
 export const allCharms: Charm[] = [
+  // Efficiency Charms
   {
-    id: 'flawless-handiwork',
-    name: 'Flawless Handiwork Method',
-    description: 'Adds automatic successes to a crafting roll.',
-    minCraft: 1,
+    id: toId("Tireless Workhorse Method"),
+    name: "Tireless Workhorse Method",
+    description:
+      "Permanently grants two major project slots per dot of Essence the Solar possesses.",
+    minCraft: 2,
     minEssence: 1,
-    effect: { type: 'add_successes', value: 3 }, // Example value
+    effect: { type: "custom", value: 0 },
   },
   {
-    id: 'first-movement-demiurge',
-    name: 'First Movement of the Demiurge',
-    description: 'Reroll all dice that did not result in a success.',
+    id: toId("Efficient Craftsman Technique"),
+    name: "Efficient Craftsman Technique",
+    description:
+      "Permanently reduces the cost of temporary major slots to three silver points.",
     minCraft: 3,
-    minEssence: 2,
-    effect: { type: 'reroll_failures', value: 0 },
+    minEssence: 1,
+    effect: { type: "custom", value: 0 },
   },
   {
-    id: 'unbroken-concentration',
-    name: 'Unbroken Concentration Trance',
-    description: 'Adds more automatic successes for complex projects.',
+    id: toId("Arete-Shifting Prana"),
+    name: "Arete-Shifting Prana",
+    description:
+      "Allows temporary conversion of dots from one known Craft into a conceptually related Craft ability for one basic or major project. Roll (Intelligence + relevant Craft) for successes.",
+    minCraft: 4,
+    minEssence: 1,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Supreme Celestial Focus"),
+    name: "Supreme Celestial Focus",
+    description:
+      "Allows raising an additional Craft rating from one to five using gold points instead of experience. Can raise up to (Essence) additional Crafts, with subsequent ones costing double.",
+    minCraft: 5,
+    minEssence: 2,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Sublime Transference"),
+    name: "Sublime Transference",
+    description:
+      "Allows rearrangement of crafting points: 2sxp to 1gxp, 2gxp to 1wxp, 1wxp to 2gxp, and 1gxp to 2sxp. Each use shifts one type of experience. Can be used while asleep or incapacitated.",
+    minCraft: 5,
+    minEssence: 2,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Ages-Echoing Wisdom"),
+    name: "Ages-Echoing Wisdom",
+    description:
+      "Grants gold points equal to permanent major slots upon purchase, and again at the end of each story.",
+    minCraft: 5,
+    minEssence: 2,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Dragon Soul Emergence"),
+    name: "Dragon Soul Emergence",
+    description:
+      "Grants one permanent superior project slot. Can be purchased up to (Essence) times.",
+    minCraft: 5,
+    minEssence: 2,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Copper Spider Conception"),
+    name: "Copper Spider Conception",
+    description:
+      "Used before a superior project, this Charm lowers the cost of creating a superior slot by two gold points and two major slots (to a minimum of one major slot and one gold point).",
     minCraft: 5,
     minEssence: 3,
-    effect: { type: 'add_successes', value: 5 }, // Example value
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Clay and Breath Practice"),
+    name: "Clay and Breath Practice",
+    description:
+      "On each interval of a superior roll, if successes exceed the finishing price (typically 10), the Solar earns silver points equal to the Artifact's rating plus her current Essence.",
+    minCraft: 5,
+    minEssence: 3,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Spirit-Gathering Industry"),
+    name: "Spirit-Gathering Industry",
+    description:
+      "Permanently reduces the cost to finish a superior project by (Essence) gold points, to a minimum of three.",
+    minCraft: 5,
+    minEssence: 3,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Summit-Piercing Touch"),
+    name: "Summit-Piercing Touch",
+    description:
+      "Allows a 2-dot Artifact superior project to be placed in an unused major slot. At Essence 5+, can be used for 3-dot Artifacts. Motes remain committed until project completion.",
+    minCraft: 5,
+    minEssence: 3,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Vice-Miracle Technique"),
+    name: "Vice-Miracle Technique",
+    description:
+      "Once per season, produces a finished 2-dot Artifact (or 2-3 dot at Essence 5+) without gold point cost or Craft points earned. Awards 5 gold points if used for a socially impressive stunt. Requires having built at least one 2+ dot Artifact and being in progress of another.",
+    minCraft: 5,
+    minEssence: 3,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Unwinding Gyre Meditation"),
+    name: "Unwinding Gyre Meditation",
+    description:
+      "After completing a superior project that earned gold points, consumes the gold point bonus to reduce the goal number of the next identical Artifact rating superior project by (Essence + 5), adds an interval, and increases the gold point bonus calculation (Artifact Rating * 3 * remaining terminus, escalating with subsequent uses).",
+    minCraft: 5,
+    minEssence: 4,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("God-Forge Within"),
+    name: "God-Forge Within",
+    description:
+      "Grants two permanent legendary project slots per purchase. Can be purchased (Essence) times.",
+    minCraft: 5,
+    minEssence: 4,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Exegesis of the Distilled Form"),
+    name: "Exegesis of the Distilled Form",
+    description:
+      'After completing five legendary projects, expends all white points, rolling them for up to 20 experience points (max once per story, does not count toward Essence).',
+    minCraft: 5,
+    minEssence: 5,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Spirit-Stoking Elevation"),
+    name: "Spirit-Stoking Elevation",
+    description:
+      "Allows replacing experience point costs of certain Charms (Lore, Occult, Medicine) with white points at a rate of 5wxp:1xp. Does not apply to sorcerous projects or other Ability Charms.",
+    minCraft: 5,
+    minEssence: 5,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Sun-Heart Tenacity"),
+    name: "Sun-Heart Tenacity",
+    description:
+      "Provides ten automatic non-Charm successes to the next superior or legendary project when a legendary project is completed.",
+    minCraft: 5,
+    minEssence: 5,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Wonder-Forging Genius"),
+    name: "Wonder-Forging Genius",
+    description:
+      "When ten or more legendary projects are underway, completes one without rolls or craft points. Can be used for lower-rated Artifacts if all ten are of the same rating. Usable once per story and requires at least half of current projects completed. No craft points gained.",
+    minCraft: 5,
+    minEssence: 5,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Dual Magnus Prana"),
+    name: "Dual Magnus Prana",
+    description:
+      'Upon incapacitation, reveals the "slain" character to be a perfect double, allowing the real Solar to be relocated.',
+    minCraft: 5,
+    minEssence: 5,
+    effect: { type: "custom", value: 0 },
+  },
+
+  // Momentum Charms
+  {
+    id: toId("Brass Scales Falling"),
+    name: "Brass Scales Falling",
+    description:
+      "For each 10 on a Craft roll (without Craft Excellency), earns a silver point, up to (Essence * 2) points. Can be repurchased to increase the cap to (Essence * 3).",
+    minCraft: 3,
+    minEssence: 1,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Red Anvils Ringing"),
+    name: "Red Anvils Ringing",
+    description: "Increases silver points gained from each basic objective by one.",
+    minCraft: 4,
+    minEssence: 1,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Chains Fall Away"),
+    name: "Chains Fall Away",
+    description:
+      "Gains one gold point each time all three basic objectives on any Craft project are achieved.",
+    minCraft: 5,
+    minEssence: 1,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Craftsman Needs No Tools"),
+    name: "Craftsman Needs No Tools",
+    description:
+      "Allows starting and completing basic/major projects rapidly without tools or workshop, shaping material directly. Reduces cost by 2 motes if tools are used. Does not significantly speed superior/legendary projects.",
+    minCraft: 3,
+    minEssence: 1,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Peerless Paragon of Craft"),
+    name: "Peerless Paragon of Craft",
+    description:
+      "Upon purchase and at the end of each story, rolls a free full (Intelligence + Craft) Excellency, converting successes to silver points, and 10s also reward a gold point.",
+    minCraft: 5,
+    minEssence: 1,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Supreme Perfection of Craft"),
+    name: "Supreme Perfection of Craft",
+    description:
+      "Upon purchase, earns one gold point and (Essence + 2) silver points for every Craft Ability rated at 5. This bonus recurs daily (max once per day/downtime period), provided the Solar is actively crafting.",
+    minCraft: 5,
+    minEssence: 2,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Thousand-Forge Hands"),
+    name: "Thousand-Forge Hands",
+    description:
+      "Greatly speeds the initial design and forging work for superior or legendary projects. Project design/forging takes no longer than (6 - Essence) months for N/A and 5-dot Artifacts, and (6 - Essence) weeks for others, assuming materials are provided.",
+    minCraft: 5,
+    minEssence: 2,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Divine Transcendence of Craft"),
+    name: "Divine Transcendence of Craft",
+    description:
+      "Instantly grants three white points when purchased, and five additional white points at the end of each story.",
+    minCraft: 5,
+    minEssence: 3,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Words-as-Workshop Method"),
+    name: "Words-as-Workshop Method",
+    description:
+      "Summons Artifact tools (up to Essence) for the current task in Craft, Lore, Medicine, Occult, or Investigation. These tools vanish at the end of the scene or when finished using. Allows working on superior/legendary projects in unusual locations with a stunt.",
+    minCraft: 5,
+    minEssence: 3,
+    effect: { type: "custom", value: 0 },
+  },
+
+  // Repairing and Reforging Charms
+  {
+    id: toId("Shattering Grasp"),
+    name: "Shattering Grasp",
+    description:
+      "Allows disassembling materials and objects (basic to major projects like a steel portcullis) without tools, using precise touches and blows. Does not accrue craft points unless the material is used for new constructions or repairs.",
+    minCraft: 5,
+    minEssence: 1,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Durability-Enhancing Technique"),
+    name: "Durability-Enhancing Technique",
+    description:
+      "Permanently increases an object's (up to Essence yards radius) damage difficulty by two or (Essence), whichever is larger. Can earn silver/gold points for basic/major objects respectively if they provide fortunate protection or social standing.",
+    minCraft: 5,
+    minEssence: 1,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Crack-Mending Technique"),
+    name: "Crack-Mending Technique",
+    description:
+      "Repairs extremely damaged objects (shattered crystal, burnt paper, twisted metal) over (10 - Essence) hours. If used with Craftsman Needs No Tools, time reduces to minutes/seconds and removes tool/material needs. Can lower repair difficulty for fragmented Artifacts but doesn't remove material costs or affect goal number. Cannot mend abstract concepts or restore lost magic.",
+    minCraft: 3,
+    minEssence: 1,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Time Heals Nothing"),
+    name: "Time Heals Nothing",
+    description:
+      "Instantly creates a temporary major project slot for repairs. At Essence 3+, a repurchase allows paying 6m, 1wp for a temporary superior repair slot.",
+    minCraft: 5,
+    minEssence: 1,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Blood Diamond Sweat"),
+    name: "Blood Diamond Sweat",
+    description:
+      "Gains one additional craft point for every basic objective completed during a repair. When repairing an Artifact, earns (Artifact's rating) gold points and one white point (Legendary Artifacts offer no repair rewards).",
+    minCraft: 5,
+    minEssence: 1,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Object-Strengthening Touch"),
+    name: "Object-Strengthening Touch",
+    description:
+      "Infuses an object (Essence + 2 yards radius) with hardening Essence, increasing its destruction difficulty by (Solar's Essence + 1). Stackable with its prerequisite, lasts one scene. Does not accrue craft points.",
+    minCraft: 5,
+    minEssence: 2,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Chaos-Resistance Preparation"),
+    name: "Chaos-Resistance Preparation",
+    description:
+      "Treats an object (up to Essence yards radius) to protect it and its wielder/wearer from Wyld effects. Protection duration varies by Wyld depth (Essence days in bordermarches, hours in deep Wyld). At Essence 3+, can be used on a project scale for 15m, 1wp to protect a considerable number of goods/vehicles/armor.",
+    minCraft: 5,
+    minEssence: 2,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Breach-Healing Method"),
+    name: "Breach-Healing Method",
+    description:
+      "Establishes an Essence field (Essence * 2 yards radius) that quickens the world, providing a non-Charm dice bonus equal to Solar's Essence to Craft, Lore, Occult, and Medicine rolls, and reducing repair/Medicine difficulty by one. Lasts until work is finished.",
+    minCraft: 5,
+    minEssence: 2,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Design Beyond Limit"),
+    name: "Design Beyond Limit",
+    description:
+      "Reforges an Artifact weapon (whose Evocations are fully unlocked) over (10 - Essence) hours to grant one new inactive Emerald, Sapphire, and Adamant Evocation. Cannot be used twice on the same weapon until added Evocations are mastered. XP cost can be paid by weapon owner.",
+    minCraft: 4,
+    minEssence: 2,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("The Art of Permanence"),
+    name: "The Art of Permanence",
+    description:
+      "Infuses basic and major projects with magic, making them endure forever (unless destroyed by direct attack/traumatic damage). Objects are indelibly marked by the Solar's touch, instantly revealing her as the creator. Past life creations are automatically recognized.",
+    minCraft: 5,
+    minEssence: 3,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Realizing the Form Supernal"),
+    name: "Realizing the Form Supernal",
+    description:
+      "When using Breach-Healing Method to repair an Artifact, reduces repair difficulty by one. Reduces the goal number by (Intelligence * Essence) upon touching the Artifact. Can fully restore certain objects. Usable once per story, reset by completing an Artifact repair without it.",
+    minCraft: 5,
+    minEssence: 3,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Celestial Reforging Technique"),
+    name: "Celestial Reforging Technique",
+    description:
+      "Reshapes an Exalted weapon's current active Evocations over (10 - Essence) hours. XP cost can be paid by weapon owner. Usable once per story per weapon.",
+    minCraft: 5,
+    minEssence: 3,
+    effect: { type: "custom", value: 0 },
+  },
+
+  // Power Charms
+  {
+    id: toId("Flawless Handiwork Method"),
+    name: "Flawless Handiwork Method",
+    description:
+      "Craft rolls supplemented by this Charm reroll 10s until no more appear. At Craft 3+, can be repurchased to also reroll 6s.",
+    minCraft: 1,
+    minEssence: 1,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Triumph-Forging Eye"),
+    name: "Triumph-Forging Eye",
+    description: "Once per week, applies a free full Craft Excellency to any one roll.",
+    minCraft: 2,
+    minEssence: 1,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Supreme Masterwork Focus"),
+    name: "Supreme Masterwork Focus",
+    description:
+      "Supplements (Attribute + Craft) rolls for basic/major projects with double 9s. At Craft 5, Essence 2+, can be repurchased for double 8s on basic, major, or superior project rolls (5m, 1wp, 1gxp). At Craft 5, Essence 3+, a third repurchase grants double 7s on any (Attribute + Craft) roll (2m, 1wxp).",
+    minCraft: 3,
+    minEssence: 1,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Bright-Forging Prana"),
+    name: "Bright-Forging Prana",
+    description:
+      "Once per story, allows using (Essence or 3, whichever is greater) Craft Charms not yet learned, provided Ability minimums and prerequisites are met. These Charms count as prerequisites for others enabled by this Charm and are usable for the rest of the story only on the initial project.",
+    minCraft: 3,
+    minEssence: 2,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Experiential Conjuring of True Void"),
+    name: "Experiential Conjuring of True Void",
+    description:
+      "Used after an (Attribute + Craft) roll, grants one automatic non-Charm success and (Essence) non-Charm dice. Not for basic projects. At Essence 3+, dice bonus increases to (Intelligence + Essence).",
+    minCraft: 3,
+    minEssence: 2,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Unbroken Image Focus"),
+    name: "Unbroken Image Focus",
+    description:
+      "After an (Attribute + Craft) roll, adds (Essence + successes on initial roll) additional non-Charm successes. Does not factor in 'double numbers' effects from other Charms when calculating successes.",
+    minCraft: 4,
+    minEssence: 2,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("First Movement of the Demiurge"),
+    name: "First Movement of the Demiurge",
+    description:
+      "Permanently enhances its prerequisite: for every three-of-a-kind successes, converts one non-success die to a 10 (adding two successes). If Flawless Handiwork Method is used, these new 10s are also rerolled.",
+    minCraft: 4,
+    minEssence: 2,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Essence-Forging Kata"),
+    name: "Essence-Forging Kata",
+    description:
+      "Requires a 5-minute dramatic action. While active for one day, every two motes committed discounts the cost of the Craft Excellency by one.",
+    minCraft: 5,
+    minEssence: 3,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Mind-Expanding Meditation"),
+    name: "Mind-Expanding Meditation",
+    description:
+      "Invoked before an (Attribute + Craft) roll, allows raising the dice cap at 1sxp per die, up to current Craft rating.",
+    minCraft: 5,
+    minEssence: 3,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Inspiration-Renewing Vision"),
+    name: "Inspiration-Renewing Vision",
+    description:
+      "Supplements a superior or legendary Craft roll so it does not count towards the project's terminus. Usable once per story, reset by completing a 50+ goal superior/legendary project without it.",
+    minCraft: 5,
+    minEssence: 3,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Divine Inspiration Technique"),
+    name: "Divine Inspiration Technique",
+    description:
+      "For every three successes on a Craft roll, earns an additional non-Charm die. This effect is recursive.",
+    minCraft: 5,
+    minEssence: 3,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Horizon-Unveiling Insight"),
+    name: "Horizon-Unveiling Insight",
+    description: "Permanently raises the terminus of superior and legendary projects to seven.",
+    minCraft: 5,
+    minEssence: 4,
+    effect: { type: "custom", value: 0 },
+  },
+  {
+    id: toId("Holistic Miracle Understanding"),
+    name: "Holistic Miracle Understanding",
+    description:
+      "Enhances its prerequisite: if the non-Charm dice generated by the initial roll produce three or more successes, the new non-Charm dice are augmented by an additional three non-Charm dice.",
+    minCraft: 5,
+    minEssence: 4,
+    effect: { type: "custom", value: 0 },
   },
 ];

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import type { DiceRoll, AiOutcome, Character } from "@/lib/types";
 import {
   Card,
@@ -11,135 +12,242 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Dices, CheckCircle2, XCircle, Loader2, Sparkles } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dices,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  Sparkles,
+  Hammer,
+} from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 interface DiceRollerProps {
+  character: Character;
   targetNumber: number;
   setTargetNumber: (value: number) => void;
-  onRoll: () => void;
+  onRoll: (projectDetails: {
+    type: "Basic" | "Major" | "Superior" | "Legendary";
+    isRepair: boolean;
+    artifactRating: number;
+    objectivesMet: number;
+  }) => void;
   isLoading: boolean;
   diceRoll: DiceRoll | null;
   aiOutcome: AiOutcome | null;
-  character: Character;
 }
 
-const Dice = ({ value, isRerolled }: { value: number; isRerolled?: boolean }) => {
-  const getColor = () => {
-    if (value >= 10) return "text-accent-foreground bg-accent";
-    if (value >= 7) return "text-primary-foreground bg-primary/80";
-    return "text-muted-foreground bg-muted";
-  };
-  return (
-    <div className={`flex items-center justify-center w-10 h-10 rounded-md font-bold text-lg ${getColor()} transition-colors duration-300 relative`}>
-      {value}
-      {isRerolled && <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-background" title="Rerolled"></div>}
-    </div>
-  );
-};
+type ProjectType = "Basic" | "Major" | "Superior" | "Legendary";
 
 export default function DiceRoller({
+  character,
   targetNumber,
   setTargetNumber,
   onRoll,
   isLoading,
   diceRoll,
   aiOutcome,
-  character,
 }: DiceRollerProps) {
-  const dicePool = character.intelligence + character.craft;
+  const [projectType, setProjectType] = useState<ProjectType>("Basic");
+  const [isRepair, setIsRepair] = useState(false);
+  const [artifactRating, setArtifactRating] = useState(2);
+  const [objectivesMet, setObjectivesMet] = useState(1);
+
+  const handleRollClick = () => {
+    onRoll({
+      type: projectType,
+      isRepair,
+      artifactRating: projectType === "Superior" ? artifactRating : 0,
+      objectivesMet,
+    });
+  };
+
+  const dicePool = character[character.selectedAttribute] + character.craft;
 
   return (
-    <Card className="bg-card/80 backdrop-blur-sm border-2 border-primary/20 shadow-lg h-full">
+    <Card className="bg-card/80 backdrop-blur-sm border-2 border-primary/20 shadow-lg">
       <CardHeader>
-         <div className="flex items-center gap-3">
-          <Dices className="w-8 h-8 text-primary" />
+        <div className="flex items-center gap-3">
+          <Hammer className="w-8 h-8 text-primary" />
           <div className="flex-grow">
-            <CardTitle className="font-headline text-2xl text-primary">Crafting Roll</CardTitle>
+            <CardTitle className="font-headline text-2xl text-primary">
+              Crafting Roll
+            </CardTitle>
             <CardDescription className="font-body">
-              Set the difficulty and roll the dice.
+              Configure and execute your crafting action.
             </CardDescription>
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end mb-6">
-          <div className="space-y-2">
-            <Label htmlFor="targetNumber" className="font-bold text-lg font-body">Target Successes</Label>
+      <CardContent className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="project-type" className="font-bold">
+              Project Type
+            </Label>
+            <Select
+              value={projectType}
+              onValueChange={(v) => setProjectType(v as ProjectType)}
+            >
+              <SelectTrigger id="project-type">
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Basic">Basic</SelectItem>
+                <SelectItem value="Major">Major</SelectItem>
+                <SelectItem value="Superior">Superior</SelectItem>
+                <SelectItem value="Legendary">Legendary</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {projectType === "Superior" && (
+            <div>
+              <Label htmlFor="artifact-rating" className="font-bold">
+                Artifact Rating
+              </Label>
+              <Input
+                id="artifact-rating"
+                type="number"
+                value={artifactRating}
+                onChange={(e) =>
+                  setArtifactRating(parseInt(e.target.value, 10))
+                }
+                min={2}
+                max={5}
+              />
+            </div>
+          )}
+          <div>
+            <Label htmlFor="objectives-met" className="font-bold">
+              Objectives Met (0-3)
+            </Label>
             <Input
-              id="targetNumber"
+              id="objectives-met"
               type="number"
-              value={targetNumber}
-              onChange={(e) => setTargetNumber(parseInt(e.target.value, 10) || 1)}
-              min="1"
-              className="bg-background"
+              value={objectivesMet}
+              onChange={(e) => setObjectivesMet(parseInt(e.target.value, 10))}
+              min={0}
+              max={3}
             />
           </div>
-          <div className="text-center">
-            <p className="font-body text-muted-foreground">Dice Pool</p>
-            <p className="font-headline text-3xl font-bold text-primary">{dicePool}</p>
+          <div className="flex items-center space-x-2 pt-6">
+            <Checkbox
+              id="is-repair"
+              checked={isRepair}
+              onCheckedChange={(c) => setIsRepair(c as boolean)}
+            />
+            <Label htmlFor="is-repair" className="font-bold">
+              Is this a repair?
+            </Label>
           </div>
-          <Button onClick={onRoll} disabled={isLoading} className="w-full md:w-auto justify-self-end text-lg py-6">
+        </div>
+        <Separator />
+        <div className="text-center">
+          <Button
+            onClick={handleRollClick}
+            disabled={isLoading}
+            size="lg"
+            className="font-headline text-xl"
+          >
             {isLoading ? (
-              <>
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Rolling...
-              </>
+              <Loader2 className="mr-2 h-6 w-6 animate-spin" />
             ) : (
-              "Roll Dice"
+              <Dices className="mr-2 h-6 w-6" />
             )}
+            Roll {dicePool} Dice
           </Button>
         </div>
-
-        {isLoading && (
-          <div className="text-center p-8">
-            <Loader2 className="mx-auto h-12 w-12 animate-spin text-primary" />
-            <p className="mt-4 font-body text-lg text-muted-foreground">The loom of fate weaves your destiny...</p>
+        {diceRoll && (
+          <div className="pt-6 space-y-4">
+            <h3 className="text-lg font-bold text-center font-headline">
+              Roll Results
+            </h3>
+            <div className="flex justify-center gap-2 flex-wrap">
+              {diceRoll.initialRolls.map((roll, index) => (
+                <span
+                  key={index}
+                  className={`flex items-center justify-center w-10 h-10 rounded-full text-lg font-bold ${
+                    diceRoll.rerolledIndices.includes(index)
+                      ? "bg-muted text-muted-foreground line-through"
+                      : roll >= 10
+                        ? "bg-yellow-400 text-black"
+                        : roll >= 7
+                          ? "bg-green-500 text-white"
+                          : "bg-red-500 text-white"
+                  }`}
+                >
+                  {roll}
+                </span>
+              ))}
+            </div>
+            {diceRoll.rerolledIndices.length > 0 && (
+              <>
+                <p className="text-center text-sm font-body">
+                  Rerolled {diceRoll.rerolledIndices.length} failures.
+                </p>
+                <div className="flex justify-center gap-2 flex-wrap">
+                  {diceRoll.finalRolls
+                    .slice(
+                      diceRoll.initialRolls.length -
+                        diceRoll.rerolledIndices.length,
+                    )
+                    .map((roll, index) => (
+                      <span
+                        key={index}
+                        className={`flex items-center justify-center w-10 h-10 rounded-full text-lg font-bold ${
+                          roll >= 10
+                            ? "bg-yellow-400 text-black"
+                            : roll >= 7
+                              ? "bg-green-500 text-white"
+                              : "bg-red-500 text-white"
+                        }`}
+                      >
+                        {roll}
+                      </span>
+                    ))}
+                </div>
+              </>
+            )}
+            <div className="text-center font-bold text-2xl font-headline flex items-center justify-center gap-2">
+              {diceRoll.totalSuccesses >= targetNumber ? (
+                <CheckCircle2 className="w-8 h-8 text-green-500" />
+              ) : (
+                <XCircle className="w-8 h-8 text-red-500" />
+              )}
+              <span>
+                {diceRoll.totalSuccesses} Successes vs TN {targetNumber}
+              </span>
+            </div>
           </div>
         )}
-        
-        {diceRoll && (
-          <div className="space-y-6 animate-in fade-in-50 duration-500">
-            <Separator />
-            <div>
-              <h3 className="font-headline text-xl text-primary mb-3">Dice Results</h3>
-              <div className="flex flex-wrap gap-2">
-                {diceRoll.initialRolls.map((roll, index) => (
-                  <Dice key={index} value={roll} isRerolled={diceRoll.rerolledIndices.includes(index)} />
-                ))}
-              </div>
-              {diceRoll.rerolledIndices.length > 0 && 
-                <p className="text-sm mt-2 text-muted-foreground italic">* Red-dotted dice were rerolled due to a Charm effect.</p>
-              }
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
-                <div className="p-4 bg-muted rounded-lg">
-                    <p className="font-body text-muted-foreground">Automatic Successes</p>
-                    <p className="font-headline text-3xl font-bold text-primary">{diceRoll.automaticSuccesses}</p>
-                </div>
-                 <div className="p-4 bg-primary/20 rounded-lg">
-                    <p className="font-body text-primary">Total Successes</p>
-                    <p className="font-headline text-4xl font-bold text-primary">{diceRoll.totalSuccesses}</p>
-                </div>
-            </div>
-
-            {aiOutcome && (
-                <div className="mt-6">
-                    <Separator />
-                    <div className="mt-6 p-6 rounded-lg bg-accent/20 border border-accent">
-                        <div className="flex items-center gap-3 mb-3">
-                            <Sparkles className="w-7 h-7 text-accent-foreground" />
-                            <h3 className="font-headline text-xl text-accent-foreground">Outcome Evaluation</h3>
-                        </div>
-                        <div className={`flex items-center gap-2 mb-4 font-bold text-lg ${aiOutcome.isSuccess ? 'text-green-700' : 'text-red-700'}`}>
-                            {aiOutcome.isSuccess ? <CheckCircle2 /> : <XCircle />}
-                            <span>{aiOutcome.isSuccess ? "Success!" : "Failure"}</span>
-                        </div>
-                        <p className="font-body text-foreground/90 whitespace-pre-wrap">{aiOutcome.outcomeDescription}</p>
-                    </div>
-                </div>
-            )}
-          </div>
+        {aiOutcome && (
+          <Card className="mt-6 bg-background/50">
+            <CardHeader>
+              <CardTitle className="font-headline flex items-center gap-2">
+                <Sparkles className="w-6 h-6 text-primary" />
+                AI-Powered Outcome
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2 font-body text-base">
+              <p>
+                <span className="font-bold">Outcome: </span>
+                {aiOutcome.outcome}
+              </p>
+              <p>
+                <span className="font-bold">Rewards: </span>
+                {aiOutcome.rewards}
+              </p>
+              <p className="pt-2 italic">{aiOutcome.narrative}</p>
+            </CardContent>
+          </Card>
         )}
       </CardContent>
     </Card>

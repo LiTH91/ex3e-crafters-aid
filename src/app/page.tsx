@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Character, Charm, DiceRoll, AiOutcome } from "@/lib/types";
+import type { Character, DiceRoll, AiOutcome } from "@/lib/types";
 import { allCharms } from "@/lib/charms";
 import { evaluateCraftingOutcome } from "@/ai/flows/evaluate-crafting-outcome";
 import { useToast } from "@/hooks/use-toast";
@@ -14,7 +14,17 @@ import { Hammer } from "lucide-react";
 export default function Home() {
   const [character, setCharacter] = useState<Character>({
     intelligence: 3,
+    wits: 1,
+    perception: 1,
+    strength: 1,
+    dexterity: 1,
+    stamina: 1,
+    charisma: 1,
+    manipulation: 1,
+    appearance: 1,
     craft: 3,
+    essence: 1,
+    selectedAttribute: "intelligence",
     knownCharms: allCharms.map((c) => c.id),
   });
 
@@ -25,24 +35,32 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const handleRoll = async () => {
+  const handleRoll = async (projectDetails: {
+    type: "Basic" | "Major" | "Superior" | "Legendary";
+    isRepair: boolean;
+    artifactRating: number;
+    objectivesMet: number;
+  }) => {
     setIsLoading(true);
     setDiceRoll(null);
     setAiOutcome(null);
 
     try {
-      let dicePool = character.intelligence + character.craft;
-      const selectedCharms = allCharms.filter((c) => activeCharms.includes(c.id));
+      const dicePool =
+        character[character.selectedAttribute] + character.craft;
+      const selectedCharms = allCharms.filter((c) =>
+        activeCharms.includes(c.id),
+      );
       let charmEffectsDescription = "Applied Charms: ";
       let automaticSuccesses = 0;
       let willRerollFailures = false;
 
-      selectedCharms.forEach(charm => {
+      selectedCharms.forEach((charm) => {
         charmEffectsDescription += `${charm.name}; `;
-        if (charm.effect.type === 'add_successes') {
+        if (charm.effect.type === "add_successes") {
           automaticSuccesses += charm.effect.value;
         }
-        if (charm.effect.type === 'reroll_failures') {
+        if (charm.effect.type === "reroll_failures") {
           willRerollFailures = true;
         }
       });
@@ -50,50 +68,60 @@ export default function Home() {
         charmEffectsDescription = "None";
       }
 
-      const rollDice = (pool: number) => Array.from({ length: pool }, () => Math.floor(Math.random() * 10) + 1);
-      
+      const rollDice = (pool: number) =>
+        Array.from({ length: pool }, () => Math.floor(Math.random() * 10) + 1);
+
       let initialRolls = rollDice(dicePool);
       let finalRolls = [...initialRolls];
-      let rerolledDice: number[] = [];
 
       if (willRerollFailures) {
-        const failures = initialRolls.filter(r => r < 7);
-        rerolledDice = rollDice(failures.length);
-        const successesFromInitial = initialRolls.filter(r => r >= 7);
+        const failures = initialRolls.filter((r) => r < 7);
+        const rerolledDice = rollDice(failures.length);
+        const successesFromInitial = initialRolls.filter((r) => r >= 7);
         finalRolls = [...successesFromInitial, ...rerolledDice];
       }
-      
-      const calculateSuccesses = (rolls: number[]) => rolls.reduce((acc, roll) => {
-        if (roll >= 10) return acc + 2;
-        if (roll >= 7) return acc + 1;
-        return acc;
-      }, 0);
+
+      const calculateSuccesses = (rolls: number[]) =>
+        rolls.reduce((acc, roll) => {
+          if (roll >= 10) return acc + 2;
+          if (roll >= 7) return acc + 1;
+          return acc;
+        }, 0);
 
       const baseSuccesses = calculateSuccesses(finalRolls);
       const totalSuccesses = baseSuccesses + automaticSuccesses;
 
       setDiceRoll({
         initialRolls,
-        finalRolls: willRerollFailures ? finalRolls : initialRolls,
-        rerolledIndices: willRerollFailures ? initialRolls.map((r, i) => r < 7 ? i : -1).filter(i => i !== -1) : [],
+        finalRolls,
+        rerolledIndices: willRerollFailures
+          ? initialRolls.map((r, i) => (r < 7 ? i : -1)).filter((i) => i !== -1)
+          : [],
         totalSuccesses,
         automaticSuccesses,
       });
 
+      const isExceptional =
+        (projectDetails.type === "Basic" ||
+          projectDetails.type === "Major") &&
+        totalSuccesses >= targetNumber + 3;
+
       const aiResult = await evaluateCraftingOutcome({
+        project: projectDetails,
         successes: totalSuccesses,
         targetNumber,
         charmEffects: charmEffectsDescription,
+        isExceptional,
       });
 
       setAiOutcome(aiResult);
-
     } catch (error) {
       console.error("Error evaluating crafting outcome:", error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to evaluate the crafting outcome. Please try again.",
+        description:
+          "Failed to evaluate the crafting outcome. Please try again.",
       });
     } finally {
       setIsLoading(false);
@@ -139,7 +167,10 @@ export default function Home() {
         </div>
       </main>
       <footer className="text-center mt-12 text-sm text-muted-foreground">
-        <p>Exalted and its concepts are trademarks of Onyx Path Publishing. This is an unofficial fan utility.</p>
+        <p>
+          Exalted and its concepts are trademarks of Onyx Path Publishing. This
+          is an unofficial fan utility.
+        </p>
       </footer>
     </div>
   );
