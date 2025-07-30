@@ -201,31 +201,34 @@ export default function Home() {
       });
       await new Promise(resolve => setTimeout(resolve, 50));
 
-      // --- Explosions phase (Sequential, per-die approach) ---
+      // --- Explosions phase (Sequential, per-die, correct implementation) ---
       for (let i = 0; i < diceHistories.length; i++) {
-        const history = diceHistories[i];
-          while (true) {
-              const lastRoll = history[history.length - 1];
-              let shouldExplode = false;
-              
-              if (hasExplodingTens && lastRoll === 10) {
-                  shouldExplode = true;
-              }
-              
-              const smfThreshold = 10 - doubleSuccessLevel; // 1->9, 2->8, 3->7
-              if (doubleSuccessLevel > 0 && lastRoll >= smfThreshold && lastRoll < 10) {
+        // Process one die's explosion chain completely before moving to the next.
+        while (true) {
+            const history = diceHistories[i];
+            const lastRoll = history[history.length - 1];
+            let shouldExplode = false;
+            
+            // Check for Flawless Handiwork Method explosion (regular 10s)
+            if (hasExplodingTens && lastRoll === 10) {
                 shouldExplode = true;
-              }
+            }
+            
+            // Check for Supreme Masterwork Focus explosions
+            const smfThreshold = 10 - doubleSuccessLevel; // 1->9, 2->8, 3->7
+            if (doubleSuccessLevel > 0 && lastRoll >= smfThreshold && lastRoll < 10) {
+              shouldExplode = true;
+            }
 
-              if (shouldExplode) {
-                  const newRoll = rollDie();
-                  history.push(newRoll);
-                  setDiceRoll(prev => ({ ...prev!, diceHistories: [...diceHistories] }));
-                  await new Promise(resolve => setTimeout(resolve, 50));
-              } else {
-                  break; 
-              }
-          }
+            if (shouldExplode) {
+                const newRoll = rollDie();
+                history.push(newRoll);
+                setDiceRoll(prev => ({ ...prev!, diceHistories: [...diceHistories] }));
+                await new Promise(resolve => setTimeout(resolve, 50));
+            } else {
+                break; // Exit the while loop for this die's history
+            }
+        }
       }
 
       // --- Reroll Failures phase ---
