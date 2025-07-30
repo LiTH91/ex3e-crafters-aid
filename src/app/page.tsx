@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import type { Character, DiceRoll, CraftingOutcome, ProjectType, ActiveProject, CraftingExperience } from "@/lib/types";
 import { allCharms } from "@/lib/charms";
 import { calculateCraftingOutcome } from "@/lib/crafting-calculator";
+import { performDiceRoll } from "@/lib/dice-logic";
 import { useToast } from "@/hooks/use-toast";
 
 import CharacterSheet from "@/components/character-sheet";
@@ -47,8 +48,6 @@ interface AppState {
   craftingXp: CraftingExperience;
   activeProjects: ActiveProject[];
 }
-
-const ANIMATION_DELAY = 50;
 
 export default function Home() {
   const [appState, setAppState] = useState<AppState>({
@@ -109,11 +108,10 @@ export default function Home() {
     setDiceRoll(null);
     setOutcome(null);
 
-    await new Promise(resolve => setTimeout(resolve, 50));
-
     try {
-      const { character, activeCharms } = appState;
+      const { character, activeCharms, craftingXp } = appState;
 
+      // --- 1. Calculate Costs & Effects from Charms ---
       let moteCost = 0;
       let willpowerCost = 0;
       let sxpCost = 0;
@@ -121,46 +119,34 @@ export default function Home() {
       let wxpCost = 0;
       let tnModifier = 0;
 
-      const activeCharmDetails: { id: string; name: string; cost?: string; effect: any }[] = [];
-      
-      allCharms.forEach(charm => {
-          if (activeCharms.includes(charm.id)) {
-              activeCharmDetails.push(charm);
-          }
+      const activeCharmDetails = allCharms.flatMap(charm => {
+          const charms = [];
+          if (activeCharms.includes(charm.id)) charms.push(charm);
           if (charm.subEffects) {
               charm.subEffects.forEach(subCharm => {
-                  if (activeCharms.includes(subCharm.id)) {
-                      activeCharmDetails.push(subCharm);
-                  }
+                  if (activeCharms.includes(subCharm.id)) charms.push(subCharm);
               });
           }
+          return charms;
       });
-      
-      let willRerollFailures = false;
 
       activeCharmDetails.forEach((charm) => {
-        if (charm.effect.type === "reroll_failures") willRerollFailures = true;
-        else if (charm.effect.type === "lower_repair_difficulty" && projectDetails.type.includes("repair")) tnModifier -= charm.effect.value;
-
-         if (charm.cost) {
+        if (charm.effect.type === "lower_repair_difficulty" && projectDetails.type.includes("repair")) tnModifier -= charm.effect.value;
+        if (charm.cost) {
             const moteMatch = charm.cost.match(/(\d+)m/);
             if (moteMatch) moteCost += parseInt(moteMatch[1], 10);
-            
             const willpowerMatch = charm.cost.match(/(\d+)wp/);
             if (willpowerMatch) willpowerCost += parseInt(willpowerMatch[1], 10);
-
             const sxpMatch = charm.cost.match(/(\d+)sxp/);
             if (sxpMatch) sxpCost += parseInt(sxpMatch[1], 10);
-
             const gxpMatch = charm.cost.match(/(\d+)gxp/);
             if (gxpMatch) gxpCost += parseInt(gxpMatch[1], 10);
-
             const wxpMatch = charm.cost.match(/(\d+)wxp/);
             if (wxpMatch) wxpCost += parseInt(wxpMatch[1], 10);
-          }
+        }
       });
 
-      // --- Spend Costs ---
+      // --- 2. Spend Costs ---
       handleStateChange('character', prev => {
         let personal = prev.personalMotes;
         let peripheral = prev.peripheralMotes;
@@ -174,122 +160,28 @@ export default function Home() {
       });
 
       handleStateChange('craftingXp', prev => ({
-          ...prev,
           sxp: prev.sxp - sxpCost,
           gxp: prev.gxp - gxpCost,
           wxp: prev.wxp - wxpCost,
       }));
-      
-      const shouldDieExplode = (roll: number, currentActiveCharms: string[]): boolean => {
-        const hasExplodingTens = currentActiveCharms.includes("flawless-handiwork-method");
-        if (hasExplodingTens && roll === 10) return true;
-        
-        const smf1 = currentActiveCharms.includes('supreme-masterwork-focus-1');
-        const smf2 = currentActiveCharms.includes('supreme-masterwork-focus-2');
-        const smf3 = currentActiveCharms.includes('supreme-masterwork-focus-3');
 
-        if (smf1 && roll === 9) return true;
-        if (smf2 && roll === 8) return true;
-        if (smf3 && roll === 7) return true;
-
-        return false;
-      };
-
-      const rollDie = () => Math.floor(Math.random() * 10) + 1;
-      
-      const dicePool = character[character.selectedAttribute] + character.craft;
-      const initialRolls = Array.from({ length: dicePool }, rollDie);
-      
-      let diceHistories: number[][] = initialRolls.map(r => [r]);
-      
-      // Initial display
-      setDiceRoll({ 
-          diceHistories: diceHistories.map(h => [...h]),
-          totalSuccesses: 0,
-          automaticSuccesses: 0,
-          targetNumber: 0,
-          activeCharmNames: activeCharmDetails.map(c => c.name),
-      });
-      await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY));
-
-
-      // --- Explosions Logic (Row by Row) ---
-      while (true) {
-        let explosionsInThisPass = 0;
-        
-        for (const history of diceHistories) {
-            const lastRoll = history[history.length - 1];
-            
-            // Only explode a die if it's the last one in its chain
-            // and it meets the criteria. This prevents re-exploding an already
-            // processed die in the same pass.
-            if (shouldDieExplode(lastRoll, activeCharms)) {
-                history.push(rollDie());
-                explosionsInThisPass++;
-            }
-        }
-        
-        if (explosionsInThisPass > 0) {
-             setDiceRoll(prev => ({ ...prev!, diceHistories: diceHistories.map(h => [...h]) }));
-             await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY * 2));
-        } else {
-            break; // No explosions in this pass, exit the loop.
-        }
-      }
-
-      // --- Handle Reroll Failures ---
-      if (willRerollFailures) {
-          let hadRerolls = false;
-          for (const history of diceHistories) {
-             const lastRoll = history[history.length - 1];
-             if(lastRoll < 7) {
-                 history.push(rollDie());
-                 hadRerolls = true;
-             }
-          }
-          if (hadRerolls) {
-            setDiceRoll(prev => ({ ...prev!, diceHistories: diceHistories.map(h => [...h]) }));
-            await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY));
-          }
-      }
-      
-      const calculateSuccesses = (roll: number, currentActiveCharms: string[]) => {
-        const smf1 = currentActiveCharms.includes('supreme-masterwork-focus-1');
-        const smf2 = currentActiveCharms.includes('supreme-masterwork-focus-2');
-        const smf3 = currentActiveCharms.includes('supreme-masterwork-focus-3');
-
-        if (roll >= 10) return 2;
-        if (smf3 && roll >= 7) return 2;
-        if (smf2 && roll >= 8) return 2;
-        if (smf1 && roll >= 9) return 2;
-        if (roll >= 7) return 1;
-        return 0;
-      };
-      
-      const baseSuccesses = diceHistories.reduce((total, history) => {
-          const finalRoll = history[history.length - 1];
-          return total + calculateSuccesses(finalRoll, activeCharms);
-      }, 0);
-      
-      let automaticSuccesses = 0;
-       activeCharmDetails.forEach((charm) => {
-        if (charm.effect.type === "add_successes") automaticSuccesses += charm.effect.value;
-      });
-
-      const totalSuccesses = baseSuccesses + automaticSuccesses;
+      // --- 3. Perform the Dice Roll using the pure function ---
       const finalTargetNumber = Math.max(1, targetNumber + tnModifier);
+      const rollResult = await performDiceRoll({
+          character,
+          activeCharms,
+          targetNumber: finalTargetNumber,
+          onProgress: (interimRoll) => {
+              setDiceRoll(interimRoll);
+          }
+      });
 
-      setDiceRoll(prev => ({ 
-        ...prev!,
-        diceHistories,
-        totalSuccesses, 
-        automaticSuccesses, 
-        targetNumber: finalTargetNumber
-      }));
+      setDiceRoll(rollResult);
 
-      const isExceptional = (projectDetails.type.startsWith("basic-") || projectDetails.type.startsWith("major-")) && totalSuccesses >= finalTargetNumber + 3;
+      // --- 4. Calculate Final Outcome and Update State ---
+      const isExceptional = (projectDetails.type.startsWith("basic-") || projectDetails.type.startsWith("major-")) && rollResult.totalSuccesses >= finalTargetNumber + 3;
 
-      const result = calculateCraftingOutcome({ project: projectDetails, successes: totalSuccesses, targetNumber: finalTargetNumber, isExceptional });
+      const result = calculateCraftingOutcome({ project: projectDetails, successes: rollResult.totalSuccesses, targetNumber: finalTargetNumber, isExceptional });
 
       if (result.isSuccess) {
         handleStateChange('craftingXp', prev => ({
@@ -302,7 +194,7 @@ export default function Home() {
           handleStateChange('activeProjects', prevProjects => 
             prevProjects.map(p => {
               if (p.id === assignedProjectId) {
-                const newProgress = p.progress + totalSuccesses;
+                const newProgress = p.progress + rollResult.totalSuccesses;
                 const isComplete = newProgress >= p.goal;
                 if(isComplete) {
                     toast({ title: "Project Complete!", description: `You have completed "${p.name}".`});
@@ -316,6 +208,7 @@ export default function Home() {
       }
 
       setOutcome(result);
+
     } catch (error) {
       console.error("Error calculating crafting outcome:", error);
       toast({ variant: "destructive", title: "Error", description: "Failed to calculate the crafting outcome. Please try again." });
