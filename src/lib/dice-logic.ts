@@ -22,7 +22,8 @@ const calculateSuccesses = (roll: number, activeCharms: string[]) => {
   const smf3 = activeCharms.includes('supreme-masterwork-focus-3');
 
   if (roll >= 10) return 2;
-  if (smf3 && roll >= 7) return 2;
+  // Note: These need to be checked from most to least powerful, as a higher charm implies the lower one is active.
+  if (smf3 && roll >= 7) return 2; 
   if (smf2 && roll >= 8) return 2;
   if (smf1 && roll >= 9) return 2;
   if (roll >= 7) return 1;
@@ -48,42 +49,61 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
     const allRolls: number[][] = [];
     let totalSuccesses = 0;
 
-    // --- Reroll Failures (First Movement of the Demiurge) ---
-    // This charm is a special case. It's a single, full reroll of failures,
-    // which happens *before* calculating successes or explosions on the initial roll.
+    // --- Special Case: Reroll Failures (First Movement of the Demiurge) ---
     const willRerollFailures = activeCharms.includes("first-movement-of-the-demiurge");
     if (willRerollFailures) {
-        const initialDice = Array.from({ length: diceToRoll }, rollDie);
-        const rerolledDice = initialDice.map(die => (die < 7 ? rollDie() : die));
-        allRolls.push(rerolledDice);
-        diceToRoll = 0; // The base pool has been rolled.
+        let initialDice = Array.from({ length: diceToRoll }, rollDie);
+        // We show the first roll, then the rerolled one
+        allRolls.push([...initialDice]);
+        onProgress({
+            diceHistories: allRolls, totalSuccesses: 0, automaticSuccesses: 0, targetNumber, activeCharmNames: [],
+        });
+        await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY + 200));
+
+        initialDice = initialDice.map(die => (die < 7 ? rollDie() : die));
+        allRolls[0] = initialDice; // Replace the first wave with the rerolled dice
+
+        // From this point, the main loop will handle successes and explosions for this modified first wave.
     }
     
-    // --- Main Explosion Loop ---
-    while (diceToRoll > 0) {
-        const currentWave = Array.from({ length: diceToRoll }, rollDie);
-        allRolls.push(currentWave);
+    // --- Main Explosion Loop (Wave-based approach) ---
+    let currentWaveDice = diceToRoll;
+    
+    while (currentWaveDice > 0) {
+        const currentWaveRolls = Array.from({ length: currentWaveDice }, rollDie);
         
+        // If we already rerolled, we replace the placeholder. Otherwise, we add a new wave.
+        if (willRerollFailures && allRolls.length === 1) {
+            // This condition is a bit complex: it ensures that we use the already-rerolled dice
+            // for the first wave's calculation, instead of rolling them again.
+            // We've already replaced allRolls[0] with the rerolled dice.
+        } else {
+             allRolls.push(currentWaveRolls);
+        }
+
         let explosionsInWave = 0;
         
-        for (const die of currentWave) {
+        // Use the most recent wave for calculations
+        const waveToCalculate = allRolls[allRolls.length - 1];
+        
+        for (const die of waveToCalculate) {
             totalSuccesses += calculateSuccesses(die, activeCharms);
             if (shouldDieExplode(die, activeCharms)) {
                 explosionsInWave++;
             }
         }
         
-        diceToRoll = explosionsInWave;
+        currentWaveDice = explosionsInWave;
 
         onProgress({
             diceHistories: allRolls,
             totalSuccesses,
-            automaticSuccesses: 0,
+            automaticSuccesses: 0, // This will be populated at the end
             targetNumber,
             activeCharmNames: [], // This will be populated at the end
         });
 
-        if (diceToRoll > 0) {
+        if (currentWaveDice > 0) {
             await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY));
         }
     }
@@ -106,6 +126,15 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
     });
 
     const finalTotalSuccesses = totalSuccesses + automaticSuccesses;
+
+    // Final progress update with all data
+    onProgress({
+        diceHistories: allRolls,
+        totalSuccesses: finalTotalSuccesses,
+        automaticSuccesses,
+        targetNumber,
+        activeCharmNames: activeCharmDetails.map(c => c.name)
+    });
 
     return {
         diceHistories: allRolls,
