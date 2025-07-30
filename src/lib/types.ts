@@ -69,6 +69,7 @@ export interface Character {
 export interface CharmEffect {
   type:
     | "add_successes"
+    | "add_successes_per_essence"
     | "reroll_failures"
     | "reroll_tens"
     | "double_success"

@@ -15,6 +15,15 @@ export const allCharms: Charm[] = [
     effect: { type: "custom" }, 
   },
   {
+    id: toId("Unsurpassed Masterpiece Method"),
+    name: "Unsurpassed Masterpiece Method",
+    cost: "5m",
+    description: "Add automatic successes to a Craft roll equal to character's Essence.",
+    minCraft: 3,
+    minEssence: 1,
+    effect: { type: "add_successes_per_essence", value: 1 },
+  },
+  {
     id: toId("Tireless Workhorse Method"),
     name: "Tireless Workhorse Method",
     description: "Permanently grants two major project slots per dot of Essence the Solar possesses.",
@@ -88,7 +97,22 @@ export const allCharms: Charm[] = [
     minEssence: 2,
     effect: { type: "reroll_failures" },
   },
-  
+  {
+    id: toId("Hundred-Hand Style"),
+    name: "Hundred-Hand Style",
+    cost: "10m, 1wp",
+    description: "Allows the Solar to work on (Essence) basic or major projects at once for a single day.",
+    minCraft: 4,
+    minEssence: 2,
+    effect: { type: "custom" },
+  },
+  {
+    id: toId("Words-as-Workshop Method"),
+    name: "Words-as-Workshop Method",
+    cost: "10m",
+    description: "The Solar can direct other craftsmen, their hands guided by her genius. Her (Attribute + Craft) roll can be used for a project even if she never touches it.",
+    minCraft: 4,
+    minEssence: 2,
+    effect: { type: "custom" },
+  },
 ];
-
-    

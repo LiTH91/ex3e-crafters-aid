@@ -1,4 +1,3 @@
-
 import type { Character, DiceRoll } from "./types";
 import { allCharms } from "./charms";
 
@@ -29,7 +28,6 @@ const calculateSuccesses = (roll: number, activeCharms: string[]) => {
   if (roll >= 7) return 1;
   return 0;
 };
-
 
 // --- Main Logic Function ---
 
@@ -63,7 +61,7 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
 
         // Reroll failures and update the first wave
         const rerolledWave = firstWaveRolls.map(die => (die < 7 ? rollDie() : die));
-        allRolls[0] = rerolledWave;
+        allRolls[0] = rerolledWave; // Replace the first wave with the rerolled dice
         firstWaveRolls = rerolledWave;
     } else {
         allRolls.push(firstWaveRolls);
@@ -135,6 +133,7 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
 
     activeCharmDetails.forEach((charm) => {
         if (charm.effect.type === "add_successes") automaticSuccesses += charm.effect.value || 0;
+        if (charm.effect.type === "add_successes_per_essence") automaticSuccesses += character.essence * (charm.effect.value || 0);
     });
 
     const finalTotalSuccesses = totalSuccesses + automaticSuccesses;
