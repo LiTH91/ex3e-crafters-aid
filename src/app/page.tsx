@@ -194,7 +194,7 @@ export default function Home() {
       let allRolls = [...initialRolls];
       let rerolledIndices: { [key: number]: number } = {};
 
-      // Handle rerolling 10s
+      // Handle rerolling 10s (exploding dice)
       if (willRerollTens) {
           let tensToReroll = allRolls.filter(r => r === 10).length;
           while (tensToReroll > 0) {
