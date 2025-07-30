@@ -217,76 +217,14 @@ export default function Home() {
       };
 
       // --- Sequential Explosion Logic ---
-      while (true) {
-        let hadExplosionInThisPass = false;
-        
-        for (let i = 0; i < diceHistories.length; i++) {
-          // Check if the last roll of a chain should explode
-          const lastRoll = diceHistories[i][diceHistories[i].length - 1];
-          const chainLength = diceHistories[i].length;
-          
-          if (shouldDieExplode(lastRoll, activeCharms)) {
-             // We need a way to mark that this die has already exploded in this pass
-             // A simple way is to check the length, but if multiple can explode, we need a better flag.
-             // For now, let's assume we explode once per pass to avoid infinite loops on a single die.
-             // The correct logic is to only explode dice added in the *previous* pass.
-             // Let's refine. We will add a property to the history or track indices.
-             
-             // Let's try a simpler approach again, the one from the user.
-             // We process each die chain to completion.
-          }
-        }
-        
-        let newExplosionsHappened = false;
-        for (const history of diceHistories) {
-            const lastRoll = history[history.length - 1];
-            // To prevent re-exploding an already-exploded die in the same pass,
-            // we need to know if it has already been processed in this pass.
-            // This is getting complicated. Let's try the user's sequential model again, but correctly.
-        }
-
-        // Correct Sequential Model
         for (let i = 0; i < diceHistories.length; i++) {
             while (shouldDieExplode(diceHistories[i][diceHistories[i].length - 1], activeCharms)) {
-                diceHistories[i].push(rollDie());
-                newExplosionsHappened = true;
+                const newRoll = rollDie();
+                diceHistories[i].push(newRoll);
                 updateDiceRoll(diceHistories, activeCharmDetails.map(c => c.name));
                 await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY));
             }
         }
-
-        // Let's try the Zeilen/Row model again, but correctly.
-        let newDiceInThisRow: { historyIndex: number; roll: number }[] = [];
-        let explodingIndicesThisRow: number[] = [];
-
-        // Identify all dice that need to explode from the last element of each history
-        for (let i = 0; i < diceHistories.length; i++) {
-            const lastRoll = diceHistories[i][diceHistories[i].length - 1];
-            if (shouldDieExplode(lastRoll, activeCharms)) {
-                // To avoid re-exploding, let's only explode if the chain has a length of the current "round"
-                // This is getting too complex. The simplest logic should work.
-            }
-        }
-        
-        let continueExploding = true;
-        while(continueExploding) {
-            let explosionsInThisPass = 0;
-            for (let i = 0; i < diceHistories.length; i++) {
-                let lastRollInChain = diceHistories[i][diceHistories[i].length - 1];
-                while(shouldDieExplode(lastRollInChain, activeCharms)) {
-                    explosionsInThisPass++;
-                    const newRoll = rollDie();
-                    diceHistories[i].push(newRoll);
-                    lastRollInChain = newRoll;
-                    updateDiceRoll(diceHistories, activeCharmDetails.map(c => c.name));
-                    await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY));
-                }
-            }
-            if (explosionsInThisPass === 0) {
-                continueExploding = false;
-            }
-        }
-      }
 
 
       // --- Handle Reroll Failures ---
@@ -311,9 +249,9 @@ export default function Home() {
         const doubleSuccessLevel3 = activeCharms.includes('supreme-masterwork-focus-3');
 
         if (roll >= 10) return 2;
-        if (doubleSuccessLevel3 && roll === 7) return 2;
-        if (doubleSuccessLevel2 && roll === 8) return 2;
-        if (doubleSuccessLevel1 && roll === 9) return 2;
+        if (doubleSuccessLevel3 && roll >= 7) return 2;
+        if (doubleSuccessLevel2 && roll >= 8) return 2;
+        if (doubleSuccessLevel1 && roll >= 9) return 2;
         if (roll >= 7) return 1;
         return 0;
       };
@@ -474,4 +412,5 @@ export default function Home() {
     </div>
   );
 }
+    
     
