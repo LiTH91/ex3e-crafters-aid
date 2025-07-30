@@ -203,10 +203,13 @@ export default function Home() {
                   const lastRoll = history[history.length - 1];
 
                   let canExplode = false;
-                  if (hasExplodingTens && lastRoll === 10) canExplode = true;
-                  else if (doubleSuccessLevel >= 1 && lastRoll >= 9) canExplode = true;
+                  // Supreme Masterwork Focus explosions
+                  if (doubleSuccessLevel >= 1 && lastRoll >= 9) canExplode = true;
                   else if (doubleSuccessLevel >= 2 && lastRoll >= 8) canExplode = true;
                   else if (doubleSuccessLevel >= 3 && lastRoll >= 7) canExplode = true;
+                  
+                  // Flawless Handiwork Method explosions
+                  if (hasExplodingTens && lastRoll === 10) canExplode = true;
 
                   if (canExplode) {
                       const newRoll = rollDice(1)[0];
