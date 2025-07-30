@@ -34,7 +34,7 @@ export default function CharmSelection({
   setActiveCharms,
 }: CharmSelectionProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("name");
+  const [sortBy, setSortBy] = useState("essence");
 
   const handleCharmToggle = (charmId: string) => {
     const newActiveCharms = activeCharms.includes(charmId)
@@ -54,7 +54,9 @@ export default function CharmSelection({
           if (a.minEssence !== b.minEssence) {
             return a.minEssence - b.minEssence;
           }
-          return a.minCraft - b.minCraft;
+          if (a.minCraft !== b.minCraft) {
+            return a.minCraft - b.minCraft;
+          }
         }
         return a.name.localeCompare(b.name);
       });
@@ -90,8 +92,8 @@ export default function CharmSelection({
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="name">Name</SelectItem>
               <SelectItem value="essence">Essence</SelectItem>
+              <SelectItem value="name">Name</SelectItem>
             </SelectContent>
           </Select>
         </div>
