@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -247,22 +248,24 @@ export default function DiceRoller({
                   </div>
                 </div>
             )}
-            <div className="text-center font-bold text-2xl font-headline flex items-center justify-center gap-2">
-              {diceRoll.totalSuccesses >= diceRoll.targetNumber ? (
-                <CheckCircle2 className="w-8 h-8 text-green-500" />
-              ) : (
-                <XCircle className="w-8 h-8 text-red-500" />
-              )}
-              <span>
-                {diceRoll.totalSuccesses} Successes vs TN {diceRoll.targetNumber}
-              </span>
-            </div>
+            {diceRoll.totalSuccesses > 0 && (
+              <div className="text-center font-bold text-2xl font-headline flex items-center justify-center gap-2">
+                {diceRoll.totalSuccesses >= diceRoll.targetNumber ? (
+                  <CheckCircle2 className="w-8 h-8 text-green-500" />
+                ) : (
+                  <XCircle className="w-8 h-8 text-red-500" />
+                )}
+                <span>
+                  {diceRoll.totalSuccesses} Successes vs TN {diceRoll.targetNumber}
+                </span>
+              </div>
+            )}
              {diceRoll.automaticSuccesses > 0 && (
                 <p className="text-center text-sm text-muted-foreground">
                     (+{diceRoll.automaticSuccesses} from Charms)
                 </p>
              )}
-            {diceRoll.activeCharmNames.length > 0 && (
+            {diceRoll.activeCharmNames && diceRoll.activeCharmNames.length > 0 && (
               <div className="text-center text-xs text-muted-foreground font-body">
                   <p className="font-bold">Active Charms:</p>
                   <p>{diceRoll.activeCharmNames.join(', ')}</p>
@@ -295,3 +298,5 @@ export default function DiceRoller({
     </Card>
   );
 }
+
+    

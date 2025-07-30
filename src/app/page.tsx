@@ -192,19 +192,17 @@ export default function Home() {
       const initialRolls = Array.from({ length: dicePool }, rollDie);
       const diceHistories: number[][] = initialRolls.map(r => [r]);
       
-      const updateRollState = (histories: number[][]) => {
-         setDiceRoll(prev => ({
-           ...prev,
-           diceHistories: histories.map(h => [...h]),
-           totalSuccesses: 0, // Will be calculated at the end
-         }));
-      };
-      
-      updateRollState(diceHistories);
+      setDiceRoll({
+        diceHistories: diceHistories,
+        totalSuccesses: 0,
+        automaticSuccesses: 0,
+        targetNumber: 0,
+        activeCharmNames: [],
+      });
       await new Promise(resolve => setTimeout(resolve, 50));
 
 
-      // --- Explosions phase (Sequential approach as suggested) ---
+      // --- Explosions phase (Sequential, per-die approach) ---
       for (const history of diceHistories) {
           while (true) {
               const lastRoll = history[history.length - 1];
@@ -213,20 +211,19 @@ export default function Home() {
               if (hasExplodingTens && lastRoll === 10) {
                   shouldExplode = true;
               }
-              if (doubleSuccessLevel > 0) { // Supreme Masterwork Focus
-                const threshold = 10 - doubleSuccessLevel; // Level 1 -> 9, Level 2 -> 8, Level 3 -> 7
-                if (lastRoll >= threshold && lastRoll < 10) { // Don't double-dip with Flawless Handiwork
-                     shouldExplode = true;
-                }
+              
+              const smfThreshold = 10 - doubleSuccessLevel; // 1->9, 2->8, 3->7
+              if (doubleSuccessLevel > 0 && lastRoll >= smfThreshold && lastRoll < 10) {
+                shouldExplode = true;
               }
 
               if (shouldExplode) {
                   const newRoll = rollDie();
                   history.push(newRoll);
-                  updateRollState(diceHistories);
+                  setDiceRoll(prev => ({ ...prev!, diceHistories: [...diceHistories] }));
                   await new Promise(resolve => setTimeout(resolve, 50));
               } else {
-                  break; // End the explosion chain for this specific die
+                  break; 
               }
           }
       }
@@ -238,7 +235,7 @@ export default function Home() {
              if(lastRoll < 7) {
                  const newRoll = rollDie();
                  history.push(newRoll);
-                 updateRollState(diceHistories);
+                 setDiceRoll(prev => ({ ...prev!, diceHistories: [...diceHistories] }));
                  await new Promise(resolve => setTimeout(resolve, 50));
              }
           }
@@ -248,8 +245,8 @@ export default function Home() {
           if (roll >= 10) return 2;
           // Note: doubleSuccessLevel logic is now just for counting, not rerolling
           if (doubleSuccessLevel >= 1 && roll === 9) return 2;
-          if (doubleSuccessLevel >= 2 && roll >= 8) return 2;
-          if (doubleSuccessLevel >= 3 && roll >= 7) return 2;
+          if (doubleSuccessLevel >= 2 && roll === 8) return 2;
+          if (doubleSuccessLevel >= 3 && roll === 7) return 2;
           if (roll >= 7) return 1;
           return 0;
       }
