@@ -29,7 +29,6 @@ import {
   Sparkles,
   Hammer,
   ArrowRight,
-  FlaskConical,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
@@ -43,10 +42,7 @@ interface DiceRollerProps {
       artifactRating: number;
       objectivesMet: number;
     },
-    rollOptions: {
-      assignedProjectId?: string,
-      maxExplosions?: number,
-    }
+    assignedProjectId?: string
   ) => void;
   isLoading: boolean;
   diceRoll: DiceRoll | null;
@@ -99,12 +95,12 @@ export default function DiceRoller({
   const [assignedProjectId, setAssignedProjectId] = useState<string | undefined>(undefined);
 
 
-  const handleRollClick = (maxExplosions?: number) => {
+  const handleRollClick = () => {
     onRoll({
       type: projectType,
       artifactRating: projectType.startsWith("superior-") ? artifactRating : 0,
       objectivesMet,
-    }, { assignedProjectId, maxExplosions });
+    }, assignedProjectId);
   };
 
   const dicePool = character[character.selectedAttribute] + character.craft;
@@ -221,9 +217,9 @@ export default function DiceRoller({
           </div>
         </div>
         <Separator />
-        <div className="text-center flex flex-col sm:flex-row justify-center items-center gap-4">
+        <div className="text-center">
           <Button
-            onClick={() => handleRollClick()}
+            onClick={handleRollClick}
             disabled={isLoading}
             size="lg"
             className="font-headline text-xl"
@@ -234,20 +230,6 @@ export default function DiceRoller({
               <Dices className="mr-2 h-6 w-6" />
             )}
             Roll {dicePool} Dice
-          </Button>
-           <Button
-            onClick={() => handleRollClick(5)}
-            disabled={isLoading}
-            size="lg"
-            variant="outline"
-            className="font-headline text-xl"
-          >
-            {isLoading ? (
-              <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-            ) : (
-              <FlaskConical className="mr-2 h-6 w-6" />
-            )}
-            Simulate (5 Explosions)
           </Button>
         </div>
         {diceRoll && (

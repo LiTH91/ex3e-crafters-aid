@@ -38,11 +38,10 @@ interface DiceRollInput {
   activeCharms: string[];
   targetNumber: number;
   onProgress: (interimRoll: DiceRoll) => void;
-  maxExplosions?: number;
 }
 
 export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> => {
-    const { character, activeCharms, targetNumber, onProgress, maxExplosions = -1 } = input;
+    const { character, activeCharms, targetNumber, onProgress } = input;
     
     await new Promise(resolve => setTimeout(resolve, 50));
 
@@ -94,15 +93,9 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
         }
     }
 
-    let explosionCount = 0;
     while (diceForNextWave > 0) {
-        if(maxExplosions !== -1 && explosionCount >= maxExplosions) {
-          break;
-        }
-
         const currentWaveRolls = Array.from({ length: diceForNextWave }, rollDie);
         allRolls.push(currentWaveRolls);
-        explosionCount++;
 
         let explosionsInThisWave = 0;
         for (const die of currentWaveRolls) {
