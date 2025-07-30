@@ -191,46 +191,38 @@ export default function Home() {
       const rollDice = (pool: number) => Array.from({ length: pool }, () => Math.floor(Math.random() * 10) + 1);
 
       let initialRolls = rollDice(dicePool);
-      let workingRolls = [...initialRolls];
-      let bonusRolls: number[] = [];
-      let rerolledIndices: number[] = [];
+      let allRolls = [...initialRolls];
+      let rerolledIndices: { [key: number]: number } = {};
 
-      // Handle rerolling 10s first to generate bonus dice
+      // Handle rerolling 10s
       if (willRerollTens) {
-          let tensToReroll = workingRolls.filter(r => r === 10).length;
-          while(tensToReroll > 0) {
+          let tensToReroll = allRolls.filter(r => r === 10).length;
+          while (tensToReroll > 0) {
               const newRolls = rollDice(tensToReroll);
-              bonusRolls.push(...newRolls);
+              allRolls.push(...newRolls);
               tensToReroll = newRolls.filter(r => r === 10).length;
           }
       }
-      
-      // Combine initial and bonus rolls for failure rerolls
-      let allRollsForFailureCheck = [...workingRolls, ...bonusRolls];
 
+      // Handle rerolling failures
       if (willRerollFailures) {
-          const failuresToReroll = allRollsForFailureCheck.map((r, i) => ({ roll: r, index: i })).filter(item => item.roll < 7);
-          const rerolledDice = rollDice(failuresToReroll.length);
-          const failureIndices = failuresToReroll.map(item => item.index);
+          const failures = allRolls
+              .map((roll, index) => ({ roll, index }))
+              .filter(item => item.roll < 7);
           
-          let rerollCounter = 0;
-          const rerolledAll = allRollsForFailureCheck.map((roll, index) => {
-              if (failureIndices.includes(index)) {
-                  // Only mark original dice as rerolled for UI
-                  if (index < initialRolls.length) {
-                      rerolledIndices.push(index);
-                  }
-                  return rerolledDice[rerollCounter++];
-              }
-              return roll;
-          });
-
-          // Separate the rolls back out
-          workingRolls = rerolledAll.slice(0, initialRolls.length);
-          bonusRolls = rerolledAll.slice(initialRolls.length);
+          if (failures.length > 0) {
+              const rerolledDice = rollDice(failures.length);
+              failures.forEach((failure, i) => {
+                  const originalIndex = failure.index;
+                  const newRoll = rerolledDice[i];
+                  rerolledIndices[originalIndex] = newRoll; // Store the new roll for the original index
+                  allRolls[originalIndex] = newRoll; // Update the main roll list
+              });
+          }
       }
       
-      const allFinalRolls = [...workingRolls, ...bonusRolls];
+      const finalRolls = allRolls.slice(0, initialRolls.length);
+      const bonusRolls = allRolls.slice(initialRolls.length);
 
       const calculateSuccesses = (rolls: number[]) =>
         rolls.reduce((acc, roll) => {
@@ -242,15 +234,15 @@ export default function Home() {
           return acc;
         }, 0);
 
-      const baseSuccesses = calculateSuccesses(allFinalRolls);
+      const baseSuccesses = calculateSuccesses(allRolls);
       const totalSuccesses = baseSuccesses + automaticSuccesses;
       const finalTargetNumber = Math.max(1, targetNumber + tnModifier);
 
       setDiceRoll({ 
         initialRolls, 
-        finalRolls: workingRolls,
+        finalRolls,
         bonusRolls, 
-        rerolledIndices, 
+        rerolledDice: rerolledIndices, 
         totalSuccesses, 
         automaticSuccesses, 
         targetNumber: finalTargetNumber,

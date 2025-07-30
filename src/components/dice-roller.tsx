@@ -55,6 +55,31 @@ const getRollColor = (roll: number) => {
   return "bg-red-500 text-white";
 };
 
+const DiceDisplay = ({ roll, rerolledValue }: { roll: number, rerolledValue?: number }) => (
+    <div className="flex flex-col items-center gap-1">
+        <span
+            className={`flex items-center justify-center w-10 h-10 rounded-full text-lg font-bold ${
+                rerolledValue !== undefined
+                    ? "bg-muted text-muted-foreground line-through"
+                    : getRollColor(roll)
+            }`}
+        >
+            {roll}
+        </span>
+        {rerolledValue !== undefined && (
+            <>
+                <ArrowDown className="w-4 h-4 text-muted-foreground" />
+                <span
+                    className={`flex items-center justify-center w-10 h-10 rounded-full text-lg font-bold ${getRollColor(rerolledValue)}`}
+                >
+                    {rerolledValue}
+                </span>
+            </>
+        )}
+    </div>
+);
+
+
 export default function DiceRoller({
   character,
   targetNumber,
@@ -213,46 +238,30 @@ export default function DiceRoller({
             <h3 className="text-lg font-bold text-center font-headline">
               Roll Results
             </h3>
-            <div className="flex justify-center items-start gap-2 flex-wrap">
-              {diceRoll.initialRolls.map((roll, index) => (
-                <div key={index} className="flex flex-col items-center gap-1">
-                  <span
-                    className={`flex items-center justify-center w-10 h-10 rounded-full text-lg font-bold ${
-                      diceRoll.rerolledIndices.includes(index)
-                        ? "bg-muted text-muted-foreground line-through"
-                        : getRollColor(roll)
-                    }`}
-                  >
-                    {roll}
-                  </span>
-                  {diceRoll.rerolledIndices.includes(index) && (
-                    <>
-                      <ArrowDown className="w-4 h-4 text-muted-foreground" />
-                       <span
-                        className={`flex items-center justify-center w-10 h-10 rounded-full text-lg font-bold ${getRollColor(diceRoll.finalRolls[index])}`}
-                      >
-                        {diceRoll.finalRolls[index]}
-                      </span>
-                    </>
-                  )}
+            {diceRoll.initialRolls.length > 0 && (
+                <div>
+                  <p className="text-center text-sm font-body mb-2">Initial Rolls:</p>
+                  <div className="flex justify-center items-start gap-2 flex-wrap">
+                      {diceRoll.initialRolls.map((roll, index) => (
+                          <DiceDisplay key={`initial-${index}`} roll={roll} rerolledValue={diceRoll.rerolledDice[index]} />
+                      ))}
+                  </div>
                 </div>
-              ))}
-            </div>
+            )}
 
             {diceRoll.bonusRolls.length > 0 && (
               <>
-                <p className="text-center text-sm font-body">
-                  Bonus dice from Charms:
+                <p className="text-center text-sm font-body mb-2">
+                  Bonus Dice:
                 </p>
-                <div className="flex justify-center gap-2 flex-wrap">
-                  {diceRoll.bonusRolls.map((roll, index) => (
-                      <span
-                        key={index}
-                        className={`flex items-center justify-center w-10 h-10 rounded-full text-lg font-bold ${getRollColor(roll)}`}
-                      >
-                        {roll}
-                      </span>
-                    ))}
+                <div className="flex justify-center items-start gap-2 flex-wrap">
+                  {diceRoll.bonusRolls.map((roll, index) => {
+                     // We need to find the original index in the combined array to check for a reroll
+                     const originalBonusIndex = diceRoll.initialRolls.length + index;
+                     return (
+                       <DiceDisplay key={`bonus-${index}`} roll={roll} rerolledValue={diceRoll.rerolledDice[originalBonusIndex]} />
+                     );
+                  })}
                 </div>
               </>
             )}

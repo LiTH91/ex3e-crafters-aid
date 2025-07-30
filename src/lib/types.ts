@@ -92,7 +92,7 @@ export interface DiceRoll {
   initialRolls: number[];
   finalRolls: number[];
   bonusRolls: number[];
-  rerolledIndices: number[];
+  rerolledDice: { [key: number]: number }; // Maps original index to new roll
   totalSuccesses: number;
   automaticSuccesses: number;
   targetNumber: number;
