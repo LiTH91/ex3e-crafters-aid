@@ -86,6 +86,7 @@ export interface Charm {
   minCraft: number;
   minEssence: number;
   effect: CharmEffect;
+  category?: 'functional' | 'narrative';
   subEffects?: Charm[];
 }
 

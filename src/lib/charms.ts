@@ -1,4 +1,3 @@
-
 import type { Charm } from "./types";
 
 const toId = (name: string) =>
@@ -23,50 +22,7 @@ const essence1Charms: Charm[] = [
     minCraft: 1,
     minEssence: 1,
     effect: { type: "custom" },
-  },
-  {
-    id: toId("Tireless Workhorse Method"),
-    name: "Tireless Workhorse Method",
-    description: "Permanently grants two major project slots per dot of Essence the Solar possesses.",
-    minCraft: 2,
-    minEssence: 1,
-    effect: { type: "custom" },
-  },
-  {
-    id: toId("Craftsman Needs No Tools"),
-    name: "Craftsman Needs No Tools",
-    cost: "5m",
-    description: "Allows starting and completing basic/major projects rapidly without tools or workshop, shaping material directly.",
-    minCraft: 3,
-    minEssence: 1,
-    effect: { type: "custom" },
-  },
-   {
-    id: toId("Durability-Enhancing Technique"),
-    name: "Durability-Enhancing Technique",
-    cost: "5m",
-    description: "Doubles the object’s health levels and resistance to damage. A classic for any serious artisan.",
-    minCraft: 3,
-    minEssence: 1,
-    effect: { type: "custom" },
-  },
-  {
-    id: toId("Crack-Mending Technique"),
-    name: "Crack-Mending Technique",
-    cost: "5m",
-    description: "Repairs extremely damaged objects. Can lower repair difficulty by 1 for fragmented Artifacts.",
-    minCraft: 3,
-    minEssence: 1,
-    effect: { type: "lower_repair_difficulty", value: 1 },
-  },
-   {
-    id: toId("Unsurpassed Masterpiece Method"),
-    name: "Unsurpassed Masterpiece Method",
-    cost: "5m",
-    description: "Add automatic successes to a Craft roll equal to character's Essence.",
-    minCraft: 3,
-    minEssence: 1,
-    effect: { type: "add_successes_per_essence", value: 1 },
+    category: 'functional',
   },
   {
     id: toId("Supreme Masterwork Focus"),
@@ -75,6 +31,7 @@ const essence1Charms: Charm[] = [
     minCraft: 3,
     minEssence: 1,
     effect: { type: "custom" },
+    category: 'functional',
     subEffects: [
       {
         id: toId("Supreme Masterwork Focus-1"),
@@ -105,6 +62,55 @@ const essence1Charms: Charm[] = [
       },
     ],
   },
+   {
+    id: toId("Unsurpassed Masterpiece Method"),
+    name: "Unsurpassed Masterpiece Method",
+    cost: "5m",
+    description: "Add automatic successes to a Craft roll equal to character's Essence.",
+    minCraft: 3,
+    minEssence: 1,
+    effect: { type: "add_successes_per_essence", value: 1 },
+    category: 'functional',
+  },
+  {
+    id: toId("Crack-Mending Technique"),
+    name: "Crack-Mending Technique",
+    cost: "5m",
+    description: "Repairs extremely damaged objects. Can lower repair difficulty by 1 for fragmented Artifacts.",
+    minCraft: 3,
+    minEssence: 1,
+    effect: { type: "lower_repair_difficulty", value: 1 },
+    category: 'functional',
+  },
+  {
+    id: toId("Tireless Workhorse Method"),
+    name: "Tireless Workhorse Method",
+    description: "Permanently grants two major project slots per dot of Essence the Solar possesses.",
+    minCraft: 2,
+    minEssence: 1,
+    effect: { type: "custom" },
+    category: 'narrative',
+  },
+  {
+    id: toId("Craftsman Needs No Tools"),
+    name: "Craftsman Needs No Tools",
+    cost: "5m",
+    description: "Allows starting and completing basic/major projects rapidly without tools or workshop, shaping material directly.",
+    minCraft: 3,
+    minEssence: 1,
+    effect: { type: "custom" },
+    category: 'narrative',
+  },
+   {
+    id: toId("Durability-Enhancing Technique"),
+    name: "Durability-Enhancing Technique",
+    cost: "5m",
+    description: "Doubles the object’s health levels and resistance to damage. A classic for any serious artisan.",
+    minCraft: 3,
+    minEssence: 1,
+    effect: { type: "custom" },
+    category: 'narrative',
+  },
 ];
 
 
@@ -121,6 +127,7 @@ const essence2Charms: Charm[] = [
     minCraft: 4,
     minEssence: 2,
     effect: { type: "reroll_failures" },
+    category: 'functional',
   },
   {
     id: toId("Hundred-Hand Style"),
@@ -130,6 +137,7 @@ const essence2Charms: Charm[] = [
     minCraft: 4,
     minEssence: 2,
     effect: { type: "custom" },
+    category: 'narrative',
   },
   {
     id: toId("Words-as-Workshop Method"),
@@ -139,6 +147,7 @@ const essence2Charms: Charm[] = [
     minCraft: 4,
     minEssence: 2,
     effect: { type: "custom" },
+    category: 'narrative',
   },
 ];
 
@@ -156,6 +165,7 @@ const essence3Charms: Charm[] = [
     minCraft: 5,
     minEssence: 3,
     effect: { type: "add_successes", value: 2 }, // The value is per Willpower point
+    category: 'functional',
   },
 ];
 

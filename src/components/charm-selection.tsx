@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { ScrollText, Search } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 interface CharmSelectionProps {
   knownCharms: string[];
@@ -31,6 +32,34 @@ interface CharmSelectionProps {
   character: Character;
   experience: CraftingExperience;
 }
+
+const CharmItem = ({ charm, activeCharms, handleCharmToggle, isDisabled }: { charm: Charm, activeCharms: string[], handleCharmToggle: (charmId: string) => void, isDisabled: boolean }) => (
+    <div
+        key={charm.id}
+        className={`flex items-start gap-3 p-3 rounded-md transition-colors ${isDisabled ? 'opacity-50' : 'hover:bg-secondary'}`}
+    >
+        <Checkbox
+        id={charm.id}
+        checked={activeCharms.includes(charm.id)}
+        onCheckedChange={() => handleCharmToggle(charm.id)}
+        className="mt-1"
+        disabled={isDisabled}
+        />
+        <div className="grid gap-1.5 leading-none">
+        <Label
+            htmlFor={charm.id}
+            className={`font-bold text-base font-body flex items-center gap-2 ${isDisabled ? '' : 'cursor-pointer'}`}
+        >
+            {charm.name}
+            {charm.cost && <Badge variant="secondary">{charm.cost}</Badge>}
+        </Label>
+        <p className="text-sm text-muted-foreground font-body">
+            {charm.description}
+        </p>
+        </div>
+    </div>
+);
+
 
 export default function CharmSelection({
   knownCharms,
@@ -93,8 +122,8 @@ export default function CharmSelection({
     return false;
   }
 
-  const availableCharms = useMemo(() => {
-    return allCharms
+  const { functionalCharms, narrativeCharms } = useMemo(() => {
+    const charms = allCharms
       .filter((charm) =>
         charm.name.toLowerCase().includes(searchTerm.toLowerCase())
       )
@@ -109,6 +138,11 @@ export default function CharmSelection({
         }
         return a.name.localeCompare(b.name);
       });
+    
+    return {
+        functionalCharms: charms.filter(c => c.category === 'functional'),
+        narrativeCharms: charms.filter(c => c.category === 'narrative'),
+    }
   }, [searchTerm, sortBy]);
 
   return (
@@ -149,82 +183,72 @@ export default function CharmSelection({
       </CardHeader>
       <CardContent>
         <div className="space-y-4 max-h-[600px] overflow-y-auto">
-          {availableCharms.length > 0 ? (
-            availableCharms.map((charm) => {
-              const isDisabled = isCharmDisabled(charm);
-              if (charm.id === 'supreme-masterwork-focus') {
-                const level1 = getSubCharm(charm, 1);
-                const level2 = getSubCharm(charm, 2);
-                const level3 = getSubCharm(charm, 3);
-                
-                return (
-                  <div key={charm.id} className={`p-3 rounded-md transition-colors ${isCharmDisabled(charm) ? 'opacity-50' : ''}`}>
-                     <p className="font-bold text-base font-body flex items-center gap-2">
-                      {charm.name}
-                    </p>
-                    <p className="text-sm text-muted-foreground font-body mb-2">
-                        {charm.description}
-                    </p>
-                    <div className="pl-4 border-l-2 border-primary/50 space-y-3">
-                       {level1 && (
-                         <div className="flex items-start gap-3">
-                            <Checkbox id={level1.id} checked={activeCharms.includes(level1.id)} onCheckedChange={() => handleCharmToggle(level1.id, true)} className="mt-1" disabled={isDisabled || isCharmDisabled(level1)} />
-                            <Label htmlFor={level1.id} className="grid gap-1.5 leading-none cursor-pointer">
-                                <span className="font-bold text-base font-body flex items-center gap-2">{level1.name} <Badge variant="secondary">{level1.cost}</Badge></span>
-                                <span className="text-sm text-muted-foreground font-body">{level1.description}</span>
-                            </Label>
-                         </div>
-                       )}
-                       {level2 && (
-                         <div className="flex items-start gap-3">
-                            <Checkbox id={level2.id} checked={activeCharms.includes(level2.id)} onCheckedChange={() => handleCharmToggle(level2.id, true)} className="mt-1" disabled={isDisabled || isCharmDisabled(level2)} />
-                            <Label htmlFor={level2.id} className="grid gap-1.5 leading-none cursor-pointer">
-                                <span className="font-bold text-base font-body flex items-center gap-2">{level2.name} <Badge variant="secondary">{level2.cost}</Badge></span>
-                                <span className="text-sm text-muted-foreground font-body">{level2.description}</span>
-                            </Label>
-                         </div>
-                       )}
-                       {level3 && (
-                         <div className="flex items-start gap-3">
-                            <Checkbox id={level3.id} checked={activeCharms.includes(level3.id)} onCheckedChange={() => handleCharmToggle(level3.id, true)} className="mt-1" disabled={isDisabled || isCharmDisabled(level3)} />
-                            <Label htmlFor={level3.id} className="grid gap-1.5 leading-none cursor-pointer">
-                               <span className="font-bold text-base font-body flex items-center gap-2">{level3.name} <Badge variant="secondary">{level3.cost}</Badge></span>
-                                <span className="text-sm text-muted-foreground font-body">{level3.description}</span>
-                            </Label>
-                         </div>
-                       )}
-                    </div>
-                  </div>
-                )
-              }
-
-              return (
-              <div
-                key={charm.id}
-                className={`flex items-start gap-3 p-3 rounded-md transition-colors ${isDisabled ? 'opacity-50' : 'hover:bg-secondary'}`}
-              >
-                <Checkbox
-                  id={charm.id}
-                  checked={activeCharms.includes(charm.id)}
-                  onCheckedChange={() => handleCharmToggle(charm.id)}
-                  className="mt-1"
-                  disabled={isDisabled}
-                />
-                <div className="grid gap-1.5 leading-none">
-                  <Label
-                    htmlFor={charm.id}
-                    className={`font-bold text-base font-body flex items-center gap-2 ${isDisabled ? '' : 'cursor-pointer'}`}
-                  >
-                    {charm.name}
-                    {charm.cost && <Badge variant="secondary">{charm.cost}</Badge>}
-                  </Label>
-                  <p className="text-sm text-muted-foreground font-body">
-                    {charm.description}
-                  </p>
-                </div>
+          {functionalCharms.length > 0 && (
+              <div className="space-y-2">
+                  <h3 className="font-headline text-lg text-primary px-3">Functional Charms</h3>
+                  <Separator />
+                  {functionalCharms.map((charm) => {
+                    if (charm.id === 'supreme-masterwork-focus') {
+                        const level1 = getSubCharm(charm, 1);
+                        const level2 = getSubCharm(charm, 2);
+                        const level3 = getSubCharm(charm, 3);
+                        
+                        return (
+                          <div key={charm.id} className={`p-3 rounded-md transition-colors ${isCharmDisabled(charm) ? 'opacity-50' : ''}`}>
+                             <p className="font-bold text-base font-body flex items-center gap-2">
+                              {charm.name}
+                            </p>
+                            <p className="text-sm text-muted-foreground font-body mb-2">
+                                {charm.description}
+                            </p>
+                            <div className="pl-4 border-l-2 border-primary/50 space-y-3">
+                               {level1 && (
+                                 <div className="flex items-start gap-3">
+                                    <Checkbox id={level1.id} checked={activeCharms.includes(level1.id)} onCheckedChange={() => handleCharmToggle(level1.id, true)} className="mt-1" disabled={isCharmDisabled(charm) || isCharmDisabled(level1)} />
+                                    <Label htmlFor={level1.id} className="grid gap-1.5 leading-none cursor-pointer">
+                                        <span className="font-bold text-base font-body flex items-center gap-2">{level1.name} <Badge variant="secondary">{level1.cost}</Badge></span>
+                                        <span className="text-sm text-muted-foreground font-body">{level1.description}</span>
+                                    </Label>
+                                 </div>
+                               )}
+                               {level2 && (
+                                 <div className="flex items-start gap-3">
+                                    <Checkbox id={level2.id} checked={activeCharms.includes(level2.id)} onCheckedChange={() => handleCharmToggle(level2.id, true)} className="mt-1" disabled={isCharmDisabled(charm) || isCharmDisabled(level2)} />
+                                    <Label htmlFor={level2.id} className="grid gap-1.5 leading-none cursor-pointer">
+                                        <span className="font-bold text-base font-body flex items-center gap-2">{level2.name} <Badge variant="secondary">{level2.cost}</Badge></span>
+                                        <span className="text-sm text-muted-foreground font-body">{level2.description}</span>
+                                    </Label>
+                                 </div>
+                               )}
+                               {level3 && (
+                                 <div className="flex items-start gap-3">
+                                    <Checkbox id={level3.id} checked={activeCharms.includes(level3.id)} onCheckedChange={() => handleCharmToggle(level3.id, true)} className="mt-1" disabled={isCharmDisabled(charm) || isCharmDisabled(level3)} />
+                                    <Label htmlFor={level3.id} className="grid gap-1.5 leading-none cursor-pointer">
+                                       <span className="font-bold text-base font-body flex items-center gap-2">{level3.name} <Badge variant="secondary">{level3.cost}</Badge></span>
+                                        <span className="text-sm text-muted-foreground font-body">{level3.description}</span>
+                                    </Label>
+                                 </div>
+                               )}
+                            </div>
+                          </div>
+                        )
+                    }
+                    return <CharmItem key={charm.id} charm={charm} activeCharms={activeCharms} handleCharmToggle={handleCharmToggle} isDisabled={isCharmDisabled(charm)} />
+                  })}
               </div>
-            )})
-          ) : (
+          )}
+
+          {narrativeCharms.length > 0 && (
+              <div className="space-y-2">
+                  <h3 className="font-headline text-lg text-primary px-3 pt-4">Narrative & Passive Charms</h3>
+                  <Separator />
+                  {narrativeCharms.map((charm) => (
+                      <CharmItem key={charm.id} charm={charm} activeCharms={activeCharms} handleCharmToggle={handleCharmToggle} isDisabled={isCharmDisabled(charm)} />
+                  ))}
+              </div>
+          )}
+
+          {functionalCharms.length === 0 && narrativeCharms.length === 0 && (
             <p className="text-muted-foreground text-center font-body">
               No charms found.
             </p>
