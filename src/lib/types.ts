@@ -91,6 +91,7 @@ export interface Charm {
 export interface DiceRoll {
   initialRolls: number[];
   finalRolls: number[];
+  bonusRolls: number[];
   rerolledIndices: number[];
   totalSuccesses: number;
   automaticSuccesses: number;

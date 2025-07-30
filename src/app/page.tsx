@@ -193,23 +193,32 @@ export default function Home() {
       let initialRolls = rollDice(dicePool);
       let finalRolls = [...initialRolls];
       let rerolledIndices: number[] = [];
+      let bonusRolls: number[] = [];
 
       if (willRerollFailures) {
-        const failuresToReroll = initialRolls.map((r, i) => ({ roll: r, index: i })).filter(item => item.roll < 7);
-        const rerolledDice = rollDice(failuresToReroll.length);
-        rerolledIndices = failuresToReroll.map(item => item.index);
-        let rerollIndex = 0;
-        finalRolls = finalRolls.map((roll, index) => rerolledIndices.includes(index) ? rerolledDice[rerollIndex++] : roll);
+          const failuresToReroll = initialRolls.map((r, i) => ({ roll: r, index: i })).filter(item => item.roll < 7);
+          const rerolledDice = rollDice(failuresToReroll.length);
+          rerolledIndices = failuresToReroll.map(item => item.index);
+          
+          let rerollCounter = 0;
+          finalRolls = initialRolls.map((roll, index) => {
+              if (rerolledIndices.includes(index)) {
+                  return rerolledDice[rerollCounter++];
+              }
+              return roll;
+          });
       }
 
       if (willRerollTens) {
-          let tensToReroll = finalRolls.filter(r => r === 10).length;
+          let tensToReroll = (willRerollFailures ? finalRolls : initialRolls).filter(r => r === 10).length;
           while(tensToReroll > 0) {
               const newRolls = rollDice(tensToReroll);
-              finalRolls.push(...newRolls);
+              bonusRolls.push(...newRolls);
               tensToReroll = newRolls.filter(r => r === 10).length;
           }
       }
+      
+      const allFinalRolls = [...finalRolls, ...bonusRolls];
 
       const calculateSuccesses = (rolls: number[]) =>
         rolls.reduce((acc, roll) => {
@@ -221,13 +230,14 @@ export default function Home() {
           return acc;
         }, 0);
 
-      const baseSuccesses = calculateSuccesses(finalRolls);
+      const baseSuccesses = calculateSuccesses(allFinalRolls);
       const totalSuccesses = baseSuccesses + automaticSuccesses;
       const finalTargetNumber = Math.max(1, targetNumber + tnModifier);
 
       setDiceRoll({ 
         initialRolls, 
-        finalRolls, 
+        finalRolls,
+        bonusRolls, 
         rerolledIndices, 
         totalSuccesses, 
         automaticSuccesses, 

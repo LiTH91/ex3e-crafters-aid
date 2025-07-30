@@ -27,6 +27,7 @@ import {
   Loader2,
   Sparkles,
   Hammer,
+  ArrowRight,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
@@ -47,6 +48,12 @@ interface DiceRollerProps {
   aiOutcome: CraftingOutcome | null;
   activeProjects: ActiveProject[];
 }
+
+const getRollColor = (roll: number) => {
+  if (roll >= 10) return "bg-yellow-400 text-black";
+  if (roll >= 7) return "bg-green-500 text-white";
+  return "bg-red-500 text-white";
+};
 
 export default function DiceRoller({
   character,
@@ -208,40 +215,40 @@ export default function DiceRoller({
             </h3>
             <div className="flex justify-center gap-2 flex-wrap">
               {diceRoll.initialRolls.map((roll, index) => (
-                <span
-                  key={index}
-                  className={`flex items-center justify-center w-10 h-10 rounded-full text-lg font-bold ${
-                    diceRoll.rerolledIndices.includes(index)
-                      ? "bg-muted text-muted-foreground line-through"
-                      : roll >= 10
-                        ? "bg-yellow-400 text-black"
-                        : roll >= 7
-                          ? "bg-green-500 text-white"
-                          : "bg-red-500 text-white"
-                  }`}
-                >
-                  {roll}
-                </span>
+                <div key={index} className="flex items-center gap-1">
+                  <span
+                    className={`flex items-center justify-center w-10 h-10 rounded-full text-lg font-bold ${
+                      diceRoll.rerolledIndices.includes(index)
+                        ? "bg-muted text-muted-foreground line-through"
+                        : getRollColor(roll)
+                    }`}
+                  >
+                    {roll}
+                  </span>
+                  {diceRoll.rerolledIndices.includes(index) && (
+                    <>
+                      <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                       <span
+                        className={`flex items-center justify-center w-10 h-10 rounded-full text-lg font-bold ${getRollColor(diceRoll.finalRolls[index])}`}
+                      >
+                        {diceRoll.finalRolls[index]}
+                      </span>
+                    </>
+                  )}
+                </div>
               ))}
             </div>
-            {diceRoll.finalRolls.length > diceRoll.initialRolls.length && (
+
+            {diceRoll.bonusRolls.length > 0 && (
               <>
                 <p className="text-center text-sm font-body">
                   Bonus dice from Charms:
                 </p>
                 <div className="flex justify-center gap-2 flex-wrap">
-                  {diceRoll.finalRolls
-                    .slice(diceRoll.initialRolls.length)
-                    .map((roll, index) => (
+                  {diceRoll.bonusRolls.map((roll, index) => (
                       <span
                         key={index}
-                        className={`flex items-center justify-center w-10 h-10 rounded-full text-lg font-bold ${
-                          roll >= 10
-                            ? "bg-yellow-400 text-black"
-                            : roll >= 7
-                              ? "bg-green-500 text-white"
-                              : "bg-red-500 text-white"
-                        }`}
+                        className={`flex items-center justify-center w-10 h-10 rounded-full text-lg font-bold ${getRollColor(roll)}`}
                       >
                         {roll}
                       </span>
