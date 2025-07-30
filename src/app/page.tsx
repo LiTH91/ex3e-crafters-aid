@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Character, DiceRoll, AiOutcome } from "@/lib/types";
+import type { Character, DiceRoll, AiOutcome, ProjectType } from "@/lib/types";
 import { allCharms } from "@/lib/charms";
 import { evaluateCraftingOutcome } from "@/ai/flows/evaluate-crafting-outcome";
 import { useToast } from "@/hooks/use-toast";
@@ -36,8 +36,7 @@ export default function Home() {
   const { toast } = useToast();
 
   const handleRoll = async (projectDetails: {
-    type: "Basic" | "Major" | "Superior" | "Legendary";
-    isRepair: boolean;
+    type: ProjectType;
     artifactRating: number;
     objectivesMet: number;
   }) => {
@@ -102,8 +101,8 @@ export default function Home() {
       });
 
       const isExceptional =
-        (projectDetails.type === "Basic" ||
-          projectDetails.type === "Major") &&
+        (projectDetails.type.startsWith("basic-") ||
+          projectDetails.type.startsWith("major-")) &&
         totalSuccesses >= targetNumber + 3;
 
       const aiResult = await evaluateCraftingOutcome({

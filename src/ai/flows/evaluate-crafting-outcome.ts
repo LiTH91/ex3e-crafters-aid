@@ -8,11 +8,11 @@
  */
 
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import type { ProjectType } from "@/lib/types";
 
 export interface EvaluateCraftingOutcomeInput {
   project: {
-    type: "Basic" | "Major" | "Superior" | "Legendary";
-    isRepair: boolean;
+    type: ProjectType;
     artifactRating: number;
     objectivesMet: number;
   };
@@ -87,7 +87,6 @@ You are an expert Storyteller for the Exalted 3rd Edition roleplaying game. Your
 
 **INPUT FOR EVALUATION:**
 *   **Project Type:** ${input.project.type}
-*   **Is Repair?** ${input.project.isRepair}
 *   **Artifact Rating:** ${input.project.artifactRating > 0 ? input.project.artifactRating : 'N/A'}
 *   **Objectives Met:** ${input.project.objectivesMet}
 *   **Total Successes Rolled:** ${input.successes}
@@ -99,7 +98,7 @@ You are an expert Storyteller for the Exalted 3rd Edition roleplaying game. Your
 
 **YOUR TASK:**
 1.  **Analyze Success:** The roll is successful if successes >= targetNumber. Describe the quality of the work based on the margin of success.
-2.  **Calculate XP:** Strictly follow the rules above to calculate the sxp, gxp, and wxp gained. If a project type doesn't award a certain XP type, the value must be 0.
+2.  **Calculate XP:** Strictly follow the rules above to calculate the sxp, gxp, and wxp gained. The project type will specify if it's a 'creation' or 'repair' task. Apply the correct reward structure. If a project type doesn't award a certain XP type, the value must be 0.
 3.  **Write Title & Description:** Create a short, flavorful title and a descriptive paragraph for the outcome, consistent with the Exalted setting. Weave in the number of successes and any charm effects into the narrative.
 4.  **Format Output:** Return ONLY a single valid JSON object. Do not include markdown formatting like \`\`\`json.
 
@@ -114,8 +113,7 @@ You are an expert Storyteller for the Exalted 3rd Edition roleplaying game. Your
     "wxp": number
   }
 }
-`;
-
+`
   const result = await model.generateContent(prompt);
   const response = await result.response;
   const text = response.text();

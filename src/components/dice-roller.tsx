@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import type { DiceRoll, AiOutcome, Character } from "@/lib/types";
+import type { DiceRoll, AiOutcome, Character, ProjectType } from "@/lib/types";
+import { PROJECT_TYPES } from "@/lib/types";
 import {
   Card,
   CardContent,
@@ -19,7 +20,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dices,
   CheckCircle2,
@@ -35,8 +35,7 @@ interface DiceRollerProps {
   targetNumber: number;
   setTargetNumber: (value: number) => void;
   onRoll: (projectDetails: {
-    type: "Basic" | "Major" | "Superior" | "Legendary";
-    isRepair: boolean;
+    type: ProjectType;
     artifactRating: number;
     objectivesMet: number;
   }) => void;
@@ -44,8 +43,6 @@ interface DiceRollerProps {
   diceRoll: DiceRoll | null;
   aiOutcome: AiOutcome | null;
 }
-
-type ProjectType = "Basic" | "Major" | "Superior" | "Legendary";
 
 export default function DiceRoller({
   character,
@@ -56,21 +53,25 @@ export default function DiceRoller({
   diceRoll,
   aiOutcome,
 }: DiceRollerProps) {
-  const [projectType, setProjectType] = useState<ProjectType>("Basic");
-  const [isRepair, setIsRepair] = useState(false);
+  const [projectType, setProjectType] = useState<ProjectType>("basic-creation");
   const [artifactRating, setArtifactRating] = useState(2);
   const [objectivesMet, setObjectivesMet] = useState(1);
 
   const handleRollClick = () => {
     onRoll({
       type: projectType,
-      isRepair,
-      artifactRating: projectType === "Superior" ? artifactRating : 0,
+      artifactRating: projectType.startsWith("superior-") ? artifactRating : 0,
       objectivesMet,
     });
   };
 
   const dicePool = character[character.selectedAttribute] + character.craft;
+
+  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+  const formatProjectTypeName = (type: ProjectType) => {
+    const [category, action] = type.split("-");
+    return `${capitalize(category)} ${capitalize(action)}`;
+  };
 
   return (
     <Card className="bg-card/80 backdrop-blur-sm border-2 border-primary/20 shadow-lg">
@@ -101,14 +102,15 @@ export default function DiceRoller({
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Basic">Basic</SelectItem>
-                <SelectItem value="Major">Major</SelectItem>
-                <SelectItem value="Superior">Superior</SelectItem>
-                <SelectItem value="Legendary">Legendary</SelectItem>
+                {PROJECT_TYPES.map((type) => (
+                   <SelectItem key={type} value={type}>
+                     {formatProjectTypeName(type)}
+                   </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
-          {projectType === "Superior" && (
+          {projectType.startsWith("superior-") && (
             <div>
               <Label htmlFor="artifact-rating" className="font-bold">
                 Artifact Rating
@@ -137,16 +139,6 @@ export default function DiceRoller({
               min={0}
               max={3}
             />
-          </div>
-          <div className="flex items-center space-x-2 pt-6">
-            <Checkbox
-              id="is-repair"
-              checked={isRepair}
-              onCheckedChange={(c) => setIsRepair(c as boolean)}
-            />
-            <Label htmlFor="is-repair" className="font-bold">
-              Is this a repair?
-            </Label>
           </div>
         </div>
         <Separator />
@@ -231,21 +223,21 @@ export default function DiceRoller({
         {aiOutcome && (
           <Card className="mt-6 bg-background/50">
             <CardHeader>
-              <CardTitle className="font-headline flex items-center gap-2">
-                <Sparkles className="w-6 h-6 text-primary" />
-                AI-Powered Outcome
+              <CardTitle className="font-headline flex items-center gap-2 text-primary">
+                <Sparkles className="w-6 h-6" />
+                {aiOutcome.outcomeTitle}
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2 font-body text-base">
-              <p>
-                <span className="font-bold">Outcome: </span>
-                {aiOutcome.outcome}
-              </p>
-              <p>
-                <span className="font-bold">Rewards: </span>
-                {aiOutcome.rewards}
-              </p>
-              <p className="pt-2 italic">{aiOutcome.narrative}</p>
+            <CardContent className="space-y-4 font-body text-base">
+                <p className="italic">{aiOutcome.outcomeDescription}</p>
+                <Separator />
+                <div className="font-bold">
+                    <h4 className="text-lg font-headline">Rewards</h4>
+                    <p>SXP: {aiOutcome.experienceGained.sxp}</p>
+                    <p>GXP: {aiOutcome.experienceGained.gxp}</p>
+                    <p>WXP: {aiOutcome.experienceGained.wxp}</p>
+                </div>
+
             </CardContent>
           </Card>
         )}
