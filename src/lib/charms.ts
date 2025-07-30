@@ -9,10 +9,10 @@ export const allCharms: Charm[] = [
     id: toId("Flawless Handiwork Method"),
     name: "Flawless Handiwork Method",
     cost: "3m",
-    description: "Craft rolls supplemented by this Charm reroll 10s until no more appear.",
+    description: "Craft rolls supplemented by this Charm reroll 10s until no more appear (dice explode).",
     minCraft: 1,
     minEssence: 1,
-    effect: { type: "custom" }, // Handled as a special case in dice logic
+    effect: { type: "custom" }, 
   },
   {
     id: toId("Tireless Workhorse Method"),
@@ -43,7 +43,7 @@ export const allCharms: Charm[] = [
         id: toId("Supreme Masterwork Focus-1"),
         name: "Level 1: Double & Explode Nines",
         cost: "5m, 1wp",
-        description: "Supplements (Attribute + Craft) rolls for basic/major projects with double 9s. Each 9 also grants a bonus die.",
+        description: "Supplements (Attribute + Craft) rolls for basic/major projects with double 9s. Each 9 also explodes.",
         minCraft: 3,
         minEssence: 1,
         effect: { type: "double_success", value: 9 },
@@ -52,7 +52,7 @@ export const allCharms: Charm[] = [
         id: toId("Supreme Masterwork Focus-2"),
         name: "Level 2: Double & Explode Eights",
         cost: "5m, 1wp, 1gxp",
-        description: "Repurchase for double 8s on basic, major, or superior project rolls. Each 8 also grants a bonus die.",
+        description: "Repurchase for double 8s on basic, major, or superior project rolls. Each 8 also explodes.",
         minCraft: 5,
         minEssence: 2,
         effect: { type: "double_success", value: 8 },
@@ -61,7 +61,7 @@ export const allCharms: Charm[] = [
         id: toId("Supreme Masterwork Focus-3"),
         name: "Level 3: Double & Explode Sevens",
         cost: "2m, 1wxp",
-        description: "A third repurchase grants double 7s on any (Attribute + Craft) roll. Each 7 also grants a bonus die.",
+        description: "A third repurchase grants double 7s on any (Attribute + Craft) roll. Each 7 also explodes.",
         minCraft: 5,
         minEssence: 3,
         effect: { type: "double_success", value: 7 },
@@ -90,3 +90,5 @@ export const allCharms: Charm[] = [
   },
   
 ];
+
+    
