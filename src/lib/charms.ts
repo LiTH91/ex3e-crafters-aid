@@ -135,10 +135,28 @@ const essence2Charms: Charm[] = [
 
 
 // =================================================================
+// ESSENCE 3 CHARMS
+// =================================================================
+
+const essence3Charms: Charm[] = [
+  {
+    id: toId("Will-Forging Discipline"),
+    name: "Will-Forging Discipline",
+    cost: "1wp per 2 succ.", // Note: This cost is variable and will be handled in the UI
+    description: "Spend Willpower to add automatic successes to a Craft roll. Each point of Willpower adds two successes.",
+    minCraft: 5,
+    minEssence: 3,
+    effect: { type: "add_successes", value: 2 }, // The value is per Willpower point
+  },
+];
+
+
+// =================================================================
 // EXPORT ALL CHARMS
 // =================================================================
 
 export const allCharms: Charm[] = [
     ...essence1Charms,
     ...essence2Charms,
+    ...essence3Charms,
 ];
