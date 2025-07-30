@@ -16,11 +16,13 @@ interface CraftingJournalProps {
     wxp: number;
   };
   projects: any[];
+  maxProjects: number;
 }
 
 export default function CraftingJournal({
   experience,
   projects,
+  maxProjects,
 }: CraftingJournalProps) {
   return (
     <Card className="bg-card/80 backdrop-blur-sm border-2 border-primary/20 shadow-lg">
@@ -79,9 +81,16 @@ export default function CraftingJournal({
           </div>
         </div>
         <div>
-          <h3 className="font-headline text-xl text-primary mb-2">
-            Active Projects
-          </h3>
+           <div className="flex justify-between items-baseline">
+            <h3 className="font-headline text-xl text-primary mb-2">
+              Active Projects
+            </h3>
+            {maxProjects > 0 && (
+                <span className="text-sm text-muted-foreground font-body">
+                    {projects.length} / {maxProjects} slots used
+                </span>
+            )}
+           </div>
           {projects.length > 0 ? (
             <div className="space-y-4">
               {projects.map((p, i) => (
@@ -96,9 +105,15 @@ export default function CraftingJournal({
           ) : (
             <div className="text-center text-muted-foreground font-body p-4 border-2 border-dashed border-border rounded-lg">
               <p>No active projects.</p>
-              <p className="text-sm">
-                Start a major, superior, or legendary project to track it here.
-              </p>
+              {maxProjects > 0 ? (
+                 <p className="text-sm">
+                    You have {maxProjects} available major project slots.
+                 </p>
+              ) : (
+                <p className="text-sm">
+                    Activate Tireless Workhorse Method to gain project slots.
+                </p>
+              )}
             </div>
           )}
         </div>

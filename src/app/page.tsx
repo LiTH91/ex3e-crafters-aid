@@ -216,6 +216,10 @@ export default function Home() {
     }
   };
 
+  const hasTirelessWorkhorse = activeCharms.includes("tireless-workhorse-method");
+  const majorProjectSlots = hasTirelessWorkhorse ? character.essence * 2 : 0;
+
+
   return (
     <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8">
       <main className="max-w-7xl mx-auto">
@@ -262,6 +266,7 @@ export default function Home() {
                 <CraftingJournal
                   experience={craftingXp}
                   projects={activeProjects}
+                  maxProjects={majorProjectSlots}
                 />
               </TabsContent>
             </Tabs>
