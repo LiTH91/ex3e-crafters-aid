@@ -63,12 +63,12 @@ const getDieStyle = (roll: number, activeCharms: string[]): string => {
     (roll >= 7 && activeCharms.includes('supreme-masterwork-focus-3'));
 
   if (isSpecialSuccess) {
-    return "text-yellow-400 border-yellow-400";
+    return "bg-yellow-400 text-black border-yellow-600";
   }
   if (roll >= 7) {
-    return "text-green-500 border-green-500";
+    return "bg-green-500 text-white border-green-700";
   }
-  return "text-red-500 border-red-500";
+  return "bg-red-500 text-white border-red-700";
 };
 
 
