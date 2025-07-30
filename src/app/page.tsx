@@ -78,6 +78,7 @@ export default function Home() {
       let willDoubleNines = false;
       let moteCost = 0;
       let willpowerCost = 0;
+      let tnModifier = 0;
 
       selectedCharms.forEach((charm) => {
         if (charm.effect.type === "add_successes") {
@@ -92,6 +93,10 @@ export default function Home() {
         if (charm.effect.type === "double_nines") {
           willDoubleNines = true;
         }
+        if (charm.effect.type === "lower_repair_difficulty" && projectDetails.type.includes("repair")) {
+          tnModifier -= charm.effect.value;
+        }
+
          // Parse costs
          if (charm.cost) {
             const moteMatch = charm.cost.match(/(\d+)m/);
@@ -174,16 +179,18 @@ export default function Home() {
         totalSuccesses,
         automaticSuccesses,
       });
+      
+      const finalTargetNumber = Math.max(1, targetNumber + tnModifier);
 
       const isExceptional =
         (projectDetails.type.startsWith("basic-") ||
           projectDetails.type.startsWith("major-")) &&
-        totalSuccesses >= targetNumber + 3;
+        totalSuccesses >= finalTargetNumber + 3;
 
       const result = calculateCraftingOutcome({
         project: projectDetails,
         successes: totalSuccesses,
-        targetNumber,
+        targetNumber: finalTargetNumber,
         isExceptional,
       });
 

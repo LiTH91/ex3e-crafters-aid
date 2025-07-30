@@ -57,6 +57,7 @@ export interface CharmEffect {
     | "reroll_failures"
     | "reroll_tens"
     | "double_nines"
+    | "lower_repair_difficulty"
     | "custom";
   value: number;
 }
