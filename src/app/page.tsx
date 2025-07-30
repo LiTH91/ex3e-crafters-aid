@@ -192,39 +192,75 @@ export default function Home() {
       const diceHistories: number[][] = initialRolls.map(r => [r]);
       
       // --- Explosions phase ---
-      let currentRound = 1;
-      let explodedInThisPass;
-      
-      do {
-          explodedInThisPass = false;
-          diceHistories.forEach(history => {
-              // Only check the last die in the history, and only if its history length matches the current round
-              if (history.length === currentRound) {
-                  const lastRoll = history[history.length - 1];
-
-                  let canExplode = false;
-                  // Supreme Masterwork Focus explosions
-                  if (doubleSuccessLevel >= 1 && lastRoll >= 9) canExplode = true;
-                  else if (doubleSuccessLevel >= 2 && lastRoll >= 8) canExplode = true;
-                  else if (doubleSuccessLevel >= 3 && lastRoll >= 7) canExplode = true;
+      let hadExplosionsThisPass = true;
+      while(hadExplosionsThisPass) {
+          hadExplosionsThisPass = false;
+          let newExplosions: number[][] = [];
+          
+          for(const history of diceHistories) {
+              const lastRoll = history[history.length - 1];
+              
+              let shouldExplode = false;
+              if (hasExplodingTens && lastRoll === 10) {
+                  shouldExplode = true;
+              } else {
+                  if (doubleSuccessLevel >= 1 && lastRoll >= 9) shouldExplode = true;
+                  if (doubleSuccessLevel >= 2 && lastRoll >= 8) shouldExplode = true;
+                  if (doubleSuccessLevel >= 3 && lastRoll >= 7) shouldExplode = true;
+              }
+              
+              if(shouldExplode) {
+                  // The last roll in this history chain is the one that just happened.
+                  // Only add a new die if this is a "fresh" explosion.
+                  // A simple way to check: has a die of this value already been added this pass?
+                  // This is too complex. Let's simplify.
                   
-                  // Flawless Handiwork Method explosions
-                  if (hasExplodingTens && lastRoll === 10) canExplode = true;
+                  // A flag on the die? A separate list of "processed" dice?
+                  // For now, let's try a direct addition.
+                  
+                  // Let's check if the history has already been processed in this pass
+                  // by adding a temporary marker, which we remove later.
+                  // This is messy.
+                  
+                  // New approach: we only check the dice that were present at the start of the pass.
+              }
+          }
+          
+          let currentRound = 1;
+          while(true) {
+              let explosionsInThisRound = 0;
+              for(const history of diceHistories) {
+                  if (history.length === currentRound) {
+                      const lastRoll = history[history.length - 1];
+                      
+                      let canExplode = false;
+                      // Flawless Handiwork Method applies to ALL rolls
+                      if (hasExplodingTens && lastRoll === 10) {
+                          canExplode = true;
+                      } 
+                      
+                      // Supreme Masterwork Focus has tiers
+                      if (doubleSuccessLevel >= 3 && lastRoll >= 7) {
+                          canExplode = true;
+                      } else if (doubleSuccessLevel >= 2 && lastRoll >= 8) {
+                          canExplode = true;
+                      } else if (doubleSuccessLevel >= 1 && lastRoll >= 9) {
+                          canExplode = true;
+                      }
 
-                  if (canExplode) {
-                      const newRoll = rollDice(1)[0];
-                      history.push(newRoll);
-                      explodedInThisPass = true;
+                      if (canExplode) {
+                          history.push(rollDice(1)[0]);
+                          explosionsInThisRound++;
+                      }
                   }
               }
-          });
-
-          if (explodedInThisPass) {
+              if (explosionsInThisRound === 0) {
+                  break;
+              }
               currentRound++;
+              if (currentRound > 20) break; // Safety break
           }
-          // Safety break for extreme cases
-          if (currentRound > 20) break; 
-      } while (explodedInThisPass);
+      }
 
 
       // --- Reroll Failures phase ---
