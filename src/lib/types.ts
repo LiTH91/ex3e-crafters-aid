@@ -40,6 +40,12 @@ export interface ActiveProject {
   isComplete: boolean;
 }
 
+export interface CraftingExperience {
+  sxp: number;
+  gxp: number;
+  wxp: number;
+}
+
 
 export interface Character {
   intelligence: number;
@@ -101,3 +107,5 @@ export interface CraftingOutcome {
     wxp: number;
   };
 }
+
+    

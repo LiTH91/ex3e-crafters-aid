@@ -22,7 +22,7 @@ import { UserCircle, Sparkles, BrainCircuit, Droplets, HeartPulse, Hammer } from
 
 interface CharacterSheetProps {
   character: Character;
-  setCharacter: (character: Character | ((char: Character) => Character)) => void;
+  setCharacter: (value: (prev: Character) => Character) => void;
 }
 
 export default function CharacterSheet({
@@ -202,3 +202,5 @@ export default function CharacterSheet({
     </Card>
   );
 }
+
+    

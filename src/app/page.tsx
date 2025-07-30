@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import type { Character, DiceRoll, CraftingOutcome, ProjectType, ActiveProject } from "@/lib/types";
+import { useState, useEffect } from "react";
+import type { Character, DiceRoll, CraftingOutcome, ProjectType, ActiveProject, CraftingExperience } from "@/lib/types";
 import { allCharms } from "@/lib/charms";
 import { calculateCraftingOutcome } from "@/lib/crafting-calculator";
 import { useToast } from "@/hooks/use-toast";
@@ -13,46 +13,86 @@ import CraftingJournal from "@/components/crafting-journal";
 import CraftingReference from "@/components/crafting-reference";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Hammer } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
-interface CraftingExperience {
-  sxp: number;
-  gxp: number;
-  wxp: number;
+const initialCharacter: Character = {
+  intelligence: 3,
+  wits: 1,
+  perception: 1,
+  strength: 1,
+  dexterity: 1,
+  stamina: 1,
+  charisma: 1,
+  manipulation: 1,
+  appearance: 1,
+  craft: 3,
+  essence: 1,
+  personalMotes: 10,
+  peripheralMotes: 25,
+  willpower: 5,
+  selectedAttribute: "intelligence",
+  knownCharms: allCharms.map((c) => c.id),
+};
+
+const initialExperience: CraftingExperience = {
+  sxp: 0,
+  gxp: 0,
+  wxp: 0,
+}
+
+interface AppState {
+  character: Character;
+  activeCharms: string[];
+  craftingXp: CraftingExperience;
+  activeProjects: ActiveProject[];
 }
 
 export default function Home() {
-  const [character, setCharacter] = useState<Character>({
-    intelligence: 3,
-    wits: 1,
-    perception: 1,
-    strength: 1,
-    dexterity: 1,
-    stamina: 1,
-    charisma: 1,
-    manipulation: 1,
-    appearance: 1,
-    craft: 3,
-    essence: 1,
-    personalMotes: 10,
-    peripheralMotes: 25,
-    willpower: 5,
-    selectedAttribute: "intelligence",
-    knownCharms: allCharms.map((c) => c.id),
+  const [appState, setAppState] = useState<AppState>({
+    character: initialCharacter,
+    activeCharms: [],
+    craftingXp: initialExperience,
+    activeProjects: [],
   });
 
-  const [activeCharms, setActiveCharms] = useState<string[]>([]);
   const [targetNumber, setTargetNumber] = useState<number>(5);
   const [diceRoll, setDiceRoll] = useState<DiceRoll | null>(null);
   const [outcome, setOutcome] = useState<CraftingOutcome | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
-  const [craftingXp, setCraftingXp] = useState<CraftingExperience>({
-    sxp: 0,
-    gxp: 0,
-    wxp: 0,
-  });
-  const [activeProjects, setActiveProjects] = useState<ActiveProject[]>([]);
+  // Load state from localStorage on initial render
+  useEffect(() => {
+    try {
+      const savedState = localStorage.getItem("exaltedCrafterState");
+      if (savedState) {
+        const parsedState = JSON.parse(savedState);
+        // Basic validation to ensure essential keys exist
+        if (parsedState.character && parsedState.activeProjects) {
+            setAppState(parsedState);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load state from localStorage", error);
+    }
+  }, []);
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      const stateToSave = JSON.stringify(appState);
+      localStorage.setItem("exaltedCrafterState", stateToSave);
+    } catch (error) {
+      console.error("Failed to save state to localStorage", error);
+    }
+  }, [appState]);
+
+  const handleStateChange = <K extends keyof AppState>(key: K, value: AppState[K] | ((prevState: AppState[K]) => AppState[K])) => {
+    setAppState(prev => {
+        const newValue = typeof value === 'function' ? (value as (prevState: AppState[K]) => AppState[K])(prev[key]) : value;
+        return { ...prev, [key]: newValue };
+    });
+  };
 
   const handleRoll = async (
     projectDetails: {
@@ -66,15 +106,12 @@ export default function Home() {
     setDiceRoll(null);
     setOutcome(null);
 
-    // Simulate a brief delay for UX
     await new Promise(resolve => setTimeout(resolve, 500));
 
     try {
-      const dicePool =
-        character[character.selectedAttribute] + character.craft;
-      const selectedCharms = allCharms.filter((c) =>
-        activeCharms.includes(c.id),
-      );
+      const { character, activeCharms } = appState;
+      const dicePool = character[character.selectedAttribute] + character.craft;
+      const selectedCharms = allCharms.filter((c) => activeCharms.includes(c.id));
       
       let automaticSuccesses = 0;
       let willRerollFailures = false;
@@ -87,32 +124,16 @@ export default function Home() {
       let tnModifier = 0;
 
       selectedCharms.forEach((charm) => {
-        // This is a simplified check. A full implementation might need a more robust system
-        // if charms can have multiple, selectable effects.
         if (charm.id === 'supreme-masterwork-focus') {
-             // Find the highest active level of the charm based on activeCharms
-            if (activeCharms.includes('supreme-masterwork-focus-3')) {
-                doubleSuccessLevel = 3;
-            } else if (activeCharms.includes('supreme-masterwork-focus-2')) {
-                doubleSuccessLevel = 2;
-            } else if (activeCharms.includes('supreme-masterwork-focus-1')) {
-                doubleSuccessLevel = 1;
-            }
+            if (activeCharms.includes('supreme-masterwork-focus-3')) doubleSuccessLevel = 3;
+            else if (activeCharms.includes('supreme-masterwork-focus-2')) doubleSuccessLevel = 2;
+            else if (activeCharms.includes('supreme-masterwork-focus-1')) doubleSuccessLevel = 1;
         }
-        else if (charm.effect.type === "add_successes") {
-          automaticSuccesses += charm.effect.value;
-        }
-        else if (charm.effect.type === "reroll_failures") {
-          willRerollFailures = true;
-        }
-        else if (charm.id === 'flawless-handiwork-method') {
-           willRerollTens = true;
-        }
-        else if (charm.effect.type === "lower_repair_difficulty" && projectDetails.type.includes("repair")) {
-          tnModifier -= charm.effect.value;
-        }
+        else if (charm.effect.type === "add_successes") automaticSuccesses += charm.effect.value;
+        else if (charm.effect.type === "reroll_failures") willRerollFailures = true;
+        else if (charm.id === 'flawless-handiwork-method') willRerollTens = true;
+        else if (charm.effect.type === "lower_repair_difficulty" && projectDetails.type.includes("repair")) tnModifier -= charm.effect.value;
 
-         // Parse costs
          if (charm.cost) {
             const moteMatch = charm.cost.match(/(\d+)m/);
             if (moteMatch) moteCost += parseInt(moteMatch[1], 10);
@@ -128,59 +149,38 @@ export default function Home() {
           }
       });
       
-      // Deduct resources
-      setCharacter(prev => {
+      handleStateChange('character', prev => {
         let personal = prev.personalMotes;
         let peripheral = prev.peripheralMotes;
-
         let remainingMoteCost = moteCost;
-        
         const personalToSpend = Math.min(personal, remainingMoteCost);
         personal -= personalToSpend;
         remainingMoteCost -= personalToSpend;
-
         const peripheralToSpend = Math.min(peripheral, remainingMoteCost);
         peripheral -= peripheralToSpend;
-
-        return {
-            ...prev, 
-            personalMotes: personal,
-            peripheralMotes: peripheral,
-            willpower: prev.willpower - willpowerCost
-        }
+        return { ...prev, personalMotes: personal, peripheralMotes: peripheral, willpower: prev.willpower - willpowerCost };
       });
 
-      setCraftingXp(prev => ({
+      handleStateChange('craftingXp', prev => ({
           ...prev,
           gxp: prev.gxp - gxpCost,
           wxp: prev.wxp - wxpCost,
       }));
 
-
-      const rollDice = (pool: number) =>
-        Array.from({ length: pool }, () => Math.floor(Math.random() * 10) + 1);
+      const rollDice = (pool: number) => Array.from({ length: pool }, () => Math.floor(Math.random() * 10) + 1);
 
       let initialRolls = rollDice(dicePool);
       let finalRolls = [...initialRolls];
       let rerolledIndices: number[] = [];
 
-      // Handle reroll failures
       if (willRerollFailures) {
         const failuresToReroll = initialRolls.map((r, i) => ({ roll: r, index: i })).filter(item => item.roll < 7);
         const rerolledDice = rollDice(failuresToReroll.length);
-        
         rerolledIndices = failuresToReroll.map(item => item.index);
-        
         let rerollIndex = 0;
-        finalRolls = finalRolls.map((roll, index) => {
-            if (rerolledIndices.includes(index)) {
-                return rerolledDice[rerollIndex++];
-            }
-            return roll;
-        });
+        finalRolls = finalRolls.map((roll, index) => rerolledIndices.includes(index) ? rerolledDice[rerollIndex++] : roll);
       }
 
-      // Handle reroll 10s from Flawless Handiwork Method
       if (willRerollTens) {
           let tensToReroll = finalRolls.filter(r => r === 10).length;
           while(tensToReroll > 0) {
@@ -189,7 +189,6 @@ export default function Home() {
               tensToReroll = newRolls.filter(r => r === 10).length;
           }
       }
-
 
       const calculateSuccesses = (rolls: number[]) =>
         rolls.reduce((acc, roll) => {
@@ -205,37 +204,21 @@ export default function Home() {
       const totalSuccesses = baseSuccesses + automaticSuccesses;
       const finalTargetNumber = Math.max(1, targetNumber + tnModifier);
 
-      setDiceRoll({
-        initialRolls,
-        finalRolls,
-        rerolledIndices,
-        totalSuccesses,
-        automaticSuccesses,
-        targetNumber: finalTargetNumber
-      });
+      setDiceRoll({ initialRolls, finalRolls, rerolledIndices, totalSuccesses, automaticSuccesses, targetNumber: finalTargetNumber });
 
-      const isExceptional =
-        (projectDetails.type.startsWith("basic-") ||
-          projectDetails.type.startsWith("major-")) &&
-        totalSuccesses >= finalTargetNumber + 3;
+      const isExceptional = (projectDetails.type.startsWith("basic-") || projectDetails.type.startsWith("major-")) && totalSuccesses >= finalTargetNumber + 3;
 
-      const result = calculateCraftingOutcome({
-        project: projectDetails,
-        successes: totalSuccesses,
-        targetNumber: finalTargetNumber,
-        isExceptional,
-      });
+      const result = calculateCraftingOutcome({ project: projectDetails, successes: totalSuccesses, targetNumber: finalTargetNumber, isExceptional });
 
       if (result.isSuccess) {
-        setCraftingXp((prev) => ({
+        handleStateChange('craftingXp', prev => ({
           sxp: prev.sxp + result.experienceGained.sxp,
           gxp: prev.gxp + result.experienceGained.gxp,
           wxp: prev.wxp + result.experienceGained.wxp,
         }));
 
-        // Update project progress
         if (assignedProjectId) {
-          setActiveProjects(prevProjects => 
+          handleStateChange('activeProjects', prevProjects => 
             prevProjects.map(p => {
               if (p.id === assignedProjectId) {
                 const newProgress = p.progress + totalSuccesses;
@@ -254,33 +237,39 @@ export default function Home() {
       setOutcome(result);
     } catch (error) {
       console.error("Error calculating crafting outcome:", error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description:
-          "Failed to calculate the crafting outcome. Please try again.",
-      });
+      toast({ variant: "destructive", title: "Error", description: "Failed to calculate the crafting outcome. Please try again." });
     } finally {
       setIsLoading(false);
     }
   };
 
+  const resetState = () => {
+    if (window.confirm("Are you sure you want to reset all data? This cannot be undone.")) {
+        localStorage.removeItem("exaltedCrafterState");
+        setAppState({
+            character: initialCharacter,
+            activeCharms: [],
+            craftingXp: initialExperience,
+            activeProjects: [],
+        });
+        setDiceRoll(null);
+        setOutcome(null);
+        setTargetNumber(5);
+        toast({ title: "Data Reset", description: "All character data and projects have been reset." });
+    }
+  }
+
+  const { character, activeCharms, craftingXp, activeProjects } = appState;
   const hasTirelessWorkhorse = activeCharms.includes("tireless-workhorse-method");
   const majorProjectSlots = hasTirelessWorkhorse ? character.essence * 2 : 0;
 
   const addProject = (project: Omit<ActiveProject, 'id' | 'isComplete'>) => {
-    const newProject: ActiveProject = {
-        ...project,
-        id: crypto.randomUUID(),
-        isComplete: false,
-    };
-    setActiveProjects(prev => [...prev, newProject]);
+    handleStateChange('activeProjects', prev => [...prev, { ...project, id: crypto.randomUUID(), isComplete: false }]);
   }
 
   const removeProject = (projectId: string) => {
-    setActiveProjects(prev => prev.filter(p => p.id !== projectId));
+    handleStateChange('activeProjects', prev => prev.filter(p => p.id !== projectId));
   }
-
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8">
@@ -299,11 +288,14 @@ export default function Home() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-1 flex flex-col gap-8">
-            <CharacterSheet character={character} setCharacter={setCharacter} />
+            <CharacterSheet 
+              character={character} 
+              setCharacter={(value) => handleStateChange('character', value)} 
+            />
             <CharmSelection
               knownCharms={character.knownCharms}
               activeCharms={activeCharms}
-              setActiveCharms={setActiveCharms}
+              setActiveCharms={(value) => handleStateChange('activeCharms', value)}
               character={character}
               experience={craftingXp}
             />
@@ -345,6 +337,7 @@ export default function Home() {
         </div>
       </main>
       <footer className="text-center mt-12 text-sm text-muted-foreground">
+        <Button variant="outline" onClick={resetState} className="mb-4">Reset All Data</Button>
         <p>
           Exalted and its concepts are trademarks of Onyx Path Publishing. This
           is an unofficial fan utility.
