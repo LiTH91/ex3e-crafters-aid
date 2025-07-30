@@ -15,10 +15,10 @@ export const ATTRIBUTES = [
 export type Attribute = (typeof ATTRIBUTES)[number];
 
 export const PROJECT_TYPES = [
-  "basic-creation",
-  "major-creation",
-  "superior-creation",
-  "legendary-creation",
+  "basic-project",
+  "major-project",
+  "superior-project",
+  "legendary-project",
   "basic-repair",
   "major-repair",
   "superior-repair",
@@ -45,6 +45,7 @@ export interface Character {
   appearance: number;
   craft: number;
   essence: number;
+  motes: number;
   selectedAttribute: Attribute;
   knownCharms: string[]; // Array of charm IDs
 }

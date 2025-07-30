@@ -32,6 +32,7 @@ export default function Home() {
     appearance: 1,
     craft: 3,
     essence: 1,
+    motes: 10,
     selectedAttribute: "intelligence",
     knownCharms: allCharms.map((c) => c.id),
   });
@@ -70,6 +71,7 @@ export default function Home() {
       let willRerollFailures = false;
       let willRerollTens = false;
       let willDoubleNines = false;
+      let moteCost = 0;
 
       selectedCharms.forEach((charm) => {
         charmEffectsDescription += `${charm.name}; `;
@@ -85,10 +87,20 @@ export default function Home() {
         if (charm.effect.type === "double_nines") {
           willDoubleNines = true;
         }
+         // Parse mote cost
+         if (charm.cost) {
+          const match = charm.cost.match(/(\d+)m/);
+          if (match) {
+            moteCost += parseInt(match[1], 10);
+          }
+        }
       });
       if (selectedCharms.length === 0) {
         charmEffectsDescription = "None";
       }
+
+      // Deduct motes
+      setCharacter(prev => ({...prev, motes: prev.motes - moteCost}))
 
       const rollDice = (pool: number) =>
         Array.from({ length: pool }, () => Math.floor(Math.random() * 10) + 1);

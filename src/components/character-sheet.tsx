@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -17,36 +18,27 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UserCircle, Sparkles, BrainCircuit } from "lucide-react";
+import { UserCircle, Sparkles, BrainCircuit, Droplets } from "lucide-react";
 
 interface CharacterSheetProps {
   character: Character;
-  setCharacter: (character: Character) => void;
+  setCharacter: (character: Character | ((char: Character) => Character)) => void;
 }
 
 export default function CharacterSheet({
   character,
   setCharacter,
 }: CharacterSheetProps) {
-  const handleStatChange = (stat: keyof Character, value: string) => {
-    const isAttribute = ATTRIBUTES.includes(stat as Attribute);
-    const numValue = parseInt(value, 10);
+  const handleStatChange = (stat: keyof Character, value: string | number) => {
+    const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
 
     if (!isNaN(numValue)) {
-      if (isAttribute) {
-        setCharacter({
-          ...character,
-          [stat]: numValue,
-          selectedAttribute: stat as Attribute, // Also update the selected attribute
-        });
-      } else {
-        setCharacter({ ...character, [stat]: numValue });
-      }
+        setCharacter(prev => ({ ...prev, [stat]: numValue }));
     }
   };
 
   const handleAttributeChange = (value: string) => {
-    setCharacter({ ...character, selectedAttribute: value as Attribute });
+    setCharacter(prev => ({ ...prev, selectedAttribute: value as Attribute }));
   };
 
   const statOptions = [1, 2, 3, 4, 5];
@@ -128,26 +120,41 @@ export default function CharacterSheet({
             </SelectContent>
           </Select>
         </div>
-        <div className="grid w-full items-center gap-2.5">
-          <Label htmlFor="essence" className="font-bold text-lg font-body flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-yellow-500" />
-            Essence Level
-          </Label>
-          <Select
-            value={character.essence.toString()}
-            onValueChange={(value) => handleStatChange("essence", value)}
-          >
-            <SelectTrigger id="essence" className="bg-background">
-              <SelectValue placeholder="Select Essence" />
-            </SelectTrigger>
-            <SelectContent>
-              {essenceOptions.map((val) => (
-                <SelectItem key={val} value={val.toString()}>
-                  {val}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="grid grid-cols-2 gap-4">
+            <div className="grid w-full items-center gap-2.5">
+                <Label htmlFor="essence" className="font-bold text-lg font-body flex items-center gap-2">
+                    <Sparkles className="w-5 h-5 text-yellow-500" />
+                    Essence
+                </Label>
+                <Select
+                    value={character.essence.toString()}
+                    onValueChange={(value) => handleStatChange("essence", value)}
+                >
+                    <SelectTrigger id="essence" className="bg-background">
+                    <SelectValue placeholder="Select Essence" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    {essenceOptions.map((val) => (
+                        <SelectItem key={val} value={val.toString()}>
+                        {val}
+                        </SelectItem>
+                    ))}
+                    </SelectContent>
+                </Select>
+            </div>
+             <div className="grid w-full items-center gap-2.5">
+                <Label htmlFor="motes" className="font-bold text-lg font-body flex items-center gap-2">
+                    <Droplets className="w-5 h-5 text-cyan-500" />
+                    Motes
+                </Label>
+                <Input
+                    id="motes"
+                    type="number"
+                    value={character.motes}
+                    onChange={(e) => handleStatChange("motes", e.target.value)}
+                    className="bg-background"
+                />
+            </div>
         </div>
       </CardContent>
     </Card>
