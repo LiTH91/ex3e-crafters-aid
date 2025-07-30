@@ -48,7 +48,7 @@ interface AppState {
   activeProjects: ActiveProject[];
 }
 
-const ANIMATION_DELAY = 100;
+const ANIMATION_DELAY = 150;
 
 export default function Home() {
   const [appState, setAppState] = useState<AppState>({
@@ -191,65 +191,91 @@ export default function Home() {
       const rollDie = () => Math.floor(Math.random() * 10) + 1;
       
       const dicePool = character[character.selectedAttribute] + character.craft;
-      let initialRolls = Array.from({ length: dicePool }, rollDie);
+      const initialRolls = Array.from({ length: dicePool }, rollDie);
       
-      // --- Stage 1: Initial Roll + SMF Bonus Dice ---
       let diceHistories: number[][] = initialRolls.map(r => [r]);
       
-      // Bonus dice from Supreme Masterwork Focus
+      const updateDiceRoll = (histories: number[][]) => {
+         setDiceRoll(prev => ({ 
+            ...prev!, 
+            diceHistories: histories.map(h => [...h]), 
+            activeCharmNames: activeCharmDetails.map(c => c.name) 
+        }));
+      }
+
+      updateDiceRoll(diceHistories);
+      await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY));
+
+      // --- Stage 1: Initial SMF Bonus Dice ---
       if (doubleSuccessLevel > 0) {
-        const smfThreshold = 10 - doubleSuccessLevel;
         const bonusDiceToAdd: number[] = [];
-        diceHistories.forEach(history => {
-            const lastRoll = history[history.length - 1];
-            if (lastRoll >= smfThreshold && lastRoll < 10) {
+        const smfThreshold = 10 - doubleSuccessLevel;
+        initialRolls.forEach(roll => {
+            if (roll >= smfThreshold && roll < 10) {
                 bonusDiceToAdd.push(rollDie());
             }
         });
         if (bonusDiceToAdd.length > 0) {
             diceHistories.push(...bonusDiceToAdd.map(r => [r]));
-        }
-      }
-
-      setDiceRoll({
-        diceHistories: [...diceHistories],
-        totalSuccesses: 0,
-        automaticSuccesses: 0,
-        targetNumber: 0,
-        activeCharmNames: activeCharmDetails.map(c => c.name),
-      });
-      await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY));
-
-
-      // --- Stage 2: Handle Exploding Dice (Iteratively by "Row") ---
-      if (hasExplodingTens) {
-        while (true) {
-          const diceToExplode: number[] = [];
-          
-          // Find which dice from the last "row" need to explode
-          for(let i = 0; i < diceHistories.length; i++) {
-              const history = diceHistories[i];
-              // Only explode if it's the last die in the chain and is a 10
-              if(history[history.length - 1] === 10) {
-                  diceToExplode.push(i);
-              }
-          }
-
-          if (diceToExplode.length > 0) {
-            for (const index of diceToExplode) {
-                // To prevent infinite loops on the same turn, we check if it already exploded in this "pass"
-                // A simple way is to check if the last die is a 10 and the chain length is the current pass number
-                // But a safer way is to just add the new die.
-                diceHistories[index].push(rollDie());
-            }
-            setDiceRoll(prev => ({ ...prev!, diceHistories: [...diceHistories] }));
+            updateDiceRoll(diceHistories);
             await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY));
-          } else {
-            // No more dice to explode, exit the loop
-            break;
-          }
         }
       }
+
+      // --- Stage 2: Handle Exploding Dice & SMF Bonus (Iteratively by "Row") ---
+      let lastRoundNewDice = [...diceHistories.map(h => h[h.length - 1])];
+
+      while (true) {
+        const nextRoundDice: {-readonly [K in keyof number[]]: number[]} = [];
+        const nextRoundBonusDice: number[] = [];
+        let newDiceGenerated = false;
+
+        // Check for explosions and SMF bonus dice from the last round's results
+        for (let i = 0; i < lastRoundNewDice.length; i++) {
+            const dieResult = lastRoundNewDice[i];
+            
+            // Check for exploding 10s
+            if (hasExplodingTens && dieResult === 10) {
+                if (!nextRoundDice[i]) nextRoundDice[i] = [];
+                nextRoundDice[i].push(rollDie());
+                newDiceGenerated = true;
+            }
+
+            // Check for SMF bonus dice (these are new histories, not chain reactions)
+            if (doubleSuccessLevel > 0) {
+                const smfThreshold = 10 - doubleSuccessLevel;
+                 if (dieResult >= smfThreshold && dieResult < 10) {
+                    nextRoundBonusDice.push(rollDie());
+                    newDiceGenerated = true;
+                 }
+            }
+        }
+        
+        if (!newDiceGenerated) {
+            break; // No more dice to roll, exit the loop
+        }
+        
+        const currentDiceToRoll: number[] = [];
+
+        // Append chain reactions (explosions)
+        for (let i = 0; i < nextRoundDice.length; i++) {
+            if (nextRoundDice[i]) {
+                diceHistories[i].push(...nextRoundDice[i]);
+                currentDiceToRoll.push(...nextRoundDice[i]);
+            }
+        }
+        
+        // Add SMF bonus dice as new histories
+        if (nextRoundBonusDice.length > 0) {
+            diceHistories.push(...nextRoundBonusDice.map(r => [r]));
+            currentDiceToRoll.push(...nextRoundBonusDice);
+        }
+
+        lastRoundNewDice = currentDiceToRoll;
+        updateDiceRoll(diceHistories);
+        await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY));
+      }
+
 
       // --- Stage 3: Handle Reroll Failures ---
       if (willRerollFailures) {
@@ -262,21 +288,19 @@ export default function Home() {
              }
           }
           if (hadRerolls) {
-            setDiceRoll(prev => ({ ...prev!, diceHistories: [...diceHistories] }));
+            updateDiceRoll(diceHistories);
             await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY));
           }
       }
-
+      
       const calculateSuccesses = (roll: number) => {
-          if (roll >= 10) return 2;
-          // Note: The SMF "explode" is actually a bonus die, not a success adder on the same die.
-          // The success doubling is the primary effect.
-          if (doubleSuccessLevel >= 1 && roll === 9) return 2;
-          if (doubleSuccessLevel >= 2 && roll === 8) return 2;
-          if (doubleSuccessLevel >= 3 && roll === 7) return 2;
-          if (roll >= 7) return 1;
-          return 0;
-      }
+        if (roll >= 10) return 2;
+        if (doubleSuccessLevel >= 1 && roll === 9) return 2;
+        if (doubleSuccessLevel >= 2 && roll === 8) return 2;
+        if (doubleSuccessLevel >= 3 && roll === 7) return 2;
+        if (roll >= 7) return 1;
+        return 0;
+      };
       
       const baseSuccesses = diceHistories.reduce((total, history) => {
           const finalRoll = history[history.length - 1];
@@ -286,13 +310,13 @@ export default function Home() {
       const totalSuccesses = baseSuccesses + automaticSuccesses;
       const finalTargetNumber = Math.max(1, targetNumber + tnModifier);
 
-      setDiceRoll({ 
-        diceHistories: diceHistories,
+      setDiceRoll(prev => ({ 
+        ...prev!,
+        diceHistories,
         totalSuccesses, 
         automaticSuccesses, 
-        targetNumber: finalTargetNumber,
-        activeCharmNames: activeCharmDetails.map(c => c.name),
-      });
+        targetNumber: finalTargetNumber
+      }));
 
       const isExceptional = (projectDetails.type.startsWith("basic-") || projectDetails.type.startsWith("major-")) && totalSuccesses >= finalTargetNumber + 3;
 
