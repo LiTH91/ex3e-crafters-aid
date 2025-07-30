@@ -193,40 +193,30 @@ export default function Home() {
       const diceHistories: number[][] = initialRolls.map(r => [r]);
 
       // --- Explosions phase ---
-      let continueExploding = true;
-      while (continueExploding) {
-          let explosionsThisRound = 0;
-          
-          diceHistories.forEach((history) => {
-              // Only check the last roll in the history
-              const lastRoll = history[history.length - 1];
-              
-              let explodes = false;
-              if (hasExplodingTens && lastRoll === 10) explodes = true;
-              else if (doubleSuccessLevel >= 1 && lastRoll === 9) explodes = true;
-              else if (doubleSuccessLevel >= 2 && lastRoll === 8) explodes = true;
-              else if (doubleSuccessLevel >= 3 && lastRoll === 7) explodes = true;
-
-              // Check if it already exploded in this chain
-              // We infer this by seeing if a new roll was already added.
-              // A more robust way might be to add a flag. For now, check history length.
-              // This logic is tricky. A die can only explode once per "round" of explosions.
-              // Let's check if the history has already grown in this pass.
-              // A better way: let's use a flag on the history object, or just check the last die.
-              // The logic here is tricky. Let's simplify. A die roll 'explodes'. A new die is added to its history.
-              // In the next loop, we check the NEW last die.
-              
-              if (explodes) {
-                  const newRoll = rollDice(1)[0];
-                  history.push(newRoll);
-                  explosionsThisRound++;
-              }
-          });
-          
-          if (explosionsThisRound === 0) {
-              continueExploding = false;
+      let round = 1;
+      let explosionsInPreviousRound = 0;
+      do {
+        explosionsInPreviousRound = 0;
+        diceHistories.forEach(history => {
+          // Only explode if this die hasn't exploded in this round yet.
+          if (history.length === round) {
+            const lastRoll = history[history.length - 1];
+            
+            let explodes = false;
+            if (hasExplodingTens && lastRoll === 10) explodes = true;
+            else if (doubleSuccessLevel >= 1 && lastRoll === 9) explodes = true;
+            else if (doubleSuccessLevel >= 2 && lastRoll === 8) explodes = true;
+            else if (doubleSuccessLevel >= 3 && lastRoll === 7) explodes = true;
+            
+            if (explodes) {
+              history.push(rollDice(1)[0]);
+              explosionsInPreviousRound++;
+            }
           }
-      }
+        });
+        round++;
+      } while (explosionsInPreviousRound > 0);
+      
 
       // --- Reroll Failures phase ---
       if (willRerollFailures) {
