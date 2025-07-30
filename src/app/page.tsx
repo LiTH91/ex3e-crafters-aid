@@ -10,6 +10,7 @@ import CharacterSheet from "@/components/character-sheet";
 import CharmSelection from "@/components/charm-selection";
 import DiceRoller from "@/components/dice-roller";
 import CraftingJournal from "@/components/crafting-journal";
+import CraftingReference from "@/components/crafting-reference";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Hammer } from "lucide-react";
 
@@ -288,9 +289,10 @@ export default function Home() {
 
           <div className="lg:col-span-2">
             <Tabs defaultValue="roller">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="roller">Dice Roller</TabsTrigger>
                 <TabsTrigger value="journal">Crafting Journal</TabsTrigger>
+                <TabsTrigger value="reference">Crafting Reference</TabsTrigger>
               </TabsList>
               <TabsContent value="roller">
                 <DiceRoller
@@ -312,6 +314,9 @@ export default function Home() {
                   onAddProject={addProject}
                   onRemoveProject={removeProject}
                 />
+              </TabsContent>
+               <TabsContent value="reference">
+                <CraftingReference />
               </TabsContent>
             </Tabs>
           </div>
