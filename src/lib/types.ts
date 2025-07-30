@@ -1,5 +1,3 @@
-import type { EvaluateCraftingOutcomeOutput } from "@/ai/flows/evaluate-crafting-outcome";
-
 export const ATTRIBUTES = [
   "intelligence",
   "wits",
@@ -81,4 +79,13 @@ export interface DiceRoll {
   automaticSuccesses: number;
 }
 
-export type AiOutcome = EvaluateCraftingOutcomeOutput;
+export interface CraftingOutcome {
+  isSuccess: boolean;
+  outcomeTitle: string;
+  outcomeDescription: string;
+  experienceGained: {
+    sxp: number;
+    gxp: number;
+    wxp: number;
+  };
+}

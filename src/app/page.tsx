@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import type { Character, DiceRoll, AiOutcome, ProjectType } from "@/lib/types";
+import type { Character, DiceRoll, CraftingOutcome, ProjectType } from "@/lib/types";
 import { allCharms } from "@/lib/charms";
-import { evaluateCraftingOutcome } from "@/ai/flows/evaluate-crafting-outcome";
+import { calculateCraftingOutcome } from "@/lib/crafting-calculator";
 import { useToast } from "@/hooks/use-toast";
 
 import CharacterSheet from "@/components/character-sheet";
@@ -42,7 +42,7 @@ export default function Home() {
   const [activeCharms, setActiveCharms] = useState<string[]>([]);
   const [targetNumber, setTargetNumber] = useState<number>(5);
   const [diceRoll, setDiceRoll] = useState<DiceRoll | null>(null);
-  const [aiOutcome, setAiOutcome] = useState<AiOutcome | null>(null);
+  const [outcome, setOutcome] = useState<CraftingOutcome | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -60,7 +60,10 @@ export default function Home() {
   }) => {
     setIsLoading(true);
     setDiceRoll(null);
-    setAiOutcome(null);
+    setOutcome(null);
+
+    // Simulate a brief delay for UX
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     try {
       const dicePool =
@@ -68,16 +71,15 @@ export default function Home() {
       const selectedCharms = allCharms.filter((c) =>
         activeCharms.includes(c.id),
       );
-      let charmEffectsDescription = "Applied Charms: ";
+      
       let automaticSuccesses = 0;
-      let willRerollFailures = false;
+      let willRerollFailures = false; // Placeholder for future implementation
       let willRerollTens = false;
       let willDoubleNines = false;
       let moteCost = 0;
       let willpowerCost = 0;
 
       selectedCharms.forEach((charm) => {
-        charmEffectsDescription += `${charm.name}; `;
         if (charm.effect.type === "add_successes") {
           automaticSuccesses += charm.effect.value;
         }
@@ -102,9 +104,6 @@ export default function Home() {
             }
           }
       });
-      if (selectedCharms.length === 0) {
-        charmEffectsDescription = "None";
-      }
 
       // Deduct resources
       setCharacter(prev => {
@@ -181,30 +180,29 @@ export default function Home() {
           projectDetails.type.startsWith("major-")) &&
         totalSuccesses >= targetNumber + 3;
 
-      const aiResult = await evaluateCraftingOutcome({
+      const result = calculateCraftingOutcome({
         project: projectDetails,
         successes: totalSuccesses,
         targetNumber,
-        charmEffects: charmEffectsDescription,
         isExceptional,
       });
 
-      if (aiResult.isSuccess) {
+      if (result.isSuccess) {
         setCraftingXp((prev) => ({
-          sxp: prev.sxp + aiResult.experienceGained.sxp,
-          gxp: prev.gxp + aiResult.experienceGained.gxp,
-          wxp: prev.wxp + aiResult.experienceGained.wxp,
+          sxp: prev.sxp + result.experienceGained.sxp,
+          gxp: prev.gxp + result.experienceGained.gxp,
+          wxp: prev.wxp + result.experienceGained.wxp,
         }));
       }
 
-      setAiOutcome(aiResult);
+      setOutcome(result);
     } catch (error) {
-      console.error("Error evaluating crafting outcome:", error);
+      console.error("Error calculating crafting outcome:", error);
       toast({
         variant: "destructive",
         title: "Error",
         description:
-          "Failed to evaluate the crafting outcome. Please try again.",
+          "Failed to calculate the crafting outcome. Please try again.",
       });
     } finally {
       setIsLoading(false);
@@ -250,7 +248,7 @@ export default function Home() {
                   onRoll={handleRoll}
                   isLoading={isLoading}
                   diceRoll={diceRoll}
-                  aiOutcome={aiOutcome}
+                  aiOutcome={outcome}
                 />
               </TabsContent>
               <TabsContent value="journal">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { DiceRoll, AiOutcome, Character, ProjectType } from "@/lib/types";
+import type { DiceRoll, CraftingOutcome, Character, ProjectType } from "@/lib/types";
 import { PROJECT_TYPES } from "@/lib/types";
 import {
   Card,
@@ -41,7 +41,7 @@ interface DiceRollerProps {
   }) => void;
   isLoading: boolean;
   diceRoll: DiceRoll | null;
-  aiOutcome: AiOutcome | null;
+  aiOutcome: CraftingOutcome | null;
 }
 
 export default function DiceRoller({
@@ -53,7 +53,7 @@ export default function DiceRoller({
   diceRoll,
   aiOutcome,
 }: DiceRollerProps) {
-  const [projectType, setProjectType] = useState<ProjectType>("basic-creation");
+  const [projectType, setProjectType] = useState<ProjectType>("basic-project");
   const [artifactRating, setArtifactRating] = useState(2);
   const [objectivesMet, setObjectivesMet] = useState(1);
 
@@ -72,8 +72,7 @@ export default function DiceRoller({
     return type
       .split("-")
       .map(capitalize)
-      .join(" ")
-      .replace("Creation", "Project");
+      .join(" ");
   };
 
   return (
@@ -141,6 +140,18 @@ export default function DiceRoller({
               onChange={(e) => setObjectivesMet(parseInt(e.target.value, 10))}
               min={0}
               max={3}
+            />
+          </div>
+           <div>
+            <Label htmlFor="target-number" className="font-bold">
+              Target Number (TN)
+            </Label>
+            <Input
+              id="target-number"
+              type="number"
+              value={targetNumber}
+              onChange={(e) => setTargetNumber(parseInt(e.target.value, 10))}
+              min={1}
             />
           </div>
         </div>
