@@ -36,6 +36,7 @@ import { Separator } from "@/components/ui/separator";
 
 interface DiceRollerProps {
   character: Character;
+  activeCharms: string[];
   targetNumber: number;
   setTargetNumber: (value: number) => void;
   onRoll: (
@@ -50,6 +51,8 @@ interface DiceRollerProps {
   diceRoll: DiceRoll | null;
   aiOutcome: CraftingOutcome | null;
   activeProjects: ActiveProject[];
+  willpowerSpent: number;
+  setWillpowerSpent: (value: number) => void;
 }
 
 const getRollColor = (roll: number) => {
@@ -83,13 +86,16 @@ const DiceDisplay = ({ waves }: { waves: number[][] }) => (
 
 export default function DiceRoller({
   character,
+  activeCharms,
   targetNumber,
   setTargetNumber,
   onRoll,
   isLoading,
   diceRoll,
   aiOutcome,
-  activeProjects
+  activeProjects,
+  willpowerSpent,
+  setWillpowerSpent,
 }: DiceRollerProps) {
   const [projectType, setProjectType] = useState<ProjectType>("basic-project");
   const [artifactRating, setArtifactRating] = useState(2);
@@ -119,6 +125,8 @@ export default function DiceRoller({
     (charm) =>
       diceRoll?.activeCharmIds.includes(charm.id) && charm.category === 'narrative'
   );
+
+  const isWillForgingActive = activeCharms.includes("will-forging-discipline");
 
   return (
     <Card className="bg-card/80 backdrop-blur-sm border-2 border-primary/20 shadow-lg">
@@ -222,6 +230,23 @@ export default function DiceRoller({
               </SelectContent>
             </Select>
           </div>
+           {isWillForgingActive && (
+              <div className="md:col-span-2">
+                  <Label htmlFor="willpower-spent" className="font-bold flex items-center gap-2">
+                      Will-Forging Discipline
+                  </Label>
+                   <Input
+                      id="willpower-spent"
+                      type="number"
+                      value={willpowerSpent}
+                      onChange={(e) => setWillpowerSpent(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                      min={0}
+                      max={character.willpower}
+                      placeholder={`Spend WP (Max: ${character.willpower})`}
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">Spend Willpower to add 2 successes per point.</p>
+              </div>
+            )}
         </div>
         <Separator />
         <div className="text-center">

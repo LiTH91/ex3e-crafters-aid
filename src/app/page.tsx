@@ -65,6 +65,7 @@ export default function Home() {
   const [outcome, setOutcome] = useState<CraftingOutcome | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const [willpowerSpent, setWillpowerSpent] = useState(0);
 
   // Load state from localStorage on client-side mount
   useEffect(() => {
@@ -121,7 +122,7 @@ export default function Home() {
 
       // --- 1. Calculate Costs & Effects from Charms ---
       let moteCost = 0;
-      let willpowerCost = 0;
+      let willpowerCost = willpowerSpent;
       let sxpCost = 0;
       let gxpCost = 0;
       let wxpCost = 0;
@@ -144,7 +145,7 @@ export default function Home() {
             const moteMatch = charm.cost.match(/(\d+)m/);
             if (moteMatch) moteCost += parseInt(moteMatch[1], 10);
             const willpowerMatch = charm.cost.match(/(\d+)wp/);
-            if (willpowerMatch) willpowerCost += parseInt(willpowerMatch[1], 10);
+            if (willpowerMatch && charm.id !== 'will-forging-discipline') willpowerCost += parseInt(willpowerMatch[1], 10);
             const sxpMatch = charm.cost.match(/(\d+)sxp/);
             if (sxpMatch) sxpCost += parseInt(sxpMatch[1], 10);
             const gxpMatch = charm.cost.match(/(\d+)gxp/);
@@ -179,6 +180,7 @@ export default function Home() {
           character,
           activeCharms,
           targetNumber: finalTargetNumber,
+          willpowerSpent,
           onProgress: (interimRoll) => {
               setDiceRoll(interimRoll);
           }
@@ -294,6 +296,7 @@ export default function Home() {
               <TabsContent value="roller">
                 <DiceRoller
                   character={character}
+                  activeCharms={activeCharms}
                   targetNumber={targetNumber}
                   setTargetNumber={setTargetNumber}
                   onRoll={handleRoll}
@@ -301,6 +304,8 @@ export default function Home() {
                   diceRoll={diceRoll}
                   aiOutcome={outcome}
                   activeProjects={activeProjects.filter(p => !p.isComplete)}
+                  willpowerSpent={willpowerSpent}
+                  setWillpowerSpent={setWillpowerSpent}
                 />
               </TabsContent>
               <TabsContent value="journal">

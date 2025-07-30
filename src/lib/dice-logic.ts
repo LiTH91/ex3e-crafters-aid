@@ -36,11 +36,12 @@ interface DiceRollInput {
   character: Character;
   activeCharms: string[];
   targetNumber: number;
+  willpowerSpent: number;
   onProgress: (interimRoll: DiceRoll) => void;
 }
 
 export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> => {
-    const { character, activeCharms, targetNumber, onProgress } = input;
+    const { character, activeCharms, targetNumber, willpowerSpent, onProgress } = input;
     
     await new Promise(resolve => setTimeout(resolve, 50));
 
@@ -134,8 +135,15 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
     });
 
     activeCharmDetails.forEach((charm) => {
-        if (charm.effect.type === "add_successes") automaticSuccesses += charm.effect.value || 0;
-        if (charm.effect.type === "add_successes_per_essence") automaticSuccesses += character.essence * (charm.effect.value || 0);
+        if (charm.id === 'will-forging-discipline') {
+            automaticSuccesses += willpowerSpent * 2;
+        }
+        else if (charm.effect.type === "add_successes") {
+            automaticSuccesses += charm.effect.value || 0;
+        }
+        else if (charm.effect.type === "add_successes_per_essence") {
+            automaticSuccesses += character.essence * (charm.effect.value || 0);
+        }
     });
 
     const finalTotalSuccesses = totalSuccesses + automaticSuccesses;
