@@ -217,161 +217,25 @@ export default function Home() {
       while (true) {
         let explosionsInThisPass = 0;
         
-        const newDiceHistories = [...diceHistories];
-        
-        for (let i = 0; i < newDiceHistories.length; i++) {
-          const history = newDiceHistories[i];
-          const lastRoll = history[history.length - 1];
-
-          if (shouldDieExplode(lastRoll, activeCharms)) {
-            // Check if this die has already exploded in this pass by seeing if its length is greater than the current pass number
-            // A die can only explode once per pass. We can track this by checking its length against a pass counter
-            // Or a simpler way: if the last element was just added, we don't check it again in the same pass.
-            // My current loop structure does this implicitly. A die that just exploded will be checked in the NEXT pass.
-            // The problem is my loop is too simple. It doesn't handle chain reactions within a pass.
-
-            // Let's go back to the "Zeilen" model.
-            // Any die that can explode, does. The new results form the next "Zeile".
-
-          }
-        }
-        
-        // Let's use the explicit "Zeilen" logic
-        const explodingIndices: number[] = [];
-        for (let i = 0; i < diceHistories.length; i++) {
-            const history = diceHistories[i];
+        for (const history of diceHistories) {
             const lastRoll = history[history.length - 1];
-            if (shouldDieExplode(lastRoll, activeCharms)) {
-                // To prevent a die from exploding multiple times in one pass, we need to mark it.
-                // A simpler way: only check dice that haven't been extended in this pass.
-                // We need to know which dice are "new" from the last pass.
-                // The issue is my previous attempts were too complex. Let's simplify.
-            }
-        }
-
-        // New "Zeilen" attempt
-        const currentHistories = [...diceHistories];
-        let hasExplodedThisPass = false;
-
-        for (const history of currentHistories) {
-            const lastRoll = history[history.length - 1];
+            
+            // Only explode a die if it's the last one in its chain
+            // and it meets the criteria. This prevents re-exploding an already
+            // processed die in the same pass.
             if (shouldDieExplode(lastRoll, activeCharms)) {
                 history.push(rollDie());
-                hasExplodedThisPass = true;
                 explosionsInThisPass++;
             }
         }
-
-        if (hasExplodedThisPass) {
-             setDiceRoll(prev => ({ ...prev!, diceHistories: currentHistories.map(h => [...h]) }));
+        
+        if (explosionsInThisPass > 0) {
+             setDiceRoll(prev => ({ ...prev!, diceHistories: diceHistories.map(h => [...h]) }));
              await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY * 2));
         } else {
             break; // No explosions in this pass, exit the loop.
         }
       }
-      
-      // Let's try the safer while loop again, but correctly this time.
-      let continueExploding = true;
-      while (continueExploding) {
-        let explosionsThisRound = 0;
-        const currentHistories = [...diceHistories];
-        
-        for (const history of currentHistories) {
-          const lastRoll = history[history.length - 1];
-          // Key insight: A die chain can only explode once per "row". We need to check only the last element.
-          // And we need to make sure we don't re-explode an already-exploded die from the SAME pass.
-          // This requires tracking which dice are eligible for explosion in a given pass.
-        }
-        
-        // This is getting too complex. The simplest approach that failed due to infinite loop was close.
-        // Let's fix that one.
-      }
-      
-      // Final attempt at the row-by-row logic, with the bugfix for the infinite loop.
-      let lastPassExplosionCount = -1;
-      let totalExplosions = 0;
-      
-      while(totalExplosions !== lastPassExplosionCount) {
-          lastPassExplosionCount = totalExplosions;
-          
-          const currentHistories = [...diceHistories];
-          
-          for (const history of currentHistories) {
-              const lastRoll = history[history.length-1];
-              // Only explode a die if it hasn't exploded before.
-              // This is implicitly handled if we only ever check the last element.
-              
-              if(shouldDieExplode(lastRoll, activeCharms)) {
-                  history.push(rollDie());
-                  totalExplosions++;
-              }
-          }
-          
-          if(totalExplosions > lastPassExplosionCount) {
-              setDiceRoll(prev => ({ ...prev!, diceHistories: currentHistories.map(h => [...h]) }));
-              await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY * 2));
-          }
-      }
-      
-      // The issue is that the loop above is also wrong.
-      // Let's go back to the most recent working logic and fix the infinite loop.
-      while (true) {
-        let explosionsInThisPass = 0;
-        const currentHistories = [...diceHistories]; // work on a copy
-
-        for (const history of currentHistories) {
-            // To prevent a die chain from exploding more than once per "pass",
-            // we can mark it. But that is complex.
-            // The simplest thing is to only add ONE die per chain per pass.
-            const lastRoll = history[history.length - 1];
-            if (shouldDieExplode(lastRoll, activeCharms)) {
-                // This logic is flawed because it doesn't handle the "already exploded this pass" case.
-            }
-        }
-        
-        // Newest, simplest "Zeilen" logic attempt.
-        let newRolls: number[] = [];
-        let explodingDiceChains: number[][] = [];
-        
-        // This is also getting too complex. The most robust way is the one that caused the hang. Let's fix it.
-        
-        let keepLooping = true;
-        while(keepLooping) {
-            let explosionOccurred = false;
-            for(const history of diceHistories) {
-                const lastRoll = history[history.length - 1];
-                if(shouldDieExplode(lastRoll, activeCharms)) {
-                    // This is where the bug was. A die could re-explode itself infinitely.
-                    // We need to only check dice from the "previous row".
-                }
-            }
-        }
-        
-        // The one that hung was ALMOST right.
-        let lastDiceState = '';
-        while(true) {
-            let explosionsInThisPass = 0;
-            const currentDiceHistories = diceHistories.map(h => [...h]);
-
-            for (const history of currentDiceHistories) {
-                 const lastRoll = history[history.length - 1];
-                 if (shouldDieExplode(lastRoll, activeCharms)) {
-                    // Check to make sure this chain hasn't already exploded in this pass.
-                    // A simple way: add a temporary marker.
-                    // Or... let's just add the new roll to a temporary array.
-                 }
-            }
-
-            // Let's try the for-loop with internal while loop again.
-            for (let i = 0; i < diceHistories.length; i++) {
-                while (shouldDieExplode(diceHistories[i][diceHistories[i].length - 1], activeCharms)) {
-                    diceHistories[i].push(rollDie());
-                    setDiceRoll(prev => ({ ...prev!, diceHistories: diceHistories.map(h => [...h]) }));
-                    await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY));
-                }
-            }
-      }
-
 
       // --- Handle Reroll Failures ---
       if (willRerollFailures) {
@@ -407,7 +271,6 @@ export default function Home() {
           return total + calculateSuccesses(finalRoll, activeCharms);
       }, 0);
       
-      // Automatic successes are not implemented yet. Let's add them.
       let automaticSuccesses = 0;
        activeCharmDetails.forEach((charm) => {
         if (charm.effect.type === "add_successes") automaticSuccesses += charm.effect.value;
@@ -565,4 +428,6 @@ export default function Home() {
   );
 }
     
+    
+
     
