@@ -42,6 +42,13 @@ const initialExperience: CraftingExperience = {
   wxp: 0,
 }
 
+const initialAppState = {
+    character: initialCharacter,
+    activeCharms: [],
+    craftingXp: initialExperience,
+    activeProjects: [],
+};
+
 interface AppState {
   character: Character;
   activeCharms: string[];
@@ -50,29 +57,8 @@ interface AppState {
 }
 
 export default function Home() {
-  const [appState, setAppState] = useState<AppState>(() => {
-    // Initialize state from localStorage or use initial values
-    try {
-      const savedState = typeof window !== 'undefined' ? localStorage.getItem("exaltedCrafterState") : null;
-      if (savedState) {
-        const parsedState = JSON.parse(savedState);
-        // Ensure knownCharms is always up-to-date with the latest from allCharms
-        parsedState.character.knownCharms = allCharms.map(c => c.id);
-        if (parsedState.character && parsedState.activeProjects) {
-            return parsedState;
-        }
-      }
-    } catch (error) {
-      console.error("Failed to load state from localStorage", error);
-    }
-    // Return initial state if nothing in localStorage or if it's invalid
-    return {
-        character: initialCharacter,
-        activeCharms: [],
-        craftingXp: initialExperience,
-        activeProjects: [],
-    };
-  });
+  const [appState, setAppState] = useState<AppState>(initialAppState);
+  const [isMounted, setIsMounted] = useState(false); // To prevent hydration errors
 
   const [targetNumber, setTargetNumber] = useState<number>(5);
   const [diceRoll, setDiceRoll] = useState<DiceRoll | null>(null);
@@ -80,15 +66,36 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  // Load state from localStorage on client-side mount
+  useEffect(() => {
+    setIsMounted(true);
+    try {
+      const savedState = localStorage.getItem("exaltedCrafterState");
+      if (savedState) {
+        const parsedState = JSON.parse(savedState);
+        // Ensure knownCharms is always up-to-date with the latest from allCharms
+        parsedState.character.knownCharms = allCharms.map(c => c.id);
+        if (parsedState.character && parsedState.activeProjects) {
+            setAppState(parsedState);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load state from localStorage", error);
+    }
+  }, []);
+
   // Save state to localStorage whenever it changes
   useEffect(() => {
-    try {
-      const stateToSave = JSON.stringify(appState);
-      localStorage.setItem("exaltedCrafterState", stateToSave);
-    } catch (error) {
-      console.error("Failed to save state to localStorage", error);
+    // Only save state after the component has mounted and loaded initial state
+    if (isMounted) {
+        try {
+          const stateToSave = JSON.stringify(appState);
+          localStorage.setItem("exaltedCrafterState", stateToSave);
+        } catch (error) {
+          console.error("Failed to save state to localStorage", error);
+        }
     }
-  }, [appState]);
+  }, [appState, isMounted]);
 
   const handleStateChange = <K extends keyof AppState>(key: K, value: AppState[K] | ((prevState: AppState[K]) => AppState[K])) => {
     setAppState(prev => {
@@ -221,12 +228,7 @@ export default function Home() {
   const resetState = () => {
     if (window.confirm("Are you sure you want to reset all data? This cannot be undone.")) {
         localStorage.removeItem("exaltedCrafterState");
-        setAppState({
-            character: initialCharacter,
-            activeCharms: [],
-            craftingXp: initialExperience,
-            activeProjects: [],
-        });
+        setAppState(initialAppState);
         setDiceRoll(null);
         setOutcome(null);
         setTargetNumber(5);
@@ -244,6 +246,12 @@ export default function Home() {
 
   const removeProject = (projectId: string) => {
     handleStateChange('activeProjects', prev => prev.filter(p => p.id !== projectId));
+  }
+  
+  if (!isMounted) {
+    // Render a loading state or null on the server and initial client render
+    // to prevent hydration mismatch. This can be a skeleton loader.
+    return null; 
   }
 
   return (
