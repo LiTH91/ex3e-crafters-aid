@@ -149,6 +149,16 @@ const essence2Charms: Charm[] = [
     effect: { type: "custom" },
     category: 'narrative',
   },
+  {
+    id: toId("Sublime Transference"),
+    name: "Sublime Transference",
+    cost: "1m per 2 committed",
+    description: "Allows the crafter to commit their own motes into an artifact's pool as it is being created, fulfilling Evocation-of-Need prerequisites.",
+    minCraft: 4,
+    minEssence: 2,
+    effect: { type: "custom" },
+    category: 'narrative',
+  },
 ];
 
 
