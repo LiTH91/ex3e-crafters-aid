@@ -28,7 +28,7 @@ import {
   Loader2,
   Sparkles,
   Hammer,
-  ArrowDown,
+  ArrowRight,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
@@ -56,23 +56,24 @@ const getRollColor = (roll: number) => {
   return "bg-red-500 text-white";
 };
 
-const DiceDisplay = ({ history }: { history: number[] }) => (
-    <div className="flex flex-col items-center gap-1">
-        {history.map((roll, index) => (
-            <div key={index} className="flex flex-col items-center">
-                <span
-                    className={`flex items-center justify-center w-10 h-10 rounded-full text-lg font-bold ${
-                        index < history.length - 1
-                            ? "bg-muted text-muted-foreground line-through"
-                            : getRollColor(roll)
-                    }`}
-                >
-                    {roll}
-                </span>
-                {index < history.length - 1 && (
-                     <ArrowDown className="w-4 h-4 text-muted-foreground" />
+const DiceDisplay = ({ waves }: { waves: number[][] }) => (
+    <div className="flex items-center justify-center gap-4 flex-wrap p-4 bg-secondary/30 rounded-lg">
+        {waves.map((wave, waveIndex) => (
+           <div key={`wave-${waveIndex}`} className="flex items-center gap-4">
+                <div className="flex items-center gap-2 flex-wrap justify-center">
+                    {wave.map((roll, rollIndex) => (
+                        <span
+                            key={`wave-${waveIndex}-roll-${rollIndex}`}
+                            className={`flex items-center justify-center w-10 h-10 rounded-full text-lg font-bold shadow-md ${getRollColor(roll)}`}
+                        >
+                            {roll}
+                        </span>
+                    ))}
+                </div>
+                {waveIndex < waves.length - 1 && (
+                     <ArrowRight className="w-6 h-6 text-muted-foreground hidden md:block" />
                 )}
-            </div>
+           </div>
         ))}
     </div>
 );
@@ -237,16 +238,7 @@ export default function DiceRoller({
               Roll Results
             </h3>
             {diceRoll.diceHistories.length > 0 && (
-                <div>
-                  <div className="flex justify-center items-start gap-2 flex-wrap">
-                      {diceRoll.diceHistories.map((history, index) => (
-                          <DiceDisplay 
-                              key={`history-${index}`} 
-                              history={history}
-                          />
-                      ))}
-                  </div>
-                </div>
+                <DiceDisplay waves={diceRoll.diceHistories} />
             )}
             {diceRoll.totalSuccesses > 0 && (
               <div className="text-center font-bold text-2xl font-headline flex items-center justify-center gap-2">
@@ -298,5 +290,3 @@ export default function DiceRoller({
     </Card>
   );
 }
-
-    
