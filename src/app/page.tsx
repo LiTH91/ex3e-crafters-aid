@@ -201,7 +201,6 @@ export default function Home() {
       });
       await new Promise(resolve => setTimeout(resolve, 50));
 
-
       // --- Explosions phase (Sequential, per-die approach) ---
       for (let i = 0; i < diceHistories.length; i++) {
         const history = diceHistories[i];
