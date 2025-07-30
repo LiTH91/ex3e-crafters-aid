@@ -108,14 +108,12 @@ export default function Home() {
     setIsLoading(true);
     setDiceRoll(null);
     setOutcome(null);
-    
+
     await new Promise(resolve => setTimeout(resolve, 50));
 
     try {
       const { character, activeCharms } = appState;
-      
-      let automaticSuccesses = 0;
-      let willRerollFailures = false;
+
       let moteCost = 0;
       let willpowerCost = 0;
       let sxpCost = 0;
@@ -127,9 +125,7 @@ export default function Home() {
       
       allCharms.forEach(charm => {
           if (activeCharms.includes(charm.id)) {
-              if (charm.id !== 'supreme-masterwork-focus') { 
-                  activeCharmDetails.push(charm);
-              }
+              activeCharmDetails.push(charm);
           }
           if (charm.subEffects) {
               charm.subEffects.forEach(subCharm => {
@@ -140,6 +136,9 @@ export default function Home() {
           }
       });
       
+      let automaticSuccesses = 0;
+      let willRerollFailures = false;
+
       activeCharmDetails.forEach((charm) => {
         if (charm.effect.type === "add_successes") automaticSuccesses += charm.effect.value;
         else if (charm.effect.type === "reroll_failures") willRerollFailures = true;
@@ -200,31 +199,92 @@ export default function Home() {
         });
       }
 
-      updateDiceRoll(diceHistories, activeCharmDetails.map(c => c.name));
-      await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY));
-
-      const shouldDieExplode = (roll: number, activeCharms: string[]): boolean => {
-        const hasExplodingTens = activeCharms.includes("flawless-handiwork-method");
-        const doubleSuccessLevel1 = activeCharms.includes('supreme-masterwork-focus-1');
-        const doubleSuccessLevel2 = activeCharms.includes('supreme-masterwork-focus-2');
-        const doubleSuccessLevel3 = activeCharms.includes('supreme-masterwork-focus-3');
+      const shouldDieExplode = (roll: number, currentActiveCharms: string[]): boolean => {
+        const hasExplodingTens = currentActiveCharms.includes("flawless-handiwork-method");
+        const doubleSuccessLevel1 = currentActiveCharms.includes('supreme-masterwork-focus-1');
+        const doubleSuccessLevel2 = currentActiveCharms.includes('supreme-masterwork-focus-2');
+        const doubleSuccessLevel3 = currentActiveCharms.includes('supreme-masterwork-focus-3');
 
         if (hasExplodingTens && roll === 10) return true;
-        if (doubleSuccessLevel3 && roll === 7) return true;
-        if (doubleSuccessLevel2 && roll === 8) return true;
         if (doubleSuccessLevel1 && roll === 9) return true;
+        if (doubleSuccessLevel2 && roll === 8) return true;
+        if (doubleSuccessLevel3 && roll === 7) return true;
         return false;
       };
 
-      // --- Sequential Explosion Logic ---
-        for (let i = 0; i < diceHistories.length; i++) {
-            while (shouldDieExplode(diceHistories[i][diceHistories[i].length - 1], activeCharms)) {
-                const newRoll = rollDie();
-                diceHistories[i].push(newRoll);
-                updateDiceRoll(diceHistories, activeCharmDetails.map(c => c.name));
-                await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY));
+      // --- Initial Roll Display ---
+      updateDiceRoll(diceHistories, activeCharmDetails.map(c => c.name));
+      await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY));
+
+
+      // --- Sequential Explosion Logic (Row by Row) ---
+      while(true) {
+        let explosionsInThisPass = 0;
+        
+        // Use a copy of the histories to iterate over, while modifying the original
+        const currentHistories = [...diceHistories];
+        
+        for (let i = 0; i < currentHistories.length; i++) {
+          const history = diceHistories[i];
+          const lastRoll = history[history.length - 1];
+
+          // Check if this die has already exploded in this pass
+          // This check is tricky. A simpler way is to check the length.
+          // We only check a die for explosion if its history length is exactly the current pass number.
+          // This doesn't quite work.
+          // Let's use a flag on the history or check its length relative to the pass.
+          // The issue is a die might explode multiple times.
+
+          // Simplified approach: iterate through all chains and if the LAST die can explode, explode it.
+          // This is what we want.
+           if (shouldDieExplode(lastRoll, activeCharms)) {
+              // We only want to explode a die once per pass.
+              // A die chain can only have one explosion per pass.
+              // This is implicit if we only check the last die.
+              
+              // Let's create a map to track which die chains have already exploded in this pass
+              // This is getting complicated. Let's try a simpler loop.
+           }
+        }
+
+        const newDiceHistories = [...diceHistories];
+        for(let i = 0; i < newDiceHistories.length; i++) {
+             const history = newDiceHistories[i];
+             const lastRoll = history[history.length -1];
+              if(shouldDieExplode(lastRoll, activeCharms)){
+                 // to avoid re-exploding an already exploded die in the same pass, we need a check.
+                 // The easiest check is to see if we've already added to it.
+                 // This requires a different loop structure.
+
+                 // Let's try this:
+                 // 1. Find all dice that need to explode.
+                 // 2. Roll new dice for them.
+                 // 3. Add the new dice to their histories.
+                 // 4. Repeat.
+              }
+        }
+        
+        // New strategy based on "row by row"
+        let newExplosions = [];
+        for (const history of diceHistories) {
+            const lastRoll = history[history.length - 1];
+            if (shouldDieExplode(lastRoll, activeCharms)) {
+                newExplosions.push(history);
             }
         }
+
+        if (newExplosions.length > 0) {
+            explosionsInThisPass = newExplosions.length;
+            for (const history of newExplosions) {
+                history.push(rollDie());
+            }
+            updateDiceRoll(diceHistories, activeCharmDetails.map(c => c.name));
+            await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY * 2));
+        } else {
+            // No explosions in this pass, so we're done with explosions.
+            break;
+        }
+      }
 
 
       // --- Handle Reroll Failures ---
@@ -243,10 +303,10 @@ export default function Home() {
           }
       }
       
-      const calculateSuccesses = (roll: number, activeCharms: string[]) => {
-        const doubleSuccessLevel1 = activeCharms.includes('supreme-masterwork-focus-1');
-        const doubleSuccessLevel2 = activeCharms.includes('supreme-masterwork-focus-2');
-        const doubleSuccessLevel3 = activeCharms.includes('supreme-masterwork-focus-3');
+      const calculateSuccesses = (roll: number, currentActiveCharms: string[]) => {
+        const doubleSuccessLevel1 = currentActiveCharms.includes('supreme-masterwork-focus-1');
+        const doubleSuccessLevel2 = currentActiveCharms.includes('supreme-masterwork-focus-2');
+        const doubleSuccessLevel3 = currentActiveCharms.includes('supreme-masterwork-focus-3');
 
         if (roll >= 10) return 2;
         if (doubleSuccessLevel3 && roll >= 7) return 2;
