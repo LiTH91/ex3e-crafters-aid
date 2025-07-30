@@ -50,11 +50,28 @@ interface AppState {
 }
 
 export default function Home() {
-  const [appState, setAppState] = useState<AppState>({
-    character: initialCharacter,
-    activeCharms: [],
-    craftingXp: initialExperience,
-    activeProjects: [],
+  const [appState, setAppState] = useState<AppState>(() => {
+    // Initialize state from localStorage or use initial values
+    try {
+      const savedState = typeof window !== 'undefined' ? localStorage.getItem("exaltedCrafterState") : null;
+      if (savedState) {
+        const parsedState = JSON.parse(savedState);
+        // Ensure knownCharms is always up-to-date with the latest from allCharms
+        parsedState.character.knownCharms = allCharms.map(c => c.id);
+        if (parsedState.character && parsedState.activeProjects) {
+            return parsedState;
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load state from localStorage", error);
+    }
+    // Return initial state if nothing in localStorage or if it's invalid
+    return {
+        character: initialCharacter,
+        activeCharms: [],
+        craftingXp: initialExperience,
+        activeProjects: [],
+    };
   });
 
   const [targetNumber, setTargetNumber] = useState<number>(5);
@@ -62,22 +79,6 @@ export default function Home() {
   const [outcome, setOutcome] = useState<CraftingOutcome | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-
-  // Load state from localStorage on initial render
-  useEffect(() => {
-    try {
-      const savedState = localStorage.getItem("exaltedCrafterState");
-      if (savedState) {
-        const parsedState = JSON.parse(savedState);
-        // Basic validation to ensure essential keys exist
-        if (parsedState.character && parsedState.activeProjects) {
-            setAppState(parsedState);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to load state from localStorage", error);
-    }
-  }, []);
 
   // Save state to localStorage whenever it changes
   useEffect(() => {
@@ -320,9 +321,3 @@ export default function Home() {
     </div>
   );
 }
-    
-    
-
-    
-
-    

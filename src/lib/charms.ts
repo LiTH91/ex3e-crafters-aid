@@ -50,7 +50,7 @@ const essence1Charms: Charm[] = [
     minEssence: 1,
     effect: { type: "lower_repair_difficulty", value: 1 },
   },
-  {
+   {
     id: toId("Unsurpassed Masterpiece Method"),
     name: "Unsurpassed Masterpiece Method",
     cost: "5m",

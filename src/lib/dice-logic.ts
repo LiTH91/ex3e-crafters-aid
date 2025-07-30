@@ -1,3 +1,4 @@
+
 import type { Character, DiceRoll } from "./types";
 import { allCharms } from "./charms";
 
@@ -49,6 +50,7 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
     
     // --- Step 1: Initial Roll & Reroll ---
     let firstWaveRolls = Array.from({ length: initialDicePool }, rollDie);
+    let diceToExplode: number[] = [];
 
     const willRerollFailures = activeCharms.includes("first-movement-of-the-demiurge");
     if (willRerollFailures) {
@@ -67,9 +69,12 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
         allRolls.push(firstWaveRolls);
     }
     
-    // Calculate successes for the first wave
+    // Calculate successes and gather explosions for the first wave
     for (const die of firstWaveRolls) {
         totalSuccesses += calculateSuccesses(die, activeCharms);
+        if (shouldDieExplode(die, activeCharms)) {
+            diceToExplode.push(die);
+        }
     }
 
     // Update progress after the first wave is fully processed
@@ -84,12 +89,7 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
 
 
     // --- Step 2: Explosion Loop (Waves) ---
-    let diceForNextWave = 0;
-    for (const die of firstWaveRolls) {
-        if (shouldDieExplode(die, activeCharms)) {
-            diceForNextWave++;
-        }
-    }
+    let diceForNextWave = diceToExplode.length;
 
     while (diceForNextWave > 0) {
         const currentWaveRolls = Array.from({ length: diceForNextWave }, rollDie);
