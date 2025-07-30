@@ -62,7 +62,7 @@ const essence1Charms: Charm[] = [
       },
     ],
   },
-   {
+  {
     id: toId("Unsurpassed Masterpiece Method"),
     name: "Unsurpassed Masterpiece Method",
     cost: "5m",
@@ -101,7 +101,7 @@ const essence1Charms: Charm[] = [
     effect: { type: "custom" },
     category: 'narrative',
   },
-   {
+  {
     id: toId("Durability-Enhancing Technique"),
     name: "Durability-Enhancing Technique",
     cost: "5m",
@@ -119,7 +119,7 @@ const essence1Charms: Charm[] = [
 // =================================================================
 
 const essence2Charms: Charm[] = [
-    {
+  {
     id: toId("First Movement of the Demiurge"),
     name: "First Movement of the Demiurge",
     cost: "5m",
@@ -170,12 +170,66 @@ const essence3Charms: Charm[] = [
   {
     id: toId("Will-Forging Discipline"),
     name: "Will-Forging Discipline",
-    cost: "1wp per 2 succ.", // Note: This cost is variable and will be handled in the UI
+    cost: "1wp per 2 succ.",
     description: "Spend Willpower to add automatic successes to a Craft roll. Each point of Willpower adds two successes.",
     minCraft: 5,
     minEssence: 3,
-    effect: { type: "add_successes", value: 2 }, // The value is per Willpower point
+    effect: { type: "add_successes", value: 2 },
     category: 'functional',
+  },
+];
+
+// =================================================================
+// ESSENCE 4 CHARMS
+// =================================================================
+
+const essence4Charms: Charm[] = [
+  {
+    id: toId("World-Defining Artifice"),
+    name: "World-Defining Artifice",
+    cost: "15m, 1wp",
+    description: "Allows the creation of demesnes, manses, and other reality-shaping constructs outside the normal crafting rules.",
+    minCraft: 5,
+    minEssence: 4,
+    effect: { type: "custom" },
+    category: 'narrative',
+  },
+  {
+    id: toId("Soul-Stirring Handiwork"),
+    name: "Soul-Stirring Handiwork",
+    cost: "10m, 1wp",
+    description: "The Solar can imbue her creations with powerful emotions, making them more persuasive, intimidating, or comforting.",
+    minCraft: 5,
+    minEssence: 4,
+    effect: { type: "custom" },
+    category: 'narrative',
+  },
+];
+
+// =================================================================
+// ESSENCE 5 CHARMS
+// =================================================================
+
+const essence5Charms: Charm[] = [
+  {
+    id: toId("Sovereign of the Forges"),
+    name: "Sovereign of the Forges",
+    cost: "—",
+    description: "The Solar becomes a conceptual workshop, able to create anything anywhere, with her Essence providing the materials.",
+    minCraft: 5,
+    minEssence: 5,
+    effect: { type: "custom" },
+    category: 'narrative',
+  },
+  {
+    id: toId("Blade of the Unconquered Sun"),
+    name: "Blade of the Unconquered Sun",
+    cost: "10m, 1wp, 1wxp",
+    description: "Allows the creation of artifacts specifically designed to permanently destroy the servants of the Yozis and the Neverborn.",
+    minCraft: 5,
+    minEssence: 5,
+    effect: { type: "custom" },
+    category: 'narrative',
   },
 ];
 
@@ -188,4 +242,6 @@ export const allCharms: Charm[] = [
     ...essence1Charms,
     ...essence2Charms,
     ...essence3Charms,
+    ...essence4Charms,
+    ...essence5Charms,
 ];
