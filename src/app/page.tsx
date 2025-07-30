@@ -243,7 +243,6 @@ export default function Home() {
       
       const calculateSuccesses = (roll: number) => {
           if (roll >= 10) return 2;
-          // Note: doubleSuccessLevel logic is now just for counting, not rerolling
           if (doubleSuccessLevel >= 1 && roll === 9) return 2;
           if (doubleSuccessLevel >= 2 && roll === 8) return 2;
           if (doubleSuccessLevel >= 3 && roll === 7) return 2;
@@ -407,3 +406,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
