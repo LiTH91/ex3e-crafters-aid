@@ -127,33 +127,29 @@ const evaluateCraftingOutcomeFlow = ai.defineFlow(
   async (input) => {
     try {
       const result = await prompt(input);
-      // In Genkit 1.x, the structured output is directly available on `output()`
       return result.output!;
-    } catch (error) {
-       console.error(
-        "Error evaluating crafting outcome, attempting to fix JSON:",
-        error,
-      );
-      // Fallback for when the model doesn't return perfect JSON
-      const result = await prompt(input);
-      const text = result.text; // Use .text in v1.x
-      try {
-        const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/);
-        if (jsonMatch && jsonMatch[1]) {
-          return JSON.parse(jsonMatch[1]);
+    } catch (error: any) {
+      console.error("Error evaluating crafting outcome:", error);
+      
+      let errorMessage = "An unknown error occurred while contacting the AI.";
+      if (error.message) {
+        // Extract a more user-friendly message if possible
+        if (error.message.includes("503 Service Unavailable") || error.message.includes("overloaded")) {
+          errorMessage = "The AI model is currently overloaded. Please try again in a few moments.";
+        } else if (error.message.includes("API key not valid")) {
+          errorMessage = "The provided API key is not valid. Please check your .env file.";
+        } else {
+            errorMessage = "The AI's response was not in the expected format. Please check the console for details.";
         }
-        // If no markdown, try to parse the whole thing
-        return JSON.parse(text);
-      } catch (parseError) {
-         console.error("Failed to parse even after cleanup:", parseError, "Raw text was:", text);
-         // Return a structured error if all else fails
-         return {
-           isSuccess: false,
-           outcomeTitle: "Error in AI Response",
-           outcomeDescription: "The AI's response was not valid JSON. Please check the console for more details.",
-           experienceGained: { sxp: 0, gxp: 0, wxp: 0 },
-         };
       }
+
+      // Return a structured error if the prompt fails
+      return {
+        isSuccess: false,
+        outcomeTitle: "Error in AI Response",
+        outcomeDescription: errorMessage,
+        experienceGained: { sxp: 0, gxp: 0, wxp: 0 },
+      };
     }
   },
 );
