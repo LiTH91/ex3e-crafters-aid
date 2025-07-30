@@ -108,6 +108,7 @@ export default function CharmSelection({
   }
 
   const isCharmDisabled = (charm: Charm): boolean => {
+    // Cost checks
     const costSxp = charm.cost?.match(/(\d+)sxp/);
     const costGxp = charm.cost?.match(/(\d+)gxp/);
     const costWxp = charm.cost?.match(/(\d+)wxp/);
@@ -115,6 +116,11 @@ export default function CharmSelection({
     if (costGxp && experience.gxp < parseInt(costGxp[1], 10)) return true;
     if (costWxp && experience.wxp < parseInt(costWxp[1], 10)) return true;
     
+    // Special rule for Ever-Ready Innovation Discipline
+    if (charm.id === 'ever-ready-innovation-discipline' && experience.sxp < 15) {
+        return true;
+    }
+
     // Prerequisites check
     if (charm.minCraft > character.craft) return true;
     if (charm.minEssence > character.essence) return true;

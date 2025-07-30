@@ -177,6 +177,16 @@ const essence3Charms: Charm[] = [
     effect: { type: "add_successes", value: 2 },
     category: 'functional',
   },
+   {
+    id: toId("Ever-Ready Innovation Discipline"),
+    name: "Ever-Ready Innovation Discipline",
+    cost: "15m, 1wp",
+    description: "Retroactively complete a major project as a plot device. Prereq: Thousand-Forge Hands. Requires 15+ SXP on hand to activate (SXP is not spent). May be used (Essence/2) times per story. Clever use may grant bonus XP.",
+    minCraft: 5,
+    minEssence: 3,
+    effect: { type: "custom" },
+    category: 'narrative',
+  },
 ];
 
 // =================================================================
