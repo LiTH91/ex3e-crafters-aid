@@ -377,7 +377,7 @@ export const allCharms: Charm[] = [
       "Craft rolls supplemented by this Charm reroll 10s until no more appear. At Craft 3+, can be repurchased to also reroll 6s.",
     minCraft: 1,
     minEssence: 1,
-    effect: { type: "custom", value: 0 },
+    effect: { type: "reroll_tens", value: 0 },
   },
   {
     id: toId("Triumph-Forging Eye"),
@@ -394,7 +394,7 @@ export const allCharms: Charm[] = [
       "Supplements (Attribute + Craft) rolls for basic/major projects with double 9s. At Craft 5, Essence 2+, can be repurchased for double 8s on basic, major, or superior project rolls (5m, 1wp, 1gxp). At Craft 5, Essence 3+, a third repurchase grants double 7s on any (Attribute + Craft) roll (2m, 1wxp).",
     minCraft: 3,
     minEssence: 1,
-    effect: { type: "custom", value: 0 },
+    effect: { type: "double_nines", value: 0 },
   },
   {
     id: toId("Bright-Forging Prana"),

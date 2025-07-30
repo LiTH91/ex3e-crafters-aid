@@ -50,7 +50,6 @@ export default function Home() {
   });
   const [activeProjects, setActiveProjects] = useState<any[]>([]);
 
-
   const handleRoll = async (projectDetails: {
     type: ProjectType;
     artifactRating: number;
@@ -69,6 +68,8 @@ export default function Home() {
       let charmEffectsDescription = "Applied Charms: ";
       let automaticSuccesses = 0;
       let willRerollFailures = false;
+      let willRerollTens = false;
+      let willDoubleNines = false;
 
       selectedCharms.forEach((charm) => {
         charmEffectsDescription += `${charm.name}; `;
@@ -77,6 +78,12 @@ export default function Home() {
         }
         if (charm.effect.type === "reroll_failures") {
           willRerollFailures = true;
+        }
+        if (charm.effect.type === "reroll_tens") {
+          willRerollTens = true;
+        }
+        if (charm.effect.type === "double_nines") {
+          willDoubleNines = true;
         }
       });
       if (selectedCharms.length === 0) {
@@ -88,17 +95,34 @@ export default function Home() {
 
       let initialRolls = rollDice(dicePool);
       let finalRolls = [...initialRolls];
+      let rerolledIndices: number[] = [];
 
+      // Handle rerolls
       if (willRerollFailures) {
         const failures = initialRolls.filter((r) => r < 7);
         const rerolledDice = rollDice(failures.length);
         const successesFromInitial = initialRolls.filter((r) => r >= 7);
+        rerolledIndices = initialRolls
+          .map((r, i) => (r < 7 ? i : -1))
+          .filter((i) => i !== -1);
         finalRolls = [...successesFromInitial, ...rerolledDice];
+      }
+
+      if (willRerollTens) {
+        let tensToReroll = finalRolls.filter((r) => r === 10).length;
+        let bonusRolls: number[] = [];
+        while (tensToReroll > 0) {
+          const newRolls = rollDice(tensToReroll);
+          bonusRolls.push(...newRolls);
+          tensToReroll = newRolls.filter((r) => r === 10).length;
+        }
+        finalRolls.push(...bonusRolls);
       }
 
       const calculateSuccesses = (rolls: number[]) =>
         rolls.reduce((acc, roll) => {
           if (roll >= 10) return acc + 2;
+          if (willDoubleNines && roll === 9) return acc + 2;
           if (roll >= 7) return acc + 1;
           return acc;
         }, 0);
@@ -109,9 +133,7 @@ export default function Home() {
       setDiceRoll({
         initialRolls,
         finalRolls,
-        rerolledIndices: willRerollFailures
-          ? initialRolls.map((r, i) => (r < 7 ? i : -1)).filter((i) => i !== -1)
-          : [],
+        rerolledIndices,
         totalSuccesses,
         automaticSuccesses,
       });

@@ -50,7 +50,12 @@ export interface Character {
 }
 
 export interface CharmEffect {
-  type: "add_successes" | "reroll_failures" | "custom";
+  type:
+    | "add_successes"
+    | "reroll_failures"
+    | "reroll_tens"
+    | "double_nines"
+    | "custom";
   value: number;
 }
 

@@ -69,8 +69,11 @@ export default function DiceRoller({
 
   const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
   const formatProjectTypeName = (type: ProjectType) => {
-    const [category, action] = type.split("-");
-    return `${capitalize(category)} ${capitalize(action)}`;
+    return type
+      .split("-")
+      .map(capitalize)
+      .join(" ")
+      .replace("Creation", "Project");
   };
 
   return (
@@ -180,17 +183,14 @@ export default function DiceRoller({
                 </span>
               ))}
             </div>
-            {diceRoll.rerolledIndices.length > 0 && (
+            {diceRoll.finalRolls.length > diceRoll.initialRolls.length && (
               <>
                 <p className="text-center text-sm font-body">
-                  Rerolled {diceRoll.rerolledIndices.length} failures.
+                  Bonus dice from Charms.
                 </p>
                 <div className="flex justify-center gap-2 flex-wrap">
                   {diceRoll.finalRolls
-                    .slice(
-                      diceRoll.initialRolls.length -
-                        diceRoll.rerolledIndices.length,
-                    )
+                    .slice(diceRoll.initialRolls.length)
                     .map((roll, index) => (
                       <span
                         key={index}
