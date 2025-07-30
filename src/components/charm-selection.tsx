@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import type { Charm, Character } from "@/lib/types";
 import { allCharms } from "@/lib/charms";
 import {
   Card,
@@ -26,22 +27,68 @@ interface CharmSelectionProps {
   knownCharms: string[];
   activeCharms: string[];
   setActiveCharms: (charms: string[]) => void;
+  character: Character;
+  experience: { gxp: number; wxp: number };
 }
 
 export default function CharmSelection({
   knownCharms,
   activeCharms,
   setActiveCharms,
+  character,
+  experience,
 }: CharmSelectionProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("essence");
 
-  const handleCharmToggle = (charmId: string) => {
-    const newActiveCharms = activeCharms.includes(charmId)
-      ? activeCharms.filter((id) => id !== charmId)
-      : [...activeCharms, charmId];
+  const handleCharmToggle = (charmId: string, isSubCharm: boolean = false) => {
+    const baseCharmId = isSubCharm ? 'supreme-masterwork-focus' : charmId;
+
+    let newActiveCharms = [...activeCharms];
+
+    if (newActiveCharms.includes(charmId)) {
+        // If it's a sub-charm, deselecting it deselects all higher sub-charms
+        if(charmId === 'supreme-masterwork-focus-1') {
+            newActiveCharms = newActiveCharms.filter(id => !id.startsWith('supreme-masterwork-focus'));
+        } else if (charmId === 'supreme-masterwork-focus-2') {
+             newActiveCharms = newActiveCharms.filter(id => id !== 'supreme-masterwork-focus-2' && id !== 'supreme-masterwork-focus-3');
+        } else {
+             newActiveCharms = newActiveCharms.filter((id) => id !== charmId);
+        }
+    } else {
+        // Add the charm
+        newActiveCharms.push(charmId);
+        // If it's a sub-charm, also select the base charm and lower-tier ones
+        if(isSubCharm) {
+            if(!newActiveCharms.includes(baseCharmId)) newActiveCharms.push(baseCharmId);
+            if(charmId === 'supreme-masterwork-focus-3' && !newActiveCharms.includes('supreme-masterwork-focus-2')) {
+                newActiveCharms.push('supreme-masterwork-focus-2');
+            }
+             if(charmId !== 'supreme-masterwork-focus-1' && !newActiveCharms.includes('supreme-masterwork-focus-1')) {
+                newActiveCharms.push('supreme-masterwork-focus-1');
+            }
+        }
+    }
     setActiveCharms(newActiveCharms);
   };
+
+  const getSubCharm = (charm: Charm, level: 1 | 2 | 3): Charm | undefined => {
+    if (charm.id !== 'supreme-masterwork-focus' || !charm.subEffects) return undefined;
+    return charm.subEffects.find(c => c.id.endsWith(`-${level}`));
+  }
+
+  const isCharmDisabled = (charm: Charm): boolean => {
+    const costGxp = charm.cost?.match(/(\d+)gxp/);
+    const costWxp = charm.cost?.match(/(\d+)wxp/);
+    if (costGxp && experience.gxp < parseInt(costGxp[1], 10)) return true;
+    if (costWxp && experience.wxp < parseInt(costWxp[1], 10)) return true;
+    
+    // Prerequisites check
+    if (charm.minCraft > character.craft) return true;
+    if (charm.minEssence > character.essence) return true;
+
+    return false;
+  }
 
   const availableCharms = useMemo(() => {
     return allCharms
@@ -101,7 +148,54 @@ export default function CharmSelection({
       <CardContent>
         <div className="space-y-4 max-h-[600px] overflow-y-auto">
           {availableCharms.length > 0 ? (
-            availableCharms.map((charm) => (
+            availableCharms.map((charm) => {
+              if (charm.id === 'supreme-masterwork-focus') {
+                const level1 = getSubCharm(charm, 1);
+                const level2 = getSubCharm(charm, 2);
+                const level3 = getSubCharm(charm, 3);
+                
+                return (
+                  <div key={charm.id} className="p-3 rounded-md transition-colors bg-secondary/30">
+                     <p className="font-bold text-base font-body flex items-center gap-2">
+                      {charm.name}
+                    </p>
+                    <p className="text-sm text-muted-foreground font-body mb-2">
+                        {charm.description}
+                    </p>
+                    <div className="pl-4 border-l-2 border-primary/50 space-y-3">
+                       {level1 && (
+                         <div className="flex items-start gap-3">
+                            <Checkbox id={level1.id} checked={activeCharms.includes(level1.id)} onCheckedChange={() => handleCharmToggle(level1.id, true)} className="mt-1" disabled={isCharmDisabled(level1)} />
+                            <Label htmlFor={level1.id} className="grid gap-1.5 leading-none cursor-pointer">
+                                <span className="font-bold text-base font-body flex items-center gap-2">{level1.name} <Badge variant="secondary">{level1.cost}</Badge></span>
+                                <span className="text-sm text-muted-foreground font-body">{level1.description}</span>
+                            </Label>
+                         </div>
+                       )}
+                       {level2 && (
+                         <div className="flex items-start gap-3">
+                            <Checkbox id={level2.id} checked={activeCharms.includes(level2.id)} onCheckedChange={() => handleCharmToggle(level2.id, true)} className="mt-1" disabled={isCharmDisabled(level2)} />
+                            <Label htmlFor={level2.id} className="grid gap-1.5 leading-none cursor-pointer">
+                                <span className="font-bold text-base font-body flex items-center gap-2">{level2.name} <Badge variant="secondary">{level2.cost}</Badge></span>
+                                <span className="text-sm text-muted-foreground font-body">{level2.description}</span>
+                            </Label>
+                         </div>
+                       )}
+                       {level3 && (
+                         <div className="flex items-start gap-3">
+                            <Checkbox id={level3.id} checked={activeCharms.includes(level3.id)} onCheckedChange={() => handleCharmToggle(level3.id, true)} className="mt-1" disabled={isCharmDisabled(level3)} />
+                            <Label htmlFor={level3.id} className="grid gap-1.5 leading-none cursor-pointer">
+                               <span className="font-bold text-base font-body flex items-center gap-2">{level3.name} <Badge variant="secondary">{level3.cost}</Badge></span>
+                                <span className="text-sm text-muted-foreground font-body">{level3.description}</span>
+                            </Label>
+                         </div>
+                       )}
+                    </div>
+                  </div>
+                )
+              }
+
+              return (
               <div
                 key={charm.id}
                 className="flex items-start gap-3 p-3 rounded-md transition-colors hover:bg-secondary"
@@ -111,6 +205,7 @@ export default function CharmSelection({
                   checked={activeCharms.includes(charm.id)}
                   onCheckedChange={() => handleCharmToggle(charm.id)}
                   className="mt-1"
+                  disabled={isCharmDisabled(charm)}
                 />
                 <div className="grid gap-1.5 leading-none">
                   <Label
@@ -125,7 +220,7 @@ export default function CharmSelection({
                   </p>
                 </div>
               </div>
-            ))
+            )})
           ) : (
             <p className="text-muted-foreground text-center font-body">
               No charms found.

@@ -65,10 +65,10 @@ export interface CharmEffect {
     | "add_successes"
     | "reroll_failures"
     | "reroll_tens"
-    | "double_nines"
+    | "double_success"
     | "lower_repair_difficulty"
     | "custom";
-  value: number;
+  value?: number;
 }
 
 export interface Charm {
@@ -79,6 +79,7 @@ export interface Charm {
   minCraft: number;
   minEssence: number;
   effect: CharmEffect;
+  subEffects?: Charm[];
 }
 
 export interface DiceRoll {

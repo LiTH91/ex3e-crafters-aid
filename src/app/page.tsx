@@ -79,41 +79,55 @@ export default function Home() {
       let automaticSuccesses = 0;
       let willRerollFailures = false; // Placeholder for future implementation
       let willRerollTens = false;
-      let willDoubleNines = false;
+      let doubleSuccessLevel = 0; // 0: none, 1: nines, 2: eights, 3: sevens
       let moteCost = 0;
       let willpowerCost = 0;
+      let gxpCost = 0;
+      let wxpCost = 0;
       let tnModifier = 0;
 
       selectedCharms.forEach((charm) => {
-        if (charm.effect.type === "add_successes") {
+        // This is a simplified check. A full implementation might need a more robust system
+        // if charms can have multiple, selectable effects.
+        if (charm.id === 'supreme-masterwork-focus') {
+             // Find the highest active level of the charm based on activeCharms
+            if (activeCharms.includes('supreme-masterwork-focus-3')) {
+                doubleSuccessLevel = 3;
+            } else if (activeCharms.includes('supreme-masterwork-focus-2')) {
+                doubleSuccessLevel = 2;
+            } else if (activeCharms.includes('supreme-masterwork-focus-1')) {
+                doubleSuccessLevel = 1;
+            }
+        }
+        else if (charm.effect.type === "add_successes") {
           automaticSuccesses += charm.effect.value;
         }
-        if (charm.effect.type === "reroll_failures") {
+        else if (charm.effect.type === "reroll_failures") {
           willRerollFailures = true;
         }
-        if (charm.effect.type === "reroll_tens") {
+        else if (charm.effect.type === "reroll_tens") {
           willRerollTens = true;
         }
-        if (charm.effect.type === "double_nines") {
-          willDoubleNines = true;
-        }
-        if (charm.effect.type === "lower_repair_difficulty" && projectDetails.type.includes("repair")) {
+        else if (charm.effect.type === "lower_repair_difficulty" && projectDetails.type.includes("repair")) {
           tnModifier -= charm.effect.value;
         }
 
          // Parse costs
          if (charm.cost) {
             const moteMatch = charm.cost.match(/(\d+)m/);
-            if (moteMatch) {
-              moteCost += parseInt(moteMatch[1], 10);
-            }
+            if (moteMatch) moteCost += parseInt(moteMatch[1], 10);
+            
             const willpowerMatch = charm.cost.match(/(\d+)wp/);
-            if (willpowerMatch) {
-              willpowerCost += parseInt(willpowerMatch[1], 10);
-            }
+            if (willpowerMatch) willpowerCost += parseInt(willpowerMatch[1], 10);
+
+            const gxpMatch = charm.cost.match(/(\d+)gxp/);
+            if (gxpMatch) gxpCost += parseInt(gxpMatch[1], 10);
+
+            const wxpMatch = charm.cost.match(/(\d+)wxp/);
+            if (wxpMatch) wxpCost += parseInt(wxpMatch[1], 10);
           }
       });
-
+      
       // Deduct resources
       setCharacter(prev => {
         let personal = prev.personalMotes;
@@ -135,6 +149,13 @@ export default function Home() {
             willpower: prev.willpower - willpowerCost
         }
       });
+
+      setCraftingXp(prev => ({
+          ...prev,
+          gxp: prev.gxp - gxpCost,
+          wxp: prev.wxp - wxpCost,
+      }));
+
 
       const rollDice = (pool: number) =>
         Array.from({ length: pool }, () => Math.floor(Math.random() * 10) + 1);
@@ -176,7 +197,9 @@ export default function Home() {
       const calculateSuccesses = (rolls: number[]) =>
         rolls.reduce((acc, roll) => {
           if (roll >= 10) return acc + 2;
-          if (willDoubleNines && roll === 9) return acc + 2;
+          if (doubleSuccessLevel === 1 && roll === 9) return acc + 2;
+          if (doubleSuccessLevel === 2 && roll >= 8) return acc + 2;
+          if (doubleSuccessLevel === 3 && roll >= 7) return acc + 2;
           if (roll >= 7) return acc + 1;
           return acc;
         }, 0);
@@ -284,6 +307,8 @@ export default function Home() {
               knownCharms={character.knownCharms}
               activeCharms={activeCharms}
               setActiveCharms={setActiveCharms}
+              character={character}
+              experience={craftingXp}
             />
           </div>
 
