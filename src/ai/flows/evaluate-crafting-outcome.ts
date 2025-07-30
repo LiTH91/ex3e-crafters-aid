@@ -7,6 +7,7 @@
  * - EvaluateCraftingOutcomeOutput - The return type for the evaluateCraftingOutcome function.
  */
 import { ai } from "@/ai/genkit";
+import { googleAI } from "@genkit-ai/googleai";
 import { z } from "zod";
 import type { ProjectType } from "@/lib/types";
 
@@ -50,6 +51,7 @@ export async function evaluateCraftingOutcome(
 
 const prompt = ai.definePrompt({
   name: "evaluateCraftingOutcomePrompt",
+  model: googleAI.model("gemini-1.5-flash"),
   input: { schema: EvaluateCraftingOutcomeInputSchema },
   output: { schema: EvaluateCraftingOutcomeOutputSchema },
   prompt: `You are an expert Storyteller for the Exalted 3rd Edition roleplaying game. Your task is to evaluate the outcome of a crafting roll based on the provided project details and the number of successes rolled. Generate a descriptive and flavorful title and description for the outcome, and calculate the experience points gained based on the rules provided.
