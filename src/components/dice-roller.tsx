@@ -31,6 +31,7 @@ import {
   Hammer,
   ArrowRight,
   Book,
+  Sun,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
@@ -55,25 +56,41 @@ interface DiceRollerProps {
   setWillpowerSpent: (value: number) => void;
 }
 
-const getRollColor = (roll: number) => {
-  if (roll >= 10) return "bg-yellow-400 text-black";
-  if (roll >= 7) return "bg-green-500 text-white";
-  return "bg-red-500 text-white";
+const getDieStyle = (roll: number, activeCharms: string[]): { className: string; isSun: boolean } => {
+  const isSun = 
+    roll === 10 ||
+    (roll >= 9 && activeCharms.includes('supreme-masterwork-focus-1')) ||
+    (roll >= 8 && activeCharms.includes('supreme-masterwork-focus-2')) ||
+    (roll >= 7 && activeCharms.includes('supreme-masterwork-focus-3'));
+
+  if (isSun) {
+    return { className: "text-yellow-400", isSun: true };
+  }
+  if (roll >= 7) {
+    return { className: "text-green-500", isSun: false };
+  }
+  return { className: "text-red-500", isSun: false };
 };
 
-const DiceDisplay = ({ waves }: { waves: number[][] }) => (
+
+const DiceDisplay = ({ waves, activeCharms }: { waves: number[][], activeCharms: string[] }) => (
     <div className="flex items-center justify-center gap-4 flex-wrap p-4 bg-secondary/30 rounded-lg">
         {waves.map((wave, waveIndex) => (
            <div key={`wave-${waveIndex}`} className="flex items-center gap-4">
                 <div className="flex items-center gap-2 flex-wrap justify-center">
-                    {wave.map((roll, rollIndex) => (
-                        <span
-                            key={`wave-${waveIndex}-roll-${rollIndex}`}
-                            className={`flex items-center justify-center w-10 h-10 rounded-full text-lg font-bold shadow-md ${getRollColor(roll)}`}
-                        >
-                            {roll}
-                        </span>
-                    ))}
+                    {wave.map((roll, rollIndex) => {
+                       const { className, isSun } = getDieStyle(roll, activeCharms);
+                       return (
+                           <div key={`wave-${waveIndex}-roll-${rollIndex}`} className="relative flex items-center justify-center w-10 h-10">
+                               {isSun ? (
+                                   <Sun className={`w-10 h-10 ${className}`} />
+                               ) : (
+                                   <div className={`w-10 h-10 rounded-full border-2 ${className.replace('text-', 'border-')}`} />
+                               )}
+                               <span className={`absolute text-lg font-bold ${isSun ? 'text-black' : 'text-foreground'}`}>{roll}</span>
+                           </div>
+                       )
+                    })}
                 </div>
                 {waveIndex < waves.length - 1 && (
                      <ArrowRight className="w-6 h-6 text-muted-foreground hidden md:block" />
@@ -270,7 +287,7 @@ export default function DiceRoller({
               Roll Results
             </h3>
             {diceRoll.diceHistories.length > 0 && (
-                <DiceDisplay waves={diceRoll.diceHistories} />
+                <DiceDisplay waves={diceRoll.diceHistories} activeCharms={diceRoll.activeCharmIds}/>
             )}
             {diceRoll.totalSuccesses > 0 && (
               <div className="text-center font-bold text-2xl font-headline flex items-center justify-center gap-2">
