@@ -187,30 +187,40 @@ export default function Home() {
       }));
 
       const rollDice = (pool: number) => Array.from({ length: pool }, () => Math.floor(Math.random() * 10) + 1);
-
-      // --- Main dice rolling logic ---
+      
       const initialRolls = rollDice(dicePool);
       const diceHistories: number[][] = initialRolls.map(r => [r]);
-
+      
       // --- Explosions phase ---
-      loop: while (true) {
-        for (const history of diceHistories) {
+      let explodedInThisPass;
+      do {
+        explodedInThisPass = false;
+        diceHistories.forEach((history, index) => {
             const lastRoll = history[history.length - 1];
             
-            let explodes = false;
-            if (hasExplodingTens && lastRoll === 10) explodes = true;
-            else if (doubleSuccessLevel >= 1 && lastRoll === 9) explodes = true;
-            else if (doubleSuccessLevel >= 2 && lastRoll === 8) explodes = true;
-            else if (doubleSuccessLevel >= 3 && lastRoll === 7) explodes = true;
+            // Check if this specific die has already exploded in a way that would add to this history
+            // Simple check: if a die has a history, its explosion is "handled" for this pass.
+            // This needs to be smarter. We check if the last roll can explode.
+            let canExplode = false;
+            if (hasExplodingTens && lastRoll === 10) canExplode = true;
+            else if (doubleSuccessLevel >= 1 && lastRoll === 9) canExplode = true;
+            else if (doubleSuccessLevel >= 2 && lastRoll === 8) canExplode = true;
+            else if (doubleSuccessLevel >= 3 && lastRoll === 7) canExplode = true;
+
+            // To prevent infinite loops on the same die in a single pass, we can use a flag or check length.
+            // A die can only explode once per "level" of history.
+            // A better way is to see if an explosion has *already been added for this specific die*.
+            // Since we add to history, we can just check if we should add another.
             
-            if (explodes) {
-                history.push(rollDice(1)[0]);
-                continue loop; // Restart the loop to check the new die
+            if (canExplode) {
+                // A die is identified by its index. To prevent re-exploding the same result infinitely in one pass,
+                // we'll add a new roll and set our flag. The next do-while loop will handle the new roll.
+                 history.push(rollDice(1)[0]);
+                 explodedInThisPass = true;
             }
-        }
-        break; // No explosions in a full pass, exit loop
-      }
-      
+        });
+      } while (explodedInThisPass);
+
 
       // --- Reroll Failures phase ---
       if (willRerollFailures) {
@@ -225,9 +235,9 @@ export default function Home() {
       
       const calculateSuccesses = (roll: number) => {
           if (roll >= 10) return 2;
-          if (doubleSuccessLevel === 1 && roll === 9) return 2;
-          if (doubleSuccessLevel === 2 && roll >= 8) return 2;
-          if (doubleSuccessLevel === 3 && roll >= 7) return 2;
+          if (doubleSuccessLevel >= 1 && roll === 9) return 2;
+          if (doubleSuccessLevel >= 2 && roll >= 8) return 2;
+          if (doubleSuccessLevel >= 3 && roll >= 7) return 2;
           if (roll >= 7) return 1;
           return 0;
       }
@@ -388,5 +398,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
