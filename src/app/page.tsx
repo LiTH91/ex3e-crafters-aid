@@ -119,11 +119,18 @@ export default function Home() {
       let doubleSuccessLevel = 0; // 0: none, 1: nines, 2: eights, 3: sevens
       let moteCost = 0;
       let willpowerCost = 0;
+      let sxpCost = 0;
       let gxpCost = 0;
       let wxpCost = 0;
       let tnModifier = 0;
 
-      selectedCharms.forEach((charm) => {
+      const activeSubCharms = allCharms
+        .flatMap(c => c.subEffects ? c.subEffects : [])
+        .filter(sc => activeCharms.includes(sc.id));
+      
+      const allSelectedCharms = [...selectedCharms, ...activeSubCharms];
+
+      allSelectedCharms.forEach((charm) => {
         if (charm.id === 'supreme-masterwork-focus') {
             if (activeCharms.includes('supreme-masterwork-focus-3')) doubleSuccessLevel = 3;
             else if (activeCharms.includes('supreme-masterwork-focus-2')) doubleSuccessLevel = 2;
@@ -140,6 +147,9 @@ export default function Home() {
             
             const willpowerMatch = charm.cost.match(/(\d+)wp/);
             if (willpowerMatch) willpowerCost += parseInt(willpowerMatch[1], 10);
+
+            const sxpMatch = charm.cost.match(/(\d+)sxp/);
+            if (sxpMatch) sxpCost += parseInt(sxpMatch[1], 10);
 
             const gxpMatch = charm.cost.match(/(\d+)gxp/);
             if (gxpMatch) gxpCost += parseInt(gxpMatch[1], 10);
@@ -163,6 +173,7 @@ export default function Home() {
 
       handleStateChange('craftingXp', prev => ({
           ...prev,
+          sxp: prev.sxp - sxpCost,
           gxp: prev.gxp - gxpCost,
           wxp: prev.wxp - wxpCost,
       }));

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import type { Charm, Character } from "@/lib/types";
+import type { Charm, Character, CraftingExperience } from "@/lib/types";
 import { allCharms } from "@/lib/charms";
 import {
   Card,
@@ -28,7 +28,7 @@ interface CharmSelectionProps {
   activeCharms: string[];
   setActiveCharms: (charms: string[]) => void;
   character: Character;
-  experience: { gxp: number; wxp: number };
+  experience: CraftingExperience;
 }
 
 export default function CharmSelection({
@@ -78,8 +78,10 @@ export default function CharmSelection({
   }
 
   const isCharmDisabled = (charm: Charm): boolean => {
+    const costSxp = charm.cost?.match(/(\d+)sxp/);
     const costGxp = charm.cost?.match(/(\d+)gxp/);
     const costWxp = charm.cost?.match(/(\d+)wxp/);
+    if (costSxp && experience.sxp < parseInt(costSxp[1], 10)) return true;
     if (costGxp && experience.gxp < parseInt(costGxp[1], 10)) return true;
     if (costWxp && experience.wxp < parseInt(costWxp[1], 10)) return true;
     
@@ -231,3 +233,5 @@ export default function CharmSelection({
     </Card>
   );
 }
+
+    

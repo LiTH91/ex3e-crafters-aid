@@ -101,11 +101,7 @@ export interface CraftingOutcome {
   isSuccess: boolean;
   outcomeTitle: string;
   outcomeDescription: string;
-  experienceGained: {
-    sxp: number;
-    gxp: number;
-    wxp: number;
-  };
+  experienceGained: CraftingExperience;
 }
 
     
