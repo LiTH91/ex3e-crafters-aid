@@ -31,7 +31,6 @@ import {
   Hammer,
   ArrowRight,
   Book,
-  Sun,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
@@ -56,20 +55,20 @@ interface DiceRollerProps {
   setWillpowerSpent: (value: number) => void;
 }
 
-const getDieStyle = (roll: number, activeCharms: string[]): { className: string; isSun: boolean } => {
-  const isSun = 
+const getDieStyle = (roll: number, activeCharms: string[]): string => {
+  const isSpecialSuccess = 
     roll === 10 ||
     (roll >= 9 && activeCharms.includes('supreme-masterwork-focus-1')) ||
     (roll >= 8 && activeCharms.includes('supreme-masterwork-focus-2')) ||
     (roll >= 7 && activeCharms.includes('supreme-masterwork-focus-3'));
 
-  if (isSun) {
-    return { className: "text-yellow-400", isSun: true };
+  if (isSpecialSuccess) {
+    return "text-yellow-400 border-yellow-400";
   }
   if (roll >= 7) {
-    return { className: "text-green-500", isSun: false };
+    return "text-green-500 border-green-500";
   }
-  return { className: "text-red-500", isSun: false };
+  return "text-red-500 border-red-500";
 };
 
 
@@ -79,15 +78,10 @@ const DiceDisplay = ({ waves, activeCharms }: { waves: number[][], activeCharms:
            <div key={`wave-${waveIndex}`} className="flex items-center gap-4">
                 <div className="flex items-center gap-2 flex-wrap justify-center">
                     {wave.map((roll, rollIndex) => {
-                       const { className, isSun } = getDieStyle(roll, activeCharms);
+                       const style = getDieStyle(roll, activeCharms);
                        return (
-                           <div key={`wave-${waveIndex}-roll-${rollIndex}`} className="relative flex items-center justify-center w-10 h-10">
-                               {isSun ? (
-                                   <Sun className={`w-10 h-10 ${className}`} />
-                               ) : (
-                                   <div className={`w-10 h-10 rounded-full border-2 ${className.replace('text-', 'border-')}`} />
-                               )}
-                               <span className={`absolute text-lg font-bold ${isSun ? 'text-black' : 'text-foreground'}`}>{roll}</span>
+                           <div key={`wave-${waveIndex}-roll-${rollIndex}`} className={`relative flex items-center justify-center w-10 h-10 rounded-full border-2 ${style}`}>
+                               <span className="absolute text-lg font-bold">{roll}</span>
                            </div>
                        )
                     })}

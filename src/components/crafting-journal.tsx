@@ -24,7 +24,6 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { BookOpen, Star, Sun, Moon, PlusCircle, Trash2 } from "lucide-react";
-import StoryTracker from "./story-tracker";
 
 
 interface CraftingJournalProps {
@@ -37,8 +36,6 @@ interface CraftingJournalProps {
   maxProjects: number;
   onAddProject: (project: Omit<ActiveProject, "id" | "isComplete">) => void;
   onRemoveProject: (projectId: string) => void;
-  storyUses: Record<string, number>;
-  onStoryUsesChange: (charmId: string, value: number) => void;
 }
 
 export default function CraftingJournal({
@@ -47,8 +44,6 @@ export default function CraftingJournal({
   maxProjects,
   onAddProject,
   onRemoveProject,
-  storyUses,
-  onStoryUsesChange,
 }: CraftingJournalProps) {
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectType, setNewProjectType] =
@@ -130,17 +125,6 @@ export default function CraftingJournal({
         </div>
 
         <Separator />
-         {/* Story Tracker Section */}
-        <div>
-           <StoryTracker
-            charmId="ever-ready-innovation-discipline"
-            charmName="Ever-Ready Innovation Discipline"
-            currentUses={storyUses['ever-ready-innovation-discipline'] || 0}
-            onUsesChange={(value) => onStoryUsesChange('ever-ready-innovation-discipline', value)}
-          />
-        </div>
-        <Separator />
-
 
         {/* Projects Section */}
         <div>

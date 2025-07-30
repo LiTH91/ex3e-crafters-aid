@@ -47,7 +47,6 @@ const initialAppState = {
     activeCharms: [],
     craftingXp: initialExperience,
     activeProjects: [],
-    storyUses: { 'ever-ready-innovation-discipline': 0 },
 };
 
 interface AppState {
@@ -55,7 +54,6 @@ interface AppState {
   activeCharms: string[];
   craftingXp: CraftingExperience;
   activeProjects: ActiveProject[];
-  storyUses: Record<string, number>;
 }
 
 export default function Home() {
@@ -79,10 +77,6 @@ export default function Home() {
         // Ensure knownCharms is always up-to-date with the latest from allCharms
         parsedState.character.knownCharms = allCharms.map(c => c.id);
         if (parsedState.character && parsedState.activeProjects) {
-            // Ensure storyUses is initialized if not present in saved state
-            if (!parsedState.storyUses) {
-                parsedState.storyUses = initialAppState.storyUses;
-            }
             setAppState(parsedState);
         }
       }
@@ -161,13 +155,6 @@ export default function Home() {
         }
       });
       
-      // Increment story use counter if applicable
-      if (activeCharms.includes('ever-ready-innovation-discipline')) {
-        handleStateChange('storyUses', prev => ({
-          ...prev,
-          'ever-ready-innovation-discipline': (prev['ever-ready-innovation-discipline'] || 0) + 1,
-        }));
-      }
 
       // --- 2. Spend Costs ---
       handleStateChange('character', prev => {
@@ -252,7 +239,7 @@ export default function Home() {
     }
   }
 
-  const { character, activeCharms, craftingXp, activeProjects, storyUses } = appState;
+  const { character, activeCharms, craftingXp, activeProjects } = appState;
   const hasTirelessWorkhorse = activeCharms.includes("tireless-workhorse-method");
   const majorProjectSlots = hasTirelessWorkhorse ? character.essence * 2 : 0;
 
@@ -329,8 +316,6 @@ export default function Home() {
                   maxProjects={majorProjectSlots}
                   onAddProject={addProject}
                   onRemoveProject={removeProject}
-                  storyUses={storyUses}
-                  onStoryUsesChange={(charmId, value) => handleStateChange('storyUses', prev => ({...prev, [charmId]: value}))}
                 />
               </TabsContent>
                <TabsContent value="reference">
