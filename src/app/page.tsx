@@ -206,13 +206,13 @@ export default function Home() {
               </TabsList>
               <TabsContent value="roller">
                 <DiceRoller
+                  character={character}
                   targetNumber={targetNumber}
                   setTargetNumber={setTargetNumber}
                   onRoll={handleRoll}
                   isLoading={isLoading}
                   diceRoll={diceRoll}
                   aiOutcome={aiOutcome}
-                  character={character}
                 />
               </TabsContent>
               <TabsContent value="journal">

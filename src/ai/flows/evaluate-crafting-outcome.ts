@@ -1,4 +1,4 @@
-"use server";
+'use server';
 /**
  * @fileOverview Evaluates the outcome of a crafting check using generative AI.
  *
@@ -10,6 +10,9 @@ import { ai } from "@/ai/genkit";
 import { z } from "zod";
 import type { ProjectType } from "@/lib/types";
 
+export type EvaluateCraftingOutcomeInput = z.infer<
+  typeof EvaluateCraftingOutcomeInputSchema
+>;
 const EvaluateCraftingOutcomeInputSchema = z.object({
   project: z.object({
     type: z.custom<ProjectType>(),
@@ -23,10 +26,10 @@ const EvaluateCraftingOutcomeInputSchema = z.object({
   intervalsRemaining: z.number().optional(),
   legendaryBonusRoll: z.array(z.number()).optional(),
 });
-export type EvaluateCraftingOutcomeInput = z.infer<
-  typeof EvaluateCraftingOutcomeInputSchema
->;
 
+export type EvaluateCraftingOutcomeOutput = z.infer<
+  typeof EvaluateCraftingOutcomeOutputSchema
+>;
 const EvaluateCraftingOutcomeOutputSchema = z.object({
   isSuccess: z.boolean(),
   outcomeTitle: z.string(),
@@ -37,9 +40,7 @@ const EvaluateCraftingOutcomeOutputSchema = z.object({
     wxp: z.number(),
   }),
 });
-export type EvaluateCraftingOutcomeOutput = z.infer<
-  typeof EvaluateCraftingOutcomeOutputSchema
->;
+
 
 export async function evaluateCraftingOutcome(
   input: EvaluateCraftingOutcomeInput,
@@ -123,16 +124,17 @@ const evaluateCraftingOutcomeFlow = ai.defineFlow(
   },
   async (input) => {
     try {
-      const {output} = await prompt.generate({input});
-      return output!;
+      const result = await prompt(input);
+      // In Genkit 1.x, the structured output is directly available on `output()`
+      return result.output!;
     } catch (error) {
        console.error(
         "Error evaluating crafting outcome, attempting to fix JSON:",
         error,
       );
       // Fallback for when the model doesn't return perfect JSON
-      const result = await prompt.generate({input});
-      const text = result.text();
+      const result = await prompt(input);
+      const text = result.text; // Use .text in v1.x
       try {
         const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/);
         if (jsonMatch && jsonMatch[1]) {
