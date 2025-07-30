@@ -65,6 +65,7 @@ export interface Charm {
   description: string;
   minCraft: number;
   minEssence: number;
+  cost?: string;
   effect: CharmEffect;
 }
 

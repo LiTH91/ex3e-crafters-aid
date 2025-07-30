@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ScrollText, Search } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 interface CharmSelectionProps {
   knownCharms: string[];
@@ -50,7 +51,10 @@ export default function CharmSelection({
       )
       .sort((a, b) => {
         if (sortBy === "essence") {
-          return a.minEssence - b.minEssence;
+          if (a.minEssence !== b.minEssence) {
+            return a.minEssence - b.minEssence;
+          }
+          return a.minCraft - b.minCraft;
         }
         return a.name.localeCompare(b.name);
       });
@@ -109,9 +113,10 @@ export default function CharmSelection({
                 <div className="grid gap-1.5 leading-none">
                   <Label
                     htmlFor={charm.id}
-                    className="font-bold text-base cursor-pointer font-body"
+                    className="font-bold text-base cursor-pointer font-body flex items-center gap-2"
                   >
                     {charm.name}
+                    {charm.cost && <Badge variant="secondary">{charm.cost}</Badge>}
                   </Label>
                   <p className="text-sm text-muted-foreground font-body">
                     {charm.description}
