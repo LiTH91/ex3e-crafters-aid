@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -195,64 +196,54 @@ export default function Home() {
       let continueExploding = true;
       while (continueExploding) {
           let explosionsThisRound = 0;
-          let explodingIndices: number[] = [];
-
-          diceHistories.forEach((history, index) => {
+          
+          diceHistories.forEach((history) => {
               const lastRoll = history[history.length - 1];
               let explodes = false;
+
+              // Check if the last roll in the history can explode
               if (hasExplodingTens && lastRoll === 10) explodes = true;
               else if (doubleSuccessLevel >= 1 && lastRoll === 9) explodes = true;
               else if (doubleSuccessLevel >= 2 && lastRoll === 8) explodes = true;
               else if (doubleSuccessLevel >= 3 && lastRoll === 7) explodes = true;
               
               if (explodes) {
+                  const newRoll = rollDice(1)[0];
+                  history.push(newRoll);
                   explosionsThisRound++;
-                  explodingIndices.push(index);
               }
           });
           
-          if (explosionsThisRound > 0) {
-              const newRolls = rollDice(explosionsThisRound);
-              newRolls.forEach((roll, i) => {
-                  const historyIndex = explodingIndices[i];
-                  diceHistories[historyIndex].push(roll);
-              });
-          } else {
+          if (explosionsThisRound === 0) {
               continueExploding = false;
           }
       }
 
       // --- Reroll Failures phase ---
       if (willRerollFailures) {
-          const failuresToReroll: number[] = [];
-          diceHistories.forEach((history, index) => {
+          diceHistories.forEach((history) => {
              const lastRoll = history[history.length - 1];
              if(lastRoll < 7) {
-                 failuresToReroll.push(index);
+                 const newRoll = rollDice(1)[0];
+                 history.push(newRoll);
              }
           });
-
-          if(failuresToReroll.length > 0) {
-              const rerolledDice = rollDice(failuresToReroll.length);
-              rerolledDice.forEach((newRoll, i) => {
-                  const historyIndex = failuresToReroll[i];
-                  diceHistories[historyIndex].push(newRoll);
-              })
-          }
       }
       
-      const calculateSuccesses = (rolls: number[]) =>
-        rolls.reduce((acc, roll) => {
-          if (roll >= 10) return acc + 2;
-          if (doubleSuccessLevel === 1 && roll === 9) return acc + 2;
-          if (doubleSuccessLevel === 2 && roll >= 8) return acc + 2;
-          if (doubleSuccessLevel === 3 && roll >= 7) return acc + 2;
-          if (roll >= 7) return acc + 1;
-          return acc;
-        }, 0);
+      const calculateSuccesses = (roll: number) => {
+          if (roll >= 10) return 2;
+          if (doubleSuccessLevel === 1 && roll === 9) return 2;
+          if (doubleSuccessLevel === 2 && roll >= 8) return 2;
+          if (doubleSuccessLevel === 3 && roll >= 7) return 2;
+          if (roll >= 7) return 1;
+          return 0;
+      }
       
-      const finalRollsForSuccessCount = diceHistories.map(h => h[h.length - 1]);
-      const baseSuccesses = calculateSuccesses(finalRollsForSuccessCount);
+      const baseSuccesses = diceHistories.reduce((total, history) => {
+          const finalRoll = history[history.length - 1];
+          return total + calculateSuccesses(finalRoll);
+      }, 0);
+
       const totalSuccesses = baseSuccesses + automaticSuccesses;
       const finalTargetNumber = Math.max(1, targetNumber + tnModifier);
 
@@ -404,3 +395,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
