@@ -191,26 +191,13 @@ export default function Home() {
       const rollDice = (pool: number) => Array.from({ length: pool }, () => Math.floor(Math.random() * 10) + 1);
 
       let initialRolls = rollDice(dicePool);
-      let finalRolls = [...initialRolls];
-      let rerolledIndices: number[] = [];
+      let workingRolls = [...initialRolls];
       let bonusRolls: number[] = [];
+      let rerolledIndices: number[] = [];
 
-      if (willRerollFailures) {
-          const failuresToReroll = initialRolls.map((r, i) => ({ roll: r, index: i })).filter(item => item.roll < 7);
-          const rerolledDice = rollDice(failuresToReroll.length);
-          rerolledIndices = failuresToReroll.map(item => item.index);
-          
-          let rerollCounter = 0;
-          finalRolls = initialRolls.map((roll, index) => {
-              if (rerolledIndices.includes(index)) {
-                  return rerolledDice[rerollCounter++];
-              }
-              return roll;
-          });
-      }
-
+      // Handle rerolling 10s first to generate bonus dice
       if (willRerollTens) {
-          let tensToReroll = (willRerollFailures ? finalRolls : initialRolls).filter(r => r === 10).length;
+          let tensToReroll = workingRolls.filter(r => r === 10).length;
           while(tensToReroll > 0) {
               const newRolls = rollDice(tensToReroll);
               bonusRolls.push(...newRolls);
@@ -218,7 +205,32 @@ export default function Home() {
           }
       }
       
-      const allFinalRolls = [...finalRolls, ...bonusRolls];
+      // Combine initial and bonus rolls for failure rerolls
+      let allRollsForFailureCheck = [...workingRolls, ...bonusRolls];
+
+      if (willRerollFailures) {
+          const failuresToReroll = allRollsForFailureCheck.map((r, i) => ({ roll: r, index: i })).filter(item => item.roll < 7);
+          const rerolledDice = rollDice(failuresToReroll.length);
+          const failureIndices = failuresToReroll.map(item => item.index);
+          
+          let rerollCounter = 0;
+          const rerolledAll = allRollsForFailureCheck.map((roll, index) => {
+              if (failureIndices.includes(index)) {
+                  // Only mark original dice as rerolled for UI
+                  if (index < initialRolls.length) {
+                      rerolledIndices.push(index);
+                  }
+                  return rerolledDice[rerollCounter++];
+              }
+              return roll;
+          });
+
+          // Separate the rolls back out
+          workingRolls = rerolledAll.slice(0, initialRolls.length);
+          bonusRolls = rerolledAll.slice(initialRolls.length);
+      }
+      
+      const allFinalRolls = [...workingRolls, ...bonusRolls];
 
       const calculateSuccesses = (rolls: number[]) =>
         rolls.reduce((acc, roll) => {
@@ -236,7 +248,7 @@ export default function Home() {
 
       setDiceRoll({ 
         initialRolls, 
-        finalRolls,
+        finalRolls: workingRolls,
         bonusRolls, 
         rerolledIndices, 
         totalSuccesses, 
