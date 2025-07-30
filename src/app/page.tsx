@@ -127,12 +127,10 @@ export default function Home() {
 
       allCharms.forEach(charm => {
           if (activeCharms.includes(charm.id)) {
-              // This is a base charm that is active.
-              if (charm.id !== 'supreme-masterwork-focus') { // The base SMF charm has no direct effect, only its subcharms do
+              if (charm.id !== 'supreme-masterwork-focus') { 
                   activeCharmDetails.push(charm);
               }
           }
-          // Also check for active sub-charms
           if (charm.subEffects) {
               charm.subEffects.forEach(subCharm => {
                   if (activeCharms.includes(subCharm.id)) {
@@ -192,9 +190,8 @@ export default function Home() {
 
       let initialRolls = rollDice(dicePool);
       let allRolls = [...initialRolls];
-      let rerolledIndices: { [key: number]: number } = {};
+      let rerolledDice: { [key: number]: number } = {};
 
-      // Handle rerolling 10s (exploding dice)
       if (willRerollTens) {
           let tensToReroll = allRolls.filter(r => r === 10).length;
           while (tensToReroll > 0) {
@@ -204,26 +201,22 @@ export default function Home() {
           }
       }
 
-      // Handle rerolling failures
       if (willRerollFailures) {
           const failures = allRolls
               .map((roll, index) => ({ roll, index }))
               .filter(item => item.roll < 7);
           
           if (failures.length > 0) {
-              const rerolledDice = rollDice(failures.length);
+              const rerolledDiceForFailures = rollDice(failures.length);
               failures.forEach((failure, i) => {
                   const originalIndex = failure.index;
-                  const newRoll = rerolledDice[i];
-                  rerolledIndices[originalIndex] = newRoll; // Store the new roll for the original index
-                  allRolls[originalIndex] = newRoll; // Update the main roll list
+                  const newRoll = rerolledDiceForFailures[i];
+                  rerolledDice[originalIndex] = newRoll; 
+                  allRolls[originalIndex] = newRoll; 
               });
           }
       }
       
-      const finalRolls = allRolls.slice(0, initialRolls.length);
-      const bonusRolls = allRolls.slice(initialRolls.length);
-
       const calculateSuccesses = (rolls: number[]) =>
         rolls.reduce((acc, roll) => {
           if (roll >= 10) return acc + 2;
@@ -240,9 +233,8 @@ export default function Home() {
 
       setDiceRoll({ 
         initialRolls, 
-        finalRolls,
-        bonusRolls, 
-        rerolledDice: rerolledIndices, 
+        finalRolls: allRolls,
+        rerolledDice, 
         totalSuccesses, 
         automaticSuccesses, 
         targetNumber: finalTargetNumber,

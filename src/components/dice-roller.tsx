@@ -55,16 +55,16 @@ const getRollColor = (roll: number) => {
   return "bg-red-500 text-white";
 };
 
-const DiceDisplay = ({ roll, rerolledValue }: { roll: number, rerolledValue?: number }) => (
+const DiceDisplay = ({ initialRoll, rerolledValue }: { initialRoll: number, rerolledValue?: number }) => (
     <div className="flex flex-col items-center gap-1">
         <span
             className={`flex items-center justify-center w-10 h-10 rounded-full text-lg font-bold ${
                 rerolledValue !== undefined
                     ? "bg-muted text-muted-foreground line-through"
-                    : getRollColor(roll)
+                    : getRollColor(initialRoll)
             }`}
         >
-            {roll}
+            {initialRoll}
         </span>
         {rerolledValue !== undefined && (
             <>
@@ -238,32 +238,24 @@ export default function DiceRoller({
             <h3 className="text-lg font-bold text-center font-headline">
               Roll Results
             </h3>
-            {diceRoll.initialRolls.length > 0 && (
+            {diceRoll.finalRolls.length > 0 && (
                 <div>
-                  <p className="text-center text-sm font-body mb-2">Initial Rolls:</p>
                   <div className="flex justify-center items-start gap-2 flex-wrap">
-                      {diceRoll.initialRolls.map((roll, index) => (
-                          <DiceDisplay key={`initial-${index}`} roll={roll} rerolledValue={diceRoll.rerolledDice[index]} />
-                      ))}
+                      {diceRoll.finalRolls.map((roll, index) => {
+                          const initialRoll = diceRoll.initialRolls[index];
+                          const wasRerolled = diceRoll.rerolledDice[index] !== undefined;
+                          // If it was rerolled, the value in `finalRolls` is the new value.
+                          // If it was an added "bonus" die, there's no initialRoll.
+                          return (
+                            <DiceDisplay 
+                              key={`final-${index}`} 
+                              initialRoll={initialRoll !== undefined ? initialRoll : roll} 
+                              rerolledValue={wasRerolled ? roll : undefined}
+                            />
+                          );
+                      })}
                   </div>
                 </div>
-            )}
-
-            {diceRoll.bonusRolls.length > 0 && (
-              <>
-                <p className="text-center text-sm font-body mb-2">
-                  Bonus Dice:
-                </p>
-                <div className="flex justify-center items-start gap-2 flex-wrap">
-                  {diceRoll.bonusRolls.map((roll, index) => {
-                     // We need to find the original index in the combined array to check for a reroll
-                     const originalBonusIndex = diceRoll.initialRolls.length + index;
-                     return (
-                       <DiceDisplay key={`bonus-${index}`} roll={roll} rerolledValue={diceRoll.rerolledDice[originalBonusIndex]} />
-                     );
-                  })}
-                </div>
-              </>
             )}
             <div className="text-center font-bold text-2xl font-headline flex items-center justify-center gap-2">
               {diceRoll.totalSuccesses >= diceRoll.targetNumber ? (
