@@ -107,7 +107,6 @@ export default function Home() {
     setDiceRoll(null);
     setOutcome(null);
 
-    // Short delay to allow UI to update to loading state
     await new Promise(resolve => setTimeout(resolve, 50));
 
     try {
@@ -116,7 +115,7 @@ export default function Home() {
       
       let automaticSuccesses = 0;
       let willRerollFailures = false;
-      let doubleSuccessLevel = 0; // 0: none, 1: nines, 2: eights, 3: sevens
+      let doubleSuccessLevel = 0;
       let moteCost = 0;
       let willpowerCost = 0;
       let sxpCost = 0;
@@ -190,7 +189,7 @@ export default function Home() {
       const rollDie = () => Math.floor(Math.random() * 10) + 1;
       
       const initialRolls = Array.from({ length: dicePool }, rollDie);
-      const diceHistories: number[][] = initialRolls.map(r => [r]);
+      let diceHistories: number[][] = initialRolls.map(r => [r]);
       
       setDiceRoll({
         diceHistories: [...diceHistories],
@@ -201,37 +200,32 @@ export default function Home() {
       });
       await new Promise(resolve => setTimeout(resolve, 50));
 
-      // --- Explosions phase (Sequential, per-die, correct implementation) ---
-      for (let i = 0; i < diceHistories.length; i++) {
-        // Process one die's explosion chain completely before moving to the next.
-        while (true) {
-            const history = diceHistories[i];
-            const lastRoll = history[history.length - 1];
-            let shouldExplode = false;
-            
-            // Check for Flawless Handiwork Method explosion (regular 10s)
-            if (hasExplodingTens && lastRoll === 10) {
-                shouldExplode = true;
-            }
-            
-            // Check for Supreme Masterwork Focus explosions
-            const smfThreshold = 10 - doubleSuccessLevel; // 1->9, 2->8, 3->7
-            if (doubleSuccessLevel > 0 && lastRoll >= smfThreshold && lastRoll < 10) {
-              shouldExplode = true;
-            }
+      const shouldDieExplode = (roll: number) => {
+        if (hasExplodingTens && roll === 10) {
+            return true;
+        }
+        const smfThreshold = 10 - doubleSuccessLevel;
+        if (doubleSuccessLevel > 0 && roll >= smfThreshold && roll < 10) {
+            return true;
+        }
+        return false;
+      };
 
-            if (shouldExplode) {
+      for (let i = 0; i < diceHistories.length; i++) {
+        let currentHistory = diceHistories[i];
+        while (true) {
+            const lastRoll = currentHistory[currentHistory.length - 1];
+            if (shouldDieExplode(lastRoll)) {
                 const newRoll = rollDie();
-                history.push(newRoll);
+                currentHistory.push(newRoll);
                 setDiceRoll(prev => ({ ...prev!, diceHistories: [...diceHistories] }));
                 await new Promise(resolve => setTimeout(resolve, 50));
             } else {
-                break; // Exit the while loop for this die's history
+                break; 
             }
         }
       }
 
-      // --- Reroll Failures phase ---
       if (willRerollFailures) {
           for (const history of diceHistories) {
              const lastRoll = history[history.length - 1];
@@ -409,5 +403,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
