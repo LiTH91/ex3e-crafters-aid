@@ -6,45 +6,52 @@
  * - EvaluateCraftingOutcomeInput - The input type for the evaluateCraftingOutcome function.
  * - EvaluateCraftingOutcomeOutput - The return type for the evaluateCraftingOutcome function.
  */
-
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { ai } from "@/ai/genkit";
+import { z } from "zod";
 import type { ProjectType } from "@/lib/types";
 
-export interface EvaluateCraftingOutcomeInput {
-  project: {
-    type: ProjectType;
-    artifactRating: number;
-    objectivesMet: number;
-  };
-  successes: number;
-  targetNumber: number;
-  charmEffects?: string;
-  isExceptional: boolean;
-  intervalsRemaining?: number;
-  legendaryBonusRoll?: number[];
-}
+export const EvaluateCraftingOutcomeInputSchema = z.object({
+  project: z.object({
+    type: z.custom<ProjectType>(),
+    artifactRating: z.number(),
+    objectivesMet: z.number(),
+  }),
+  successes: z.number(),
+  targetNumber: z.number(),
+  charmEffects: z.string().optional(),
+  isExceptional: z.boolean(),
+  intervalsRemaining: z.number().optional(),
+  legendaryBonusRoll: z.array(z.number()).optional(),
+});
+export type EvaluateCraftingOutcomeInput = z.infer<
+  typeof EvaluateCraftingOutcomeInputSchema
+>;
 
-export interface EvaluateCraftingOutcomeOutput {
-  isSuccess: boolean;
-  outcomeTitle: string;
-  outcomeDescription: string;
-  experienceGained: {
-    sxp: number;
-    gxp: number;
-    wxp: number;
-  };
-}
+export const EvaluateCraftingOutcomeOutputSchema = z.object({
+  isSuccess: z.boolean(),
+  outcomeTitle: z.string(),
+  outcomeDescription: z.string(),
+  experienceGained: z.object({
+    sxp: z.number(),
+    gxp: z.number(),
+    wxp: z.number(),
+  }),
+});
+export type EvaluateCraftingOutcomeOutput = z.infer<
+  typeof EvaluateCraftingOutcomeOutputSchema
+>;
 
 export async function evaluateCraftingOutcome(
   input: EvaluateCraftingOutcomeInput,
 ): Promise<EvaluateCraftingOutcomeOutput> {
-  const genAI = new GoogleGenerativeAI(
-    process.env.NEXT_PUBLIC_GEMINI_API_KEY as string,
-  );
-  const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+  return evaluateCraftingOutcomeFlow(input);
+}
 
-  const prompt = `
-You are an expert Storyteller for the Exalted 3rd Edition roleplaying game. Your task is to evaluate the outcome of a crafting roll based on the provided project details and the number of successes rolled. Generate a descriptive and flavorful title and description for the outcome, and calculate the experience points gained based on the rules provided.
+const prompt = ai.definePrompt({
+  name: "evaluateCraftingOutcomePrompt",
+  input: { schema: EvaluateCraftingOutcomeInputSchema },
+  output: { schema: EvaluateCraftingOutcomeOutputSchema },
+  prompt: `You are an expert Storyteller for the Exalted 3rd Edition roleplaying game. Your task is to evaluate the outcome of a crafting roll based on the provided project details and the number of successes rolled. Generate a descriptive and flavorful title and description for the outcome, and calculate the experience points gained based on the rules provided.
 
 **CRAFTING RULES:**
 
@@ -61,74 +68,88 @@ You are an expert Storyteller for the Exalted 3rd Edition roleplaying game. Your
 
 *   **PROJECT MECHANICS & REWARDS:**
 
-    *   **BASIC PROJECT:**
+    *   **BASIC PROJECT (Creation):**
         *   **Roll:** vs. Storyteller difficulty.
         *   **Exceptional Success:** Occurs when successes >= difficulty + 3.
         *   **Creation Reward (per objective met):** 2 sxp (3 sxp if exceptional).
+    *   **BASIC PROJECT (Repair):**
         *   **Repair Reward (per objective met):** 1 sxp.
 
-    *   **MAJOR PROJECT:**
+    *   **MAJOR PROJECT (Creation):**
         *   **Roll:** vs. Storyteller difficulty.
         *   **Exceptional Success:** Occurs when successes >= difficulty + 3.
         *   **Creation Reward (per objective met):** 2 gxp and 1 sxp (3 gxp and 1 sxp if exceptional).
+    *   **MAJOR PROJECT (Repair):**
         *   **Repair Reward (per objective met):** 1 gxp.
 
-    *   **SUPERIOR PROJECT (Artifacts):**
+    *   **SUPERIOR PROJECT (Artifacts - Creation):**
         *   **Roll:** Part of an extended roll (Difficulty 5, Terminus 6).
         *   **Creation Reward (if >=1 objective met):** 3 wxp for Artifact 2, 5 wxp for Artifact 3, 7 wxp for Artifact 4, 9 wxp for Artifact 5.
         *   **Creation Bonus:** (Artifact Rating * 2) gxp per unused interval remaining.
+    *   **SUPERIOR PROJECT (Artifacts - Repair):**
         *   **Repair Reward:** (Artifact Rating - 1) wxp. No gxp bonus.
 
-    *   **LEGENDARY PROJECT (N/A Artifacts):**
+    *   **LEGENDARY PROJECT (N/A Artifacts - Creation):**
         *   **Roll:** Part of an extended roll (Difficulty 5, Terminus 6).
         *   **Creation Reward (if >=1 objective met):** 10 wxp.
         *   **Creation Bonus:** Roll a free Craft Excellency. Gain 1 gxp per success, and 1 sxp per non-success die.
+    *   **LEGENDARY PROJECT (N/A Artifacts - Repair):**
         *   **Repair Reward:** 0 xp.
 
 **INPUT FOR EVALUATION:**
-*   **Project Type:** ${input.project.type}
-*   **Artifact Rating:** ${input.project.artifactRating > 0 ? input.project.artifactRating : 'N/A'}
-*   **Objectives Met:** ${input.project.objectivesMet}
-*   **Total Successes Rolled:** ${input.successes}
-*   **Target Number / Difficulty:** ${input.targetNumber}
-*   **Is Exceptional Success?** ${input.isExceptional}
-*   **Intervals Remaining (Superior/Legendary only):** ${input.intervalsRemaining ?? 'N/A'}
-*   **Legendary Bonus Roll Results:** ${input.legendaryBonusRoll?.join(', ') ?? 'N/A'}
-*   **Active Charm Effects:** ${input.charmEffects || "None"}
+*   **Project Type:** {{{project.type}}}
+*   **Artifact Rating:** {{#if project.artifactRating}}{{project.artifactRating}}{{else}}N/A{{/if}}
+*   **Objectives Met:** {{{project.objectivesMet}}}
+*   **Total Successes Rolled:** {{{successes}}}
+*   **Target Number / Difficulty:** {{{targetNumber}}}
+*   **Is Exceptional Success?** {{{isExceptional}}}
+*   **Intervals Remaining (Superior/Legendary only):** {{#if intervalsRemaining}}{{intervalsRemaining}}{{else}}N/A{{/if}}
+*   **Legendary Bonus Roll Results:** {{#if legendaryBonusRoll}}{{#each legendaryBonusRoll as |roll|}}{{roll}}, {{/each}}{{else}}N/A{{/if}}
+*   **Active Charm Effects:** {{#if charmEffects}}{{charmEffects}}{{else}}None{{/if}}
 
 **YOUR TASK:**
 1.  **Analyze Success:** The roll is successful if successes >= targetNumber. Describe the quality of the work based on the margin of success.
 2.  **Calculate XP:** Strictly follow the rules above to calculate the sxp, gxp, and wxp gained. The project type will specify if it's a 'creation' or 'repair' task. Apply the correct reward structure. If a project type doesn't award a certain XP type, the value must be 0.
 3.  **Write Title & Description:** Create a short, flavorful title and a descriptive paragraph for the outcome, consistent with the Exalted setting. Weave in the number of successes and any charm effects into the narrative.
-4.  **Format Output:** Return ONLY a single valid JSON object. Do not include markdown formatting like \`\`\`json.
+4.  **Format Output:** Your response MUST be a single, valid JSON object that conforms to the specified output schema. Do not include any other text, explanations, or markdown formatting like \`\`\`json.
+`,
+});
 
-**JSON Schema:**
-{
-  "isSuccess": boolean,
-  "outcomeTitle": "string",
-  "outcomeDescription": "string",
-  "experienceGained": {
-    "sxp": number,
-    "gxp": number,
-    "wxp": number
-  }
-}
-`
-  const result = await model.generateContent(prompt);
-  const response = await result.response;
-  const text = response.text();
-
-  try {
-    const parsedOutput: EvaluateCraftingOutcomeOutput = JSON.parse(text);
-    return parsedOutput;
-  } catch (error) {
-    console.error("Error parsing AI response:", error, "Raw text:", text);
-    // Fallback in case of parsing error
-    return {
-      isSuccess: false,
-      outcomeTitle: "Error in AI Response",
-      outcomeDescription: "The AI's response was not valid JSON. Please check the console for more details.",
-      experienceGained: { sxp: 0, gxp: 0, wxp: 0 },
-    };
-  }
-}
+const evaluateCraftingOutcomeFlow = ai.defineFlow(
+  {
+    name: "evaluateCraftingOutcomeFlow",
+    inputSchema: EvaluateCraftingOutcomeInputSchema,
+    outputSchema: EvaluateCraftingOutcomeOutputSchema,
+  },
+  async (input) => {
+    try {
+      const {output} = await prompt.generate({input});
+      return output!;
+    } catch (error) {
+       console.error(
+        "Error evaluating crafting outcome, attempting to fix JSON:",
+        error,
+      );
+      // Fallback for when the model doesn't return perfect JSON
+      const result = await prompt.generate({input});
+      const text = result.text();
+      try {
+        const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/);
+        if (jsonMatch && jsonMatch[1]) {
+          return JSON.parse(jsonMatch[1]);
+        }
+        // If no markdown, try to parse the whole thing
+        return JSON.parse(text);
+      } catch (parseError) {
+         console.error("Failed to parse even after cleanup:", parseError, "Raw text was:", text);
+         // Return a structured error if all else fails
+         return {
+           isSuccess: false,
+           outcomeTitle: "Error in AI Response",
+           outcomeDescription: "The AI's response was not valid JSON. Please check the console for more details.",
+           experienceGained: { sxp: 0, gxp: 0, wxp: 0 },
+         };
+      }
+    }
+  },
+);
