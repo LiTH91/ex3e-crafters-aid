@@ -9,7 +9,15 @@ import { useToast } from "@/hooks/use-toast";
 import CharacterSheet from "@/components/character-sheet";
 import CharmSelection from "@/components/charm-selection";
 import DiceRoller from "@/components/dice-roller";
+import CraftingJournal from "@/components/crafting-journal";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Hammer } from "lucide-react";
+
+interface CraftingExperience {
+  sxp: number;
+  gxp: number;
+  wxp: number;
+}
 
 export default function Home() {
   const [character, setCharacter] = useState<Character>({
@@ -34,6 +42,14 @@ export default function Home() {
   const [aiOutcome, setAiOutcome] = useState<AiOutcome | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  const [craftingXp, setCraftingXp] = useState<CraftingExperience>({
+    sxp: 0,
+    gxp: 0,
+    wxp: 0,
+  });
+  const [activeProjects, setActiveProjects] = useState<any[]>([]);
+
 
   const handleRoll = async (projectDetails: {
     type: ProjectType;
@@ -113,6 +129,14 @@ export default function Home() {
         isExceptional,
       });
 
+      if (aiResult.isSuccess) {
+        setCraftingXp((prev) => ({
+          sxp: prev.sxp + aiResult.experienceGained.sxp,
+          gxp: prev.gxp + aiResult.experienceGained.gxp,
+          wxp: prev.wxp + aiResult.experienceGained.wxp,
+        }));
+      }
+
       setAiOutcome(aiResult);
     } catch (error) {
       console.error("Error evaluating crafting outcome:", error);
@@ -153,15 +177,29 @@ export default function Home() {
           </div>
 
           <div className="lg:col-span-2">
-            <DiceRoller
-              targetNumber={targetNumber}
-              setTargetNumber={setTargetNumber}
-              onRoll={handleRoll}
-              isLoading={isLoading}
-              diceRoll={diceRoll}
-              aiOutcome={aiOutcome}
-              character={character}
-            />
+            <Tabs defaultValue="roller">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="roller">Dice Roller</TabsTrigger>
+                <TabsTrigger value="journal">Crafting Journal</TabsTrigger>
+              </TabsList>
+              <TabsContent value="roller">
+                <DiceRoller
+                  targetNumber={targetNumber}
+                  setTargetNumber={setTargetNumber}
+                  onRoll={handleRoll}
+                  isLoading={isLoading}
+                  diceRoll={diceRoll}
+                  aiOutcome={aiOutcome}
+                  character={character}
+                />
+              </TabsContent>
+              <TabsContent value="journal">
+                <CraftingJournal
+                  experience={craftingXp}
+                  projects={activeProjects}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
         </div>
       </main>
