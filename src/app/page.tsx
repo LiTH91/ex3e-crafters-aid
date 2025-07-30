@@ -188,7 +188,7 @@ export default function Home() {
 
       const rollDice = (pool: number) => Array.from({ length: pool }, () => Math.floor(Math.random() * 10) + 1);
 
-      // Main dice rolling logic
+      // --- Main dice rolling logic ---
       const initialRolls = rollDice(dicePool);
       const diceHistories: number[][] = initialRolls.map(r => [r]);
 
@@ -198,14 +198,23 @@ export default function Home() {
           let explosionsThisRound = 0;
           
           diceHistories.forEach((history) => {
+              // Only check the last roll in the history
               const lastRoll = history[history.length - 1];
+              
               let explodes = false;
-
-              // Check if the last roll in the history can explode
               if (hasExplodingTens && lastRoll === 10) explodes = true;
               else if (doubleSuccessLevel >= 1 && lastRoll === 9) explodes = true;
               else if (doubleSuccessLevel >= 2 && lastRoll === 8) explodes = true;
               else if (doubleSuccessLevel >= 3 && lastRoll === 7) explodes = true;
+
+              // Check if it already exploded in this chain
+              // We infer this by seeing if a new roll was already added.
+              // A more robust way might be to add a flag. For now, check history length.
+              // This logic is tricky. A die can only explode once per "round" of explosions.
+              // Let's check if the history has already grown in this pass.
+              // A better way: let's use a flag on the history object, or just check the last die.
+              // The logic here is tricky. Let's simplify. A die roll 'explodes'. A new die is added to its history.
+              // In the next loop, we check the NEW last die.
               
               if (explodes) {
                   const newRoll = rollDice(1)[0];
@@ -395,5 +404,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
