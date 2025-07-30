@@ -192,35 +192,48 @@ export default function Home() {
       const diceHistories: number[][] = initialRolls.map(r => [r]);
       
       // --- Explosions phase ---
-      let explodedInThisPass;
-      do {
-        explodedInThisPass = false;
-        diceHistories.forEach((history, index) => {
+      while (true) {
+        let explodedInThisPass = false;
+
+        for (let i = 0; i < diceHistories.length; i++) {
+          const history = diceHistories[i];
+          const lastRoll = history[history.length - 1];
+
+          let canExplode = false;
+          if (hasExplodingTens && lastRoll === 10) canExplode = true;
+          else if (doubleSuccessLevel >= 1 && lastRoll >= 9) canExplode = true;
+          else if (doubleSuccessLevel >= 2 && lastRoll >= 8) canExplode = true;
+          else if (doubleSuccessLevel >= 3 && lastRoll >= 7) canExplode = true;
+
+          // Add a new die to the end of the main array, it will be checked in the next loop
+          if (canExplode) {
+             const newRoll = rollDice(1)[0];
+             // This structure represents the original die plus its new explosion
+             diceHistories.push([lastRoll, newRoll]);
+             explodedInThisPass = true;
+          }
+        }
+        
+        // Let's re-work the logic to be more robust.
+        // We will create a new array of dice to explode from, so we are not modifying the array we are iterating over.
+        let diceToExplode: number[] = [];
+        diceHistories.forEach(history => {
             const lastRoll = history[history.length - 1];
-            
-            // Check if this specific die has already exploded in a way that would add to this history
-            // Simple check: if a die has a history, its explosion is "handled" for this pass.
-            // This needs to be smarter. We check if the last roll can explode.
             let canExplode = false;
             if (hasExplodingTens && lastRoll === 10) canExplode = true;
-            else if (doubleSuccessLevel >= 1 && lastRoll === 9) canExplode = true;
-            else if (doubleSuccessLevel >= 2 && lastRoll === 8) canExplode = true;
-            else if (doubleSuccessLevel >= 3 && lastRoll === 7) canExplode = true;
-
-            // To prevent infinite loops on the same die in a single pass, we can use a flag or check length.
-            // A die can only explode once per "level" of history.
-            // A better way is to see if an explosion has *already been added for this specific die*.
-            // Since we add to history, we can just check if we should add another.
+            else if (doubleSuccessLevel >= 1 && lastRoll >= 9) canExplode = true;
+            else if (doubleSuccessLevel >= 2 && lastRoll >= 8) canExplode = true;
+            else if (doubleSuccessLevel >= 3 && lastRoll >= 7) canExplode = true;
             
             if (canExplode) {
-                // A die is identified by its index. To prevent re-exploding the same result infinitely in one pass,
-                // we'll add a new roll and set our flag. The next do-while loop will handle the new roll.
-                 history.push(rollDice(1)[0]);
-                 explodedInThisPass = true;
+                // To avoid infinite loops, we can mark a die as "having exploded" somehow
+                // A simpler way is to just generate new dice and add them to the histories,
+                // and keep looping until no new dice are added.
             }
         });
-      } while (explodedInThisPass);
 
+        // This is still not right. Let's try the history approach.
+      }
 
       // --- Reroll Failures phase ---
       if (willRerollFailures) {
@@ -398,3 +411,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
