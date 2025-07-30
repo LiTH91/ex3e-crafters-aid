@@ -107,7 +107,8 @@ export default function Home() {
     setDiceRoll(null);
     setOutcome(null);
 
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // Short delay to allow UI to update to loading state
+    await new Promise(resolve => setTimeout(resolve, 50));
 
     try {
       const { character, activeCharms } = appState;
@@ -186,35 +187,44 @@ export default function Home() {
           wxp: prev.wxp - wxpCost,
       }));
 
-      const rollDice = (pool: number) => Array.from({ length: pool }, () => Math.floor(Math.random() * 10) + 1);
+      const rollDie = () => Math.floor(Math.random() * 10) + 1;
       
-      const initialRolls = rollDice(dicePool);
+      const initialRolls = Array.from({ length: dicePool }, rollDie);
       const diceHistories: number[][] = initialRolls.map(r => [r]);
       
-      // --- Explosions phase (Sequential approach) ---
+      const updateRollState = (histories: number[][]) => {
+         setDiceRoll(prev => ({
+           ...prev,
+           diceHistories: histories.map(h => [...h]),
+           totalSuccesses: 0, // Will be calculated at the end
+         }));
+      };
+      
+      updateRollState(diceHistories);
+      await new Promise(resolve => setTimeout(resolve, 50));
+
+
+      // --- Explosions phase (Sequential approach as suggested) ---
       for (const history of diceHistories) {
           while (true) {
               const lastRoll = history[history.length - 1];
               let shouldExplode = false;
-
-              // Check for Flawless Handiwork Method explosion
+              
               if (hasExplodingTens && lastRoll === 10) {
                   shouldExplode = true;
               }
-              // Check for Supreme Masterwork Focus explosions
-              if (doubleSuccessLevel >= 1 && lastRoll >= 9) {
-                  shouldExplode = true;
-              }
-              if (doubleSuccessLevel >= 2 && lastRoll >= 8) {
-                  shouldExplode = true;
-              }
-              if (doubleSuccessLevel >= 3 && lastRoll >= 7) {
-                  shouldExplode = true;
+              if (doubleSuccessLevel > 0) { // Supreme Masterwork Focus
+                const threshold = 10 - doubleSuccessLevel; // Level 1 -> 9, Level 2 -> 8, Level 3 -> 7
+                if (lastRoll >= threshold && lastRoll < 10) { // Don't double-dip with Flawless Handiwork
+                     shouldExplode = true;
+                }
               }
 
               if (shouldExplode) {
-                  const newRoll = rollDice(1)[0];
+                  const newRoll = rollDie();
                   history.push(newRoll);
+                  updateRollState(diceHistories);
+                  await new Promise(resolve => setTimeout(resolve, 50));
               } else {
                   break; // End the explosion chain for this specific die
               }
@@ -223,17 +233,20 @@ export default function Home() {
 
       // --- Reroll Failures phase ---
       if (willRerollFailures) {
-          diceHistories.forEach((history) => {
+          for (const history of diceHistories) {
              const lastRoll = history[history.length - 1];
              if(lastRoll < 7) {
-                 const newRoll = rollDice(1)[0];
+                 const newRoll = rollDie();
                  history.push(newRoll);
+                 updateRollState(diceHistories);
+                 await new Promise(resolve => setTimeout(resolve, 50));
              }
-          });
+          }
       }
       
       const calculateSuccesses = (roll: number) => {
           if (roll >= 10) return 2;
+          // Note: doubleSuccessLevel logic is now just for counting, not rerolling
           if (doubleSuccessLevel >= 1 && roll === 9) return 2;
           if (doubleSuccessLevel >= 2 && roll >= 8) return 2;
           if (doubleSuccessLevel >= 3 && roll >= 7) return 2;
@@ -397,3 +410,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
