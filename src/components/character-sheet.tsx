@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UserCircle, Sparkles, BrainCircuit, Droplets, HeartPulse, Shield } from "lucide-react";
+import { UserCircle, Sparkles, BrainCircuit, Droplets, HeartPulse, Hammer } from "lucide-react";
 
 interface CharacterSheetProps {
   character: Character;
@@ -104,7 +104,8 @@ export default function CharacterSheet({
                 </div>
             </div>
             <div className="grid w-full items-center gap-2.5">
-                <Label htmlFor="craft" className="font-bold text-lg font-body">
+                <Label htmlFor="craft" className="font-bold text-lg font-body flex items-center gap-2">
+                    <Hammer className="w-5 h-5 text-orange-500" />
                     Craft Skill
                 </Label>
                 <Select
