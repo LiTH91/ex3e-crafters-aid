@@ -89,9 +89,7 @@ export interface Charm {
 }
 
 export interface DiceRoll {
-  initialRolls: number[];
-  finalRolls: number[];
-  rerolledDice: { [key: number]: number }; // Maps original index to new roll
+  diceHistories: number[][];
   totalSuccesses: number;
   automaticSuccesses: number;
   targetNumber: number;

@@ -55,27 +55,24 @@ const getRollColor = (roll: number) => {
   return "bg-red-500 text-white";
 };
 
-const DiceDisplay = ({ initialRoll, rerolledValue }: { initialRoll: number, rerolledValue?: number }) => (
+const DiceDisplay = ({ history }: { history: number[] }) => (
     <div className="flex flex-col items-center gap-1">
-        <span
-            className={`flex items-center justify-center w-10 h-10 rounded-full text-lg font-bold ${
-                rerolledValue !== undefined
-                    ? "bg-muted text-muted-foreground line-through"
-                    : getRollColor(initialRoll)
-            }`}
-        >
-            {initialRoll}
-        </span>
-        {rerolledValue !== undefined && (
-            <>
-                <ArrowDown className="w-4 h-4 text-muted-foreground" />
+        {history.map((roll, index) => (
+            <div key={index} className="flex flex-col items-center">
                 <span
-                    className={`flex items-center justify-center w-10 h-10 rounded-full text-lg font-bold ${getRollColor(rerolledValue)}`}
+                    className={`flex items-center justify-center w-10 h-10 rounded-full text-lg font-bold ${
+                        index < history.length - 1
+                            ? "bg-muted text-muted-foreground line-through"
+                            : getRollColor(roll)
+                    }`}
                 >
-                    {rerolledValue}
+                    {roll}
                 </span>
-            </>
-        )}
+                {index < history.length - 1 && (
+                     <ArrowDown className="w-4 h-4 text-muted-foreground" />
+                )}
+            </div>
+        ))}
     </div>
 );
 
@@ -238,22 +235,15 @@ export default function DiceRoller({
             <h3 className="text-lg font-bold text-center font-headline">
               Roll Results
             </h3>
-            {diceRoll.finalRolls.length > 0 && (
+            {diceRoll.diceHistories.length > 0 && (
                 <div>
                   <div className="flex justify-center items-start gap-2 flex-wrap">
-                      {diceRoll.finalRolls.map((roll, index) => {
-                          const initialRoll = diceRoll.initialRolls[index];
-                          const wasRerolled = diceRoll.rerolledDice[index] !== undefined;
-                          // If it was rerolled, the value in `finalRolls` is the new value.
-                          // If it was an added "bonus" die, there's no initialRoll.
-                          return (
-                            <DiceDisplay 
-                              key={`final-${index}`} 
-                              initialRoll={initialRoll !== undefined ? initialRoll : roll} 
-                              rerolledValue={wasRerolled ? roll : undefined}
-                            />
-                          );
-                      })}
+                      {diceRoll.diceHistories.map((history, index) => (
+                          <DiceDisplay 
+                              key={`history-${index}`} 
+                              history={history}
+                          />
+                      ))}
                   </div>
                 </div>
             )}

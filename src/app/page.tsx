@@ -114,7 +114,6 @@ export default function Home() {
       
       let automaticSuccesses = 0;
       let willRerollFailures = false;
-      let willRerollTens = false;
       let doubleSuccessLevel = 0; // 0: none, 1: nines, 2: eights, 3: sevens
       let moteCost = 0;
       let willpowerCost = 0;
@@ -124,6 +123,7 @@ export default function Home() {
       let tnModifier = 0;
 
       const activeCharmDetails: { id: string; name: string; cost?: string; effect: any }[] = [];
+      const hasExplodingTens = activeCharms.includes("flawless-handiwork-method");
 
       allCharms.forEach(charm => {
           if (activeCharms.includes(charm.id)) {
@@ -146,7 +146,6 @@ export default function Home() {
         else if (charm.id === 'supreme-masterwork-focus-1') doubleSuccessLevel = 1;
         else if (charm.effect.type === "add_successes") automaticSuccesses += charm.effect.value;
         else if (charm.effect.type === "reroll_failures") willRerollFailures = true;
-        else if (charm.effect.type === 'reroll_tens') willRerollTens = true;
         else if (charm.effect.type === "lower_repair_difficulty" && projectDetails.type.includes("repair")) tnModifier -= charm.effect.value;
 
          if (charm.cost) {
@@ -188,32 +187,57 @@ export default function Home() {
 
       const rollDice = (pool: number) => Array.from({ length: pool }, () => Math.floor(Math.random() * 10) + 1);
 
-      let initialRolls = rollDice(dicePool);
-      let allRolls = [...initialRolls];
-      let rerolledDice: { [key: number]: number } = {};
+      // Main dice rolling logic
+      const initialRolls = rollDice(dicePool);
+      const diceHistories: number[][] = initialRolls.map(r => [r]);
 
-      if (willRerollTens) {
-          let tensToReroll = allRolls.filter(r => r === 10).length;
-          while (tensToReroll > 0) {
-              const newRolls = rollDice(tensToReroll);
-              allRolls.push(...newRolls);
-              tensToReroll = newRolls.filter(r => r === 10).length;
+      // --- Explosions phase ---
+      let continueExploding = true;
+      while (continueExploding) {
+          let explosionsThisRound = 0;
+          let explodingIndices: number[] = [];
+
+          diceHistories.forEach((history, index) => {
+              const lastRoll = history[history.length - 1];
+              let explodes = false;
+              if (hasExplodingTens && lastRoll === 10) explodes = true;
+              else if (doubleSuccessLevel >= 1 && lastRoll === 9) explodes = true;
+              else if (doubleSuccessLevel >= 2 && lastRoll === 8) explodes = true;
+              else if (doubleSuccessLevel >= 3 && lastRoll === 7) explodes = true;
+              
+              if (explodes) {
+                  explosionsThisRound++;
+                  explodingIndices.push(index);
+              }
+          });
+          
+          if (explosionsThisRound > 0) {
+              const newRolls = rollDice(explosionsThisRound);
+              newRolls.forEach((roll, i) => {
+                  const historyIndex = explodingIndices[i];
+                  diceHistories[historyIndex].push(roll);
+              });
+          } else {
+              continueExploding = false;
           }
       }
 
+      // --- Reroll Failures phase ---
       if (willRerollFailures) {
-          const failures = allRolls
-              .map((roll, index) => ({ roll, index }))
-              .filter(item => item.roll < 7);
-          
-          if (failures.length > 0) {
-              const rerolledDiceForFailures = rollDice(failures.length);
-              failures.forEach((failure, i) => {
-                  const originalIndex = failure.index;
-                  const newRoll = rerolledDiceForFailures[i];
-                  rerolledDice[originalIndex] = newRoll; 
-                  allRolls[originalIndex] = newRoll; 
-              });
+          const failuresToReroll: number[] = [];
+          diceHistories.forEach((history, index) => {
+             const lastRoll = history[history.length - 1];
+             if(lastRoll < 7) {
+                 failuresToReroll.push(index);
+             }
+          });
+
+          if(failuresToReroll.length > 0) {
+              const rerolledDice = rollDice(failuresToReroll.length);
+              rerolledDice.forEach((newRoll, i) => {
+                  const historyIndex = failuresToReroll[i];
+                  diceHistories[historyIndex].push(newRoll);
+              })
           }
       }
       
@@ -226,15 +250,14 @@ export default function Home() {
           if (roll >= 7) return acc + 1;
           return acc;
         }, 0);
-
-      const baseSuccesses = calculateSuccesses(allRolls);
+      
+      const finalRollsForSuccessCount = diceHistories.map(h => h[h.length - 1]);
+      const baseSuccesses = calculateSuccesses(finalRollsForSuccessCount);
       const totalSuccesses = baseSuccesses + automaticSuccesses;
       const finalTargetNumber = Math.max(1, targetNumber + tnModifier);
 
       setDiceRoll({ 
-        initialRolls, 
-        finalRolls: allRolls,
-        rerolledDice, 
+        diceHistories: diceHistories,
         totalSuccesses, 
         automaticSuccesses, 
         targetNumber: finalTargetNumber,
