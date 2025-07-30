@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
@@ -39,7 +40,7 @@ export default function CharmSelection({
   experience,
 }: CharmSelectionProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("essence");
+  const [sortBy, setSortBy] = useState("name");
 
   const handleCharmToggle = (charmId: string, isSubCharm: boolean = false) => {
     const baseCharmId = isSubCharm ? 'supreme-masterwork-focus' : charmId;
@@ -109,7 +110,7 @@ export default function CharmSelection({
         }
         return a.name.localeCompare(b.name);
       });
-  }, [knownCharms, searchTerm, sortBy, character.craft, character.essence]);
+  }, [knownCharms, searchTerm, sortBy]);
 
   return (
     <Card className="bg-card/80 backdrop-blur-sm border-2 border-primary/20 shadow-lg">
@@ -141,8 +142,8 @@ export default function CharmSelection({
               <SelectValue placeholder="Sort by" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="essence">Essence</SelectItem>
               <SelectItem value="name">Name</SelectItem>
+              <SelectItem value="essence">Essence</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -158,7 +159,7 @@ export default function CharmSelection({
                 const level3 = getSubCharm(charm, 3);
                 
                 return (
-                  <div key={charm.id} className={`p-3 rounded-md transition-colors ${isDisabled ? 'opacity-50' : 'bg-secondary/30'}`}>
+                  <div key={charm.id} className={`p-3 rounded-md transition-colors ${isCharmDisabled(charm) ? 'opacity-50' : ''}`}>
                      <p className="font-bold text-base font-body flex items-center gap-2">
                       {charm.name}
                     </p>
@@ -234,3 +235,4 @@ export default function CharmSelection({
     </Card>
   );
 }
+
