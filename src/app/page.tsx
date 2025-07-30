@@ -192,48 +192,37 @@ export default function Home() {
       const diceHistories: number[][] = initialRolls.map(r => [r]);
       
       // --- Explosions phase ---
-      while (true) {
-        let explodedInThisPass = false;
+      let currentRound = 1;
+      let explodedInThisPass;
+      
+      do {
+          explodedInThisPass = false;
+          diceHistories.forEach(history => {
+              // Only check the last die in the history, and only if its history length matches the current round
+              if (history.length === currentRound) {
+                  const lastRoll = history[history.length - 1];
 
-        for (let i = 0; i < diceHistories.length; i++) {
-          const history = diceHistories[i];
-          const lastRoll = history[history.length - 1];
+                  let canExplode = false;
+                  if (hasExplodingTens && lastRoll === 10) canExplode = true;
+                  else if (doubleSuccessLevel >= 1 && lastRoll >= 9) canExplode = true;
+                  else if (doubleSuccessLevel >= 2 && lastRoll >= 8) canExplode = true;
+                  else if (doubleSuccessLevel >= 3 && lastRoll >= 7) canExplode = true;
 
-          let canExplode = false;
-          if (hasExplodingTens && lastRoll === 10) canExplode = true;
-          else if (doubleSuccessLevel >= 1 && lastRoll >= 9) canExplode = true;
-          else if (doubleSuccessLevel >= 2 && lastRoll >= 8) canExplode = true;
-          else if (doubleSuccessLevel >= 3 && lastRoll >= 7) canExplode = true;
+                  if (canExplode) {
+                      const newRoll = rollDice(1)[0];
+                      history.push(newRoll);
+                      explodedInThisPass = true;
+                  }
+              }
+          });
 
-          // Add a new die to the end of the main array, it will be checked in the next loop
-          if (canExplode) {
-             const newRoll = rollDice(1)[0];
-             // This structure represents the original die plus its new explosion
-             diceHistories.push([lastRoll, newRoll]);
-             explodedInThisPass = true;
+          if (explodedInThisPass) {
+              currentRound++;
           }
-        }
-        
-        // Let's re-work the logic to be more robust.
-        // We will create a new array of dice to explode from, so we are not modifying the array we are iterating over.
-        let diceToExplode: number[] = [];
-        diceHistories.forEach(history => {
-            const lastRoll = history[history.length - 1];
-            let canExplode = false;
-            if (hasExplodingTens && lastRoll === 10) canExplode = true;
-            else if (doubleSuccessLevel >= 1 && lastRoll >= 9) canExplode = true;
-            else if (doubleSuccessLevel >= 2 && lastRoll >= 8) canExplode = true;
-            else if (doubleSuccessLevel >= 3 && lastRoll >= 7) canExplode = true;
-            
-            if (canExplode) {
-                // To avoid infinite loops, we can mark a die as "having exploded" somehow
-                // A simpler way is to just generate new dice and add them to the histories,
-                // and keep looping until no new dice are added.
-            }
-        });
+          // Safety break for extreme cases
+          if (currentRound > 20) break; 
+      } while (explodedInThisPass);
 
-        // This is still not right. Let's try the history approach.
-      }
 
       // --- Reroll Failures phase ---
       if (willRerollFailures) {
