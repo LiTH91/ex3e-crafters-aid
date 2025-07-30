@@ -4,8 +4,17 @@ import type { Charm } from "./types";
 const toId = (name: string) =>
   name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
 
-export const allCharms: Charm[] = [
-  // Essence 1
+/**
+ * @fileoverview This file is the single source of truth for all charm definitions.
+ * It follows a "data-only" approach, containing no business logic.
+ * Charms are organized by minimum Essence level for clarity and maintainability.
+ */
+
+// =================================================================
+// ESSENCE 1 CHARMS
+// =================================================================
+
+const essence1Charms: Charm[] = [
   {
     id: toId("Flawless Handiwork Method"),
     name: "Flawless Handiwork Method",
@@ -13,7 +22,7 @@ export const allCharms: Charm[] = [
     description: "Craft rolls supplemented by this Charm reroll 10s until no more appear (dice explode).",
     minCraft: 1,
     minEssence: 1,
-    effect: { type: "custom" }, 
+    effect: { type: "custom" },
   },
   {
     id: toId("Tireless Workhorse Method"),
@@ -27,12 +36,30 @@ export const allCharms: Charm[] = [
     id: toId("Craftsman Needs No Tools"),
     name: "Craftsman Needs No Tools",
     cost: "5m",
-    description: "Allows starting and completing basic/major projects rapidly without tools or workshop, shaping material directly. Reduces cost by 2 motes if tools are used. Does not significantly speed superior/legendary projects.",
+    description: "Allows starting and completing basic/major projects rapidly without tools or workshop, shaping material directly.",
     minCraft: 3,
     minEssence: 1,
     effect: { type: "custom" },
   },
-   {
+  {
+    id: toId("Crack-Mending Technique"),
+    name: "Crack-Mending Technique",
+    cost: "5m",
+    description: "Repairs extremely damaged objects. Can lower repair difficulty by 1 for fragmented Artifacts.",
+    minCraft: 3,
+    minEssence: 1,
+    effect: { type: "lower_repair_difficulty", value: 1 },
+  },
+  {
+    id: toId("Unsurpassed Masterpiece Method"),
+    name: "Unsurpassed Masterpiece Method",
+    cost: "5m",
+    description: "Add automatic successes to a Craft roll equal to character's Essence.",
+    minCraft: 3,
+    minEssence: 1,
+    effect: { type: "add_successes_per_essence", value: 1 },
+  },
+  {
     id: toId("Supreme Masterwork Focus"),
     name: "Supreme Masterwork Focus",
     description: "A multi-tiered charm that improves the quality of successes on crafting rolls and causes high-value dice to explode.",
@@ -40,7 +67,7 @@ export const allCharms: Charm[] = [
     minEssence: 1,
     effect: { type: "custom" },
     subEffects: [
-       {
+      {
         id: toId("Supreme Masterwork Focus-1"),
         name: "Level 1: Double & Explode Nines",
         cost: "5m, 1wp",
@@ -66,29 +93,17 @@ export const allCharms: Charm[] = [
         minCraft: 5,
         minEssence: 3,
         effect: { type: "double_success", value: 7 },
-      }
-    ]
+      },
+    ],
   },
-  {
-    id: toId("Crack-Mending Technique"),
-    name: "Crack-Mending Technique",
-    cost: "5m",
-    description: "Repairs extremely damaged objects. Can lower repair difficulty by 1 for fragmented Artifacts.",
-    minCraft: 3,
-    minEssence: 1,
-    effect: { type: "lower_repair_difficulty", value: 1 },
-  },
-  {
-    id: toId("Unsurpassed Masterpiece Method"),
-    name: "Unsurpassed Masterpiece Method",
-    cost: "5m",
-    description: "Add automatic successes to a Craft roll equal to character's Essence.",
-    minCraft: 3,
-    minEssence: 1,
-    effect: { type: "add_successes_per_essence", value: 1 },
-  },
-  
-  // Essence 2
+];
+
+
+// =================================================================
+// ESSENCE 2 CHARMS
+// =================================================================
+
+const essence2Charms: Charm[] = [
   {
     id: toId("First Movement of the Demiurge"),
     name: "First Movement of the Demiurge",
@@ -116,4 +131,14 @@ export const allCharms: Charm[] = [
     minEssence: 2,
     effect: { type: "custom" },
   },
+];
+
+
+// =================================================================
+// EXPORT ALL CHARMS
+// =================================================================
+
+export const allCharms: Charm[] = [
+    ...essence1Charms,
+    ...essence2Charms,
 ];
