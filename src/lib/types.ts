@@ -15,23 +15,24 @@ export const ATTRIBUTES = [
 export type Attribute = (typeof ATTRIBUTES)[number];
 
 export const PROJECT_TYPES = [
-  "basic-project",
-  "major-project",
-  "superior-project",
-  "legendary-project",
-  "basic-repair",
-  "major-repair",
-  "superior-repair",
-  "legendary-repair",
-] as const;
+    "basic-project",
+    "major-project",
+    "superior-project",
+    "legendary-project",
+    "basic-repair",
+    "major-repair",
+    "superior-repair",
+    "legendary-repair",
+  ] as const;
 
 export type ProjectType = (typeof PROJECT_TYPES)[number];
 
 export interface Project {
   type: ProjectType;
   artifactRating: number; // 0 for non-artifacts
-  basicObjectives: number; // 0-3
+  objectivesMet: number;
 }
+
 
 export interface Character {
   intelligence: number;
@@ -45,7 +46,9 @@ export interface Character {
   appearance: number;
   craft: number;
   essence: number;
-  motes: number;
+  personalMotes: number;
+  peripheralMotes: number;
+  willpower: number;
   selectedAttribute: Attribute;
   knownCharms: string[]; // Array of charm IDs
 }
@@ -63,10 +66,10 @@ export interface CharmEffect {
 export interface Charm {
   id: string;
   name: string;
+  cost?: string;
   description: string;
   minCraft: number;
   minEssence: number;
-  cost?: string;
   effect: CharmEffect;
 }
 

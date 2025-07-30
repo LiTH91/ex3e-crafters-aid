@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { UserCircle, Sparkles, BrainCircuit, Droplets } from "lucide-react";
+import { UserCircle, Sparkles, BrainCircuit, Droplets, HeartPulse, Shield } from "lucide-react";
 
 interface CharacterSheetProps {
   character: Character;
@@ -43,6 +43,8 @@ export default function CharacterSheet({
 
   const statOptions = [1, 2, 3, 4, 5];
   const essenceOptions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+  const willpowerOptions = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+
 
   return (
     <Card className="bg-card/80 backdrop-blur-sm border-2 border-primary/20 shadow-lg">
@@ -60,66 +62,69 @@ export default function CharacterSheet({
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="grid w-full items-center gap-2.5">
-          <Label htmlFor="attribute" className="font-bold text-lg font-body flex items-center gap-2">
-            <BrainCircuit className="w-5 h-5 text-blue-500" />
-            Primary Attribute
-          </Label>
-          <div className="flex gap-2">
-            <Select
-              value={character.selectedAttribute}
-              onValueChange={handleAttributeChange}
-            >
-              <SelectTrigger id="attribute" className="bg-background">
-                <SelectValue placeholder="Select Attribute" />
-              </SelectTrigger>
-              <SelectContent>
-                {ATTRIBUTES.map((attr) => (
-                  <SelectItem key={attr} value={attr}>
-                    {attr.charAt(0).toUpperCase() + attr.slice(1)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
-              value={character[character.selectedAttribute].toString()}
-              onValueChange={(value) =>
-                handleStatChange(character.selectedAttribute, value)
-              }
-            >
-              <SelectTrigger className="w-[80px] bg-background">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {statOptions.map((val) => (
-                  <SelectItem key={val} value={val.toString()}>
-                    {val}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid w-full items-center gap-2.5">
+                <Label htmlFor="attribute" className="font-bold text-lg font-body flex items-center gap-2">
+                    <BrainCircuit className="w-5 h-5 text-blue-500" />
+                    Primary Attribute
+                </Label>
+                <div className="flex gap-2">
+                    <Select
+                    value={character.selectedAttribute}
+                    onValueChange={handleAttributeChange}
+                    >
+                    <SelectTrigger id="attribute" className="bg-background">
+                        <SelectValue placeholder="Select Attribute" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {ATTRIBUTES.map((attr) => (
+                        <SelectItem key={attr} value={attr}>
+                            {attr.charAt(0).toUpperCase() + attr.slice(1)}
+                        </SelectItem>
+                        ))}
+                    </SelectContent>
+                    </Select>
+                    <Select
+                    value={character[character.selectedAttribute].toString()}
+                    onValueChange={(value) =>
+                        handleStatChange(character.selectedAttribute, value)
+                    }
+                    >
+                    <SelectTrigger className="w-[80px] bg-background">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {statOptions.map((val) => (
+                        <SelectItem key={val} value={val.toString()}>
+                            {val}
+                        </SelectItem>
+                        ))}
+                    </SelectContent>
+                    </Select>
+                </div>
+            </div>
+            <div className="grid w-full items-center gap-2.5">
+                <Label htmlFor="craft" className="font-bold text-lg font-body">
+                    Craft Skill
+                </Label>
+                <Select
+                    value={character.craft.toString()}
+                    onValueChange={(value) => handleStatChange("craft", value)}
+                >
+                    <SelectTrigger id="craft" className="bg-background">
+                    <SelectValue placeholder="Select Craft Skill" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    {statOptions.map((val) => (
+                        <SelectItem key={val} value={val.toString()}>
+                        {val}
+                        </SelectItem>
+                    ))}
+                    </SelectContent>
+                </Select>
+            </div>
         </div>
-        <div className="grid w-full items-center gap-2.5">
-          <Label htmlFor="craft" className="font-bold text-lg font-body">
-            Craft Skill
-          </Label>
-          <Select
-            value={character.craft.toString()}
-            onValueChange={(value) => handleStatChange("craft", value)}
-          >
-            <SelectTrigger id="craft" className="bg-background">
-              <SelectValue placeholder="Select Craft Skill" />
-            </SelectTrigger>
-            <SelectContent>
-              {statOptions.map((val) => (
-                <SelectItem key={val} value={val.toString()}>
-                  {val}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+
         <div className="grid grid-cols-2 gap-4">
             <div className="grid w-full items-center gap-2.5">
                 <Label htmlFor="essence" className="font-bold text-lg font-body flex items-center gap-2">
@@ -143,17 +148,53 @@ export default function CharacterSheet({
                 </Select>
             </div>
              <div className="grid w-full items-center gap-2.5">
-                <Label htmlFor="motes" className="font-bold text-lg font-body flex items-center gap-2">
-                    <Droplets className="w-5 h-5 text-cyan-500" />
-                    Motes
+                <Label htmlFor="willpower" className="font-bold text-lg font-body flex items-center gap-2">
+                    <HeartPulse className="w-5 h-5 text-red-500" />
+                    Willpower
                 </Label>
-                <Input
-                    id="motes"
-                    type="number"
-                    value={character.motes}
-                    onChange={(e) => handleStatChange("motes", e.target.value)}
-                    className="bg-background"
-                />
+                <Select
+                    value={character.willpower.toString()}
+                    onValueChange={(value) => handleStatChange("willpower", value)}
+                >
+                    <SelectTrigger id="willpower" className="bg-background">
+                    <SelectValue placeholder="Select Willpower" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    {willpowerOptions.map((val) => (
+                        <SelectItem key={val} value={val.toString()}>
+                        {val}
+                        </SelectItem>
+                    ))}
+                    </SelectContent>
+                </Select>
+            </div>
+        </div>
+        <div>
+            <Label className="font-bold text-lg font-body flex items-center gap-2 mb-2.5">
+                <Droplets className="w-5 h-5 text-cyan-500" />
+                Motes
+            </Label>
+            <div className="grid grid-cols-2 gap-4">
+                <div className="grid w-full items-center gap-1.5">
+                    <Label htmlFor="personal-motes" className="font-medium text-sm text-muted-foreground">Personal</Label>
+                    <Input
+                        id="personal-motes"
+                        type="number"
+                        value={character.personalMotes}
+                        onChange={(e) => handleStatChange("personalMotes", e.target.value)}
+                        className="bg-background"
+                    />
+                </div>
+                <div className="grid w-full items-center gap-1.5">
+                    <Label htmlFor="peripheral-motes" className="font-medium text-sm text-muted-foreground">Peripheral</Label>
+                    <Input
+                        id="peripheral-motes"
+                        type="number"
+                        value={character.peripheralMotes}
+                        onChange={(e) => handleStatChange("peripheralMotes", e.target.value)}
+                        className="bg-background"
+                    />
+                </div>
             </div>
         </div>
       </CardContent>
