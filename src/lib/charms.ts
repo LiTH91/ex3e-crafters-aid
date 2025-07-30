@@ -16,15 +16,6 @@ export const allCharms: Charm[] = [
     effect: { type: "custom" }, 
   },
   {
-    id: toId("Unsurpassed Masterpiece Method"),
-    name: "Unsurpassed Masterpiece Method",
-    cost: "5m",
-    description: "Add automatic successes to a Craft roll equal to character's Essence.",
-    minCraft: 3,
-    minEssence: 1,
-    effect: { type: "add_successes_per_essence", value: 1 },
-  },
-  {
     id: toId("Tireless Workhorse Method"),
     name: "Tireless Workhorse Method",
     description: "Permanently grants two major project slots per dot of Essence the Solar possesses.",
@@ -86,6 +77,15 @@ export const allCharms: Charm[] = [
     minCraft: 3,
     minEssence: 1,
     effect: { type: "lower_repair_difficulty", value: 1 },
+  },
+  {
+    id: toId("Unsurpassed Masterpiece Method"),
+    name: "Unsurpassed Masterpiece Method",
+    cost: "5m",
+    description: "Add automatic successes to a Craft roll equal to character's Essence.",
+    minCraft: 3,
+    minEssence: 1,
+    effect: { type: "add_successes_per_essence", value: 1 },
   },
   
   // Essence 2
