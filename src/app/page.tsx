@@ -201,20 +201,14 @@ export default function Home() {
       await new Promise(resolve => setTimeout(resolve, 50));
 
       const shouldDieExplode = (roll: number) => {
-        if (hasExplodingTens && roll === 10) {
-            return true;
-        }
-        const smfThreshold = 10 - doubleSuccessLevel;
-        if (doubleSuccessLevel > 0 && roll >= smfThreshold && roll < 10) {
-            return true;
-        }
-        return false;
+        return hasExplodingTens && roll === 10;
       };
 
       for (let i = 0; i < diceHistories.length; i++) {
         let currentHistory = diceHistories[i];
         while (true) {
             const lastRoll = currentHistory[currentHistory.length - 1];
+            
             if (shouldDieExplode(lastRoll)) {
                 const newRoll = rollDie();
                 currentHistory.push(newRoll);
@@ -225,6 +219,39 @@ export default function Home() {
             }
         }
       }
+
+      // Handle bonus dice from Supreme Masterwork Focus
+      if (doubleSuccessLevel > 0) {
+        const smfThreshold = 10 - doubleSuccessLevel;
+        const bonusDiceToAdd: number[] = [];
+        diceHistories.forEach(history => {
+            const lastRoll = history[history.length - 1];
+            if (lastRoll >= smfThreshold && lastRoll < 10) {
+                bonusDiceToAdd.push(rollDie());
+            }
+        });
+        
+        for(const bonusRoll of bonusDiceToAdd) {
+            const newHistory = [bonusRoll];
+            diceHistories.push(newHistory);
+            setDiceRoll(prev => ({ ...prev!, diceHistories: [...diceHistories] }));
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            // Explode the new bonus dice chain
+            while (true) {
+                const lastRoll = newHistory[newHistory.length - 1];
+                if (shouldDieExplode(lastRoll)) {
+                    const newRoll = rollDie();
+                    newHistory.push(newRoll);
+                    setDiceRoll(prev => ({ ...prev!, diceHistories: [...diceHistories] }));
+                    await new Promise(resolve => setTimeout(resolve, 50));
+                } else {
+                    break;
+                }
+            }
+        }
+      }
+
 
       if (willRerollFailures) {
           for (const history of diceHistories) {
@@ -403,3 +430,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
