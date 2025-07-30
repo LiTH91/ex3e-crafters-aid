@@ -31,6 +31,15 @@ export interface Project {
   objectivesMet: number;
 }
 
+export interface ActiveProject {
+  id: string;
+  name: string;
+  type: ProjectType;
+  goal: number;
+  progress: number;
+  isComplete: boolean;
+}
+
 
 export interface Character {
   intelligence: number;
@@ -64,7 +73,7 @@ export interface CharmEffect {
 
 export interface Charm {
   id: string;
-  name: string;
+  name:string;
   cost?: string;
   description: string;
   minCraft: number;

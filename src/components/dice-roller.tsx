@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { DiceRoll, CraftingOutcome, Character, ProjectType } from "@/lib/types";
+import type { DiceRoll, CraftingOutcome, Character, ProjectType, ActiveProject } from "@/lib/types";
 import { PROJECT_TYPES } from "@/lib/types";
 import {
   Card,
@@ -34,14 +34,18 @@ interface DiceRollerProps {
   character: Character;
   targetNumber: number;
   setTargetNumber: (value: number) => void;
-  onRoll: (projectDetails: {
-    type: ProjectType;
-    artifactRating: number;
-    objectivesMet: number;
-  }) => void;
+  onRoll: (
+    projectDetails: {
+      type: ProjectType;
+      artifactRating: number;
+      objectivesMet: number;
+    },
+    assignedProjectId?: string,
+  ) => void;
   isLoading: boolean;
   diceRoll: DiceRoll | null;
   aiOutcome: CraftingOutcome | null;
+  activeProjects: ActiveProject[];
 }
 
 export default function DiceRoller({
@@ -52,17 +56,20 @@ export default function DiceRoller({
   isLoading,
   diceRoll,
   aiOutcome,
+  activeProjects
 }: DiceRollerProps) {
   const [projectType, setProjectType] = useState<ProjectType>("basic-project");
   const [artifactRating, setArtifactRating] = useState(2);
   const [objectivesMet, setObjectivesMet] = useState(1);
+  const [assignedProjectId, setAssignedProjectId] = useState<string | undefined>(undefined);
+
 
   const handleRollClick = () => {
     onRoll({
       type: projectType,
       artifactRating: projectType.startsWith("superior-") ? artifactRating : 0,
       objectivesMet,
-    });
+    }, assignedProjectId);
   };
 
   const dicePool = character[character.selectedAttribute] + character.craft;
@@ -91,7 +98,7 @@ export default function DiceRoller({
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
           <div>
             <Label htmlFor="project-type" className="font-bold">
               Project Type
@@ -153,6 +160,29 @@ export default function DiceRoller({
               onChange={(e) => setTargetNumber(parseInt(e.target.value, 10))}
               min={1}
             />
+          </div>
+           <div className="md:col-span-2">
+            <Label htmlFor="assign-project" className="font-bold">
+              Assign Roll to Project (Optional)
+            </Label>
+             <Select
+              value={assignedProjectId}
+              onValueChange={(v) => setAssignedProjectId(v === "none" ? undefined : v)}
+            >
+              <SelectTrigger id="assign-project">
+                <SelectValue placeholder="Select project to add progress..." />
+              </SelectTrigger>
+              <SelectContent>
+                 <SelectItem value="none">
+                    Don't assign to a project
+                 </SelectItem>
+                {activeProjects.map((proj) => (
+                   <SelectItem key={proj.id} value={proj.id}>
+                     {proj.name} ({proj.progress}/{proj.goal})
+                   </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
         <Separator />

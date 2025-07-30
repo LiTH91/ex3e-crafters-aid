@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Character, DiceRoll, CraftingOutcome, ProjectType } from "@/lib/types";
+import type { Character, DiceRoll, CraftingOutcome, ProjectType, ActiveProject } from "@/lib/types";
 import { allCharms } from "@/lib/charms";
 import { calculateCraftingOutcome } from "@/lib/crafting-calculator";
 import { useToast } from "@/hooks/use-toast";
@@ -51,13 +51,16 @@ export default function Home() {
     gxp: 0,
     wxp: 0,
   });
-  const [activeProjects, setActiveProjects] = useState<any[]>([]);
+  const [activeProjects, setActiveProjects] = useState<ActiveProject[]>([]);
 
-  const handleRoll = async (projectDetails: {
-    type: ProjectType;
-    artifactRating: number;
-    objectivesMet: number;
-  }) => {
+  const handleRoll = async (
+    projectDetails: {
+      type: ProjectType;
+      artifactRating: number;
+      objectivesMet: number;
+    },
+    assignedProjectId?: string
+  ) => {
     setIsLoading(true);
     setDiceRoll(null);
     setOutcome(null);
@@ -156,10 +159,18 @@ export default function Home() {
       if (willRerollTens) {
           while(tensToReroll > 0) {
               const newRolls = rollDice(tensToReroll);
+              const originalLength = finalRolls.length;
               finalRolls.push(...newRolls);
+              // Mark original 10s as "rerolled" for visual feedback
+              for(let i = 0; i < originalLength; i++) {
+                  if(finalRolls[i] === 10 && !rerolledIndices.includes(i)) {
+                      rerolledIndices.push(i);
+                  }
+              }
               tensToReroll = newRolls.filter(r => r === 10).length;
           }
       }
+
 
       const calculateSuccesses = (rolls: number[]) =>
         rolls.reduce((acc, roll) => {
@@ -200,6 +211,23 @@ export default function Home() {
           gxp: prev.gxp + result.experienceGained.gxp,
           wxp: prev.wxp + result.experienceGained.wxp,
         }));
+
+        // Update project progress
+        if (assignedProjectId) {
+          setActiveProjects(prevProjects => 
+            prevProjects.map(p => {
+              if (p.id === assignedProjectId) {
+                const newProgress = p.progress + totalSuccesses;
+                const isComplete = newProgress >= p.goal;
+                if(isComplete) {
+                    toast({ title: "Project Complete!", description: `You have completed "${p.name}".`});
+                }
+                return { ...p, progress: newProgress, isComplete };
+              }
+              return p;
+            })
+          );
+        }
       }
 
       setOutcome(result);
@@ -218,6 +246,19 @@ export default function Home() {
 
   const hasTirelessWorkhorse = activeCharms.includes("tireless-workhorse-method");
   const majorProjectSlots = hasTirelessWorkhorse ? character.essence * 2 : 0;
+
+  const addProject = (project: Omit<ActiveProject, 'id' | 'isComplete'>) => {
+    const newProject: ActiveProject = {
+        ...project,
+        id: crypto.randomUUID(),
+        isComplete: false,
+    };
+    setActiveProjects(prev => [...prev, newProject]);
+  }
+
+  const removeProject = (projectId: string) => {
+    setActiveProjects(prev => prev.filter(p => p.id !== projectId));
+  }
 
 
   return (
@@ -260,6 +301,7 @@ export default function Home() {
                   isLoading={isLoading}
                   diceRoll={diceRoll}
                   aiOutcome={outcome}
+                  activeProjects={activeProjects.filter(p => !p.isComplete)}
                 />
               </TabsContent>
               <TabsContent value="journal">
@@ -267,6 +309,8 @@ export default function Home() {
                   experience={craftingXp}
                   projects={activeProjects}
                   maxProjects={majorProjectSlots}
+                  onAddProject={addProject}
+                  onRemoveProject={removeProject}
                 />
               </TabsContent>
             </Tabs>
