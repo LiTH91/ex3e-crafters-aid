@@ -111,7 +111,6 @@ export default function Home() {
     try {
       const { character, activeCharms } = appState;
       const dicePool = character[character.selectedAttribute] + character.craft;
-      const selectedCharms = allCharms.filter((c) => activeCharms.includes(c.id));
       
       let automaticSuccesses = 0;
       let willRerollFailures = false;
@@ -124,21 +123,32 @@ export default function Home() {
       let wxpCost = 0;
       let tnModifier = 0;
 
-      const activeSubCharms = allCharms
-        .flatMap(c => c.subEffects ? c.subEffects : [])
-        .filter(sc => activeCharms.includes(sc.id));
-      
-      const allSelectedCharms = [...selectedCharms, ...activeSubCharms];
+      const activeCharmDetails: { id: string; name: string; cost?: string; effect: any }[] = [];
 
-      allSelectedCharms.forEach((charm) => {
-        if (charm.id === 'supreme-masterwork-focus') {
-            if (activeCharms.includes('supreme-masterwork-focus-3')) doubleSuccessLevel = 3;
-            else if (activeCharms.includes('supreme-masterwork-focus-2')) doubleSuccessLevel = 2;
-            else if (activeCharms.includes('supreme-masterwork-focus-1')) doubleSuccessLevel = 1;
-        }
+      allCharms.forEach(charm => {
+          if (activeCharms.includes(charm.id)) {
+              // This is a base charm that is active.
+              if (charm.id !== 'supreme-masterwork-focus') { // The base SMF charm has no direct effect, only its subcharms do
+                  activeCharmDetails.push(charm);
+              }
+          }
+          // Also check for active sub-charms
+          if (charm.subEffects) {
+              charm.subEffects.forEach(subCharm => {
+                  if (activeCharms.includes(subCharm.id)) {
+                      activeCharmDetails.push(subCharm);
+                  }
+              });
+          }
+      });
+      
+      activeCharmDetails.forEach((charm) => {
+        if (charm.id === 'supreme-masterwork-focus-3') doubleSuccessLevel = 3;
+        else if (charm.id === 'supreme-masterwork-focus-2') doubleSuccessLevel = 2;
+        else if (charm.id === 'supreme-masterwork-focus-1') doubleSuccessLevel = 1;
         else if (charm.effect.type === "add_successes") automaticSuccesses += charm.effect.value;
         else if (charm.effect.type === "reroll_failures") willRerollFailures = true;
-        else if (charm.id === 'flawless-handiwork-method') willRerollTens = true;
+        else if (charm.effect.type === 'reroll_tens') willRerollTens = true;
         else if (charm.effect.type === "lower_repair_difficulty" && projectDetails.type.includes("repair")) tnModifier -= charm.effect.value;
 
          if (charm.cost) {
@@ -215,7 +225,15 @@ export default function Home() {
       const totalSuccesses = baseSuccesses + automaticSuccesses;
       const finalTargetNumber = Math.max(1, targetNumber + tnModifier);
 
-      setDiceRoll({ initialRolls, finalRolls, rerolledIndices, totalSuccesses, automaticSuccesses, targetNumber: finalTargetNumber });
+      setDiceRoll({ 
+        initialRolls, 
+        finalRolls, 
+        rerolledIndices, 
+        totalSuccesses, 
+        automaticSuccesses, 
+        targetNumber: finalTargetNumber,
+        activeCharmNames: activeCharmDetails.map(c => c.name),
+      });
 
       const isExceptional = (projectDetails.type.startsWith("basic-") || projectDetails.type.startsWith("major-")) && totalSuccesses >= finalTargetNumber + 3;
 
@@ -357,5 +375,3 @@ export default function Home() {
     </div>
   );
 }
-
-    

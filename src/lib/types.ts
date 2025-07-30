@@ -95,6 +95,7 @@ export interface DiceRoll {
   totalSuccesses: number;
   automaticSuccesses: number;
   targetNumber: number;
+  activeCharmNames: string[];
 }
 
 export interface CraftingOutcome {
@@ -103,5 +104,3 @@ export interface CraftingOutcome {
   outcomeDescription: string;
   experienceGained: CraftingExperience;
 }
-
-    

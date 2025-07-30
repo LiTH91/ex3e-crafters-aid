@@ -264,6 +264,12 @@ export default function DiceRoller({
                     (+{diceRoll.automaticSuccesses} from Charms)
                 </p>
              )}
+            {diceRoll.activeCharmNames.length > 0 && (
+              <div className="text-center text-xs text-muted-foreground font-body">
+                  <p className="font-bold">Active Charms:</p>
+                  <p>{diceRoll.activeCharmNames.join(', ')}</p>
+              </div>
+            )}
           </div>
         )}
         {aiOutcome && (
@@ -291,5 +297,3 @@ export default function DiceRoller({
     </Card>
   );
 }
-
-    
