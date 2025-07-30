@@ -227,7 +227,7 @@ export default function DiceRoller({
             {diceRoll.finalRolls.length > diceRoll.initialRolls.length && (
               <>
                 <p className="text-center text-sm font-body">
-                  Bonus dice from Charms.
+                  Bonus dice from Charms:
                 </p>
                 <div className="flex justify-center gap-2 flex-wrap">
                   {diceRoll.finalRolls
@@ -259,6 +259,11 @@ export default function DiceRoller({
                 {diceRoll.totalSuccesses} Successes vs TN {diceRoll.targetNumber}
               </span>
             </div>
+             {diceRoll.automaticSuccesses > 0 && (
+                <p className="text-center text-sm text-muted-foreground">
+                    (+{diceRoll.automaticSuccesses} from Charms)
+                </p>
+             )}
           </div>
         )}
         {aiOutcome && (
@@ -286,3 +291,5 @@ export default function DiceRoller({
     </Card>
   );
 }
+
+    

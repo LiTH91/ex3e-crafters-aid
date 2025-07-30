@@ -77,7 +77,7 @@ export default function Home() {
       );
       
       let automaticSuccesses = 0;
-      let willRerollFailures = false; // Placeholder for future implementation
+      let willRerollFailures = false;
       let willRerollTens = false;
       let doubleSuccessLevel = 0; // 0: none, 1: nines, 2: eights, 3: sevens
       let moteCost = 0;
@@ -105,8 +105,8 @@ export default function Home() {
         else if (charm.effect.type === "reroll_failures") {
           willRerollFailures = true;
         }
-        else if (charm.effect.type === "reroll_tens") {
-          willRerollTens = true;
+        else if (charm.id === 'flawless-handiwork-method') {
+           willRerollTens = true;
         }
         else if (charm.effect.type === "lower_repair_difficulty" && projectDetails.type.includes("repair")) {
           tnModifier -= charm.effect.value;
@@ -164,31 +164,28 @@ export default function Home() {
       let finalRolls = [...initialRolls];
       let rerolledIndices: number[] = [];
 
-      // Handle rerolls
+      // Handle reroll failures
       if (willRerollFailures) {
-        const failures = initialRolls.filter((r) => r < 7);
-        const rerolledDice = rollDice(failures.length);
-        const successesFromInitial = initialRolls.filter((r) => r >= 7);
-        rerolledIndices = initialRolls
-          .map((r, i) => (r < 7 ? i : -1))
-          .filter((i) => i !== -1);
-        finalRolls = [...successesFromInitial, ...rerolledDice];
+        const failuresToReroll = initialRolls.map((r, i) => ({ roll: r, index: i })).filter(item => item.roll < 7);
+        const rerolledDice = rollDice(failuresToReroll.length);
+        
+        rerolledIndices = failuresToReroll.map(item => item.index);
+        
+        let rerollIndex = 0;
+        finalRolls = finalRolls.map((roll, index) => {
+            if (rerolledIndices.includes(index)) {
+                return rerolledDice[rerollIndex++];
+            }
+            return roll;
+        });
       }
 
-      let tensToReroll = finalRolls.filter(r => r === 10).length;
-
-      // Handle reroll 10s
+      // Handle reroll 10s from Flawless Handiwork Method
       if (willRerollTens) {
+          let tensToReroll = finalRolls.filter(r => r === 10).length;
           while(tensToReroll > 0) {
               const newRolls = rollDice(tensToReroll);
-              const originalLength = finalRolls.length;
               finalRolls.push(...newRolls);
-              // Mark original 10s as "rerolled" for visual feedback
-              for(let i = 0; i < originalLength; i++) {
-                  if(finalRolls[i] === 10 && !rerolledIndices.includes(i)) {
-                      rerolledIndices.push(i);
-                  }
-              }
               tensToReroll = newRolls.filter(r => r === 10).length;
           }
       }
@@ -356,3 +353,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
