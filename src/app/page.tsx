@@ -193,13 +193,8 @@ export default function Home() {
       const diceHistories: number[][] = initialRolls.map(r => [r]);
 
       // --- Explosions phase ---
-      let round = 1;
-      let explosionsInPreviousRound = 0;
-      do {
-        explosionsInPreviousRound = 0;
-        diceHistories.forEach(history => {
-          // Only explode if this die hasn't exploded in this round yet.
-          if (history.length === round) {
+      loop: while (true) {
+        for (const history of diceHistories) {
             const lastRoll = history[history.length - 1];
             
             let explodes = false;
@@ -209,13 +204,12 @@ export default function Home() {
             else if (doubleSuccessLevel >= 3 && lastRoll === 7) explodes = true;
             
             if (explodes) {
-              history.push(rollDice(1)[0]);
-              explosionsInPreviousRound++;
+                history.push(rollDice(1)[0]);
+                continue loop; // Restart the loop to check the new die
             }
-          }
-        });
-        round++;
-      } while (explosionsInPreviousRound > 0);
+        }
+        break; // No explosions in a full pass, exit loop
+      }
       
 
       // --- Reroll Failures phase ---
@@ -394,3 +388,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
