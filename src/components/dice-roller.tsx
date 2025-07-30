@@ -27,7 +27,7 @@ import {
   Loader2,
   Sparkles,
   Hammer,
-  ArrowRight,
+  ArrowDown,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
@@ -213,9 +213,9 @@ export default function DiceRoller({
             <h3 className="text-lg font-bold text-center font-headline">
               Roll Results
             </h3>
-            <div className="flex justify-center gap-2 flex-wrap">
+            <div className="flex justify-center items-start gap-2 flex-wrap">
               {diceRoll.initialRolls.map((roll, index) => (
-                <div key={index} className="flex items-center gap-1">
+                <div key={index} className="flex flex-col items-center gap-1">
                   <span
                     className={`flex items-center justify-center w-10 h-10 rounded-full text-lg font-bold ${
                       diceRoll.rerolledIndices.includes(index)
@@ -227,7 +227,7 @@ export default function DiceRoller({
                   </span>
                   {diceRoll.rerolledIndices.includes(index) && (
                     <>
-                      <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                      <ArrowDown className="w-4 h-4 text-muted-foreground" />
                        <span
                         className={`flex items-center justify-center w-10 h-10 rounded-full text-lg font-bold ${getRollColor(diceRoll.finalRolls[index])}`}
                       >
