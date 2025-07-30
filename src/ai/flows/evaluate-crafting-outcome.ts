@@ -10,7 +10,7 @@ import { ai } from "@/ai/genkit";
 import { z } from "zod";
 import type { ProjectType } from "@/lib/types";
 
-export const EvaluateCraftingOutcomeInputSchema = z.object({
+const EvaluateCraftingOutcomeInputSchema = z.object({
   project: z.object({
     type: z.custom<ProjectType>(),
     artifactRating: z.number(),
@@ -27,7 +27,7 @@ export type EvaluateCraftingOutcomeInput = z.infer<
   typeof EvaluateCraftingOutcomeInputSchema
 >;
 
-export const EvaluateCraftingOutcomeOutputSchema = z.object({
+const EvaluateCraftingOutcomeOutputSchema = z.object({
   isSuccess: z.boolean(),
   outcomeTitle: z.string(),
   outcomeDescription: z.string(),
