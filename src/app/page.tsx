@@ -193,7 +193,7 @@ export default function Home() {
       const diceHistories: number[][] = initialRolls.map(r => [r]);
       
       setDiceRoll({
-        diceHistories: diceHistories,
+        diceHistories: [...diceHistories],
         totalSuccesses: 0,
         automaticSuccesses: 0,
         targetNumber: 0,
@@ -203,7 +203,8 @@ export default function Home() {
 
 
       // --- Explosions phase (Sequential, per-die approach) ---
-      for (const history of diceHistories) {
+      for (let i = 0; i < diceHistories.length; i++) {
+        const history = diceHistories[i];
           while (true) {
               const lastRoll = history[history.length - 1];
               let shouldExplode = false;
@@ -407,5 +408,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
