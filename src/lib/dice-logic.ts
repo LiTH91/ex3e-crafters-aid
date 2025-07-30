@@ -70,7 +70,9 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
         for (let i = 0; i < diceHistories.length; i++) {
             const history = diceHistories[i];
             const lastRoll = history[history.length - 1];
-            const historyKey = `${i}-${history.length - 1}`; // Unique key for each die roll position
+            // A unique key for each die roll *position*. 
+            // e.g., "die 0, roll 0", "die 0, roll 1", etc.
+            const historyKey = `${i}-${history.length - 1}`; 
 
             if (shouldDieExplode(lastRoll, activeCharms) && !processedExplosionIndices.has(historyKey)) {
                 history.push(rollDie());
@@ -89,7 +91,7 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
             });
             await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY * 2));
         } else {
-            break; // No explosions in a full pass, so we're done.
+            break; // No new explosions in a full pass, so we're done.
         }
     }
 
