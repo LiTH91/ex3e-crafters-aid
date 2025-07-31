@@ -60,12 +60,10 @@ export default function Home() {
   const [appState, setAppState] = useState<AppState>(initialAppState);
   const [isMounted, setIsMounted] = useState(false); // To prevent hydration errors
 
-  const [targetNumber, setTargetNumber] = useState<number>(5);
   const [diceRoll, setDiceRoll] = useState<DiceRoll | null>(null);
   const [outcome, setOutcome] = useState<CraftingOutcome | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const [willpowerSpent, setWillpowerSpent] = useState(0);
 
   // Load state from localStorage on client-side mount
   useEffect(() => {
@@ -105,12 +103,30 @@ export default function Home() {
     });
   };
 
+  const handleExperienceChange = (type: keyof CraftingExperience, amount: number) => {
+    handleStateChange('craftingXp', prev => ({
+      ...prev,
+      [type]: Math.max(0, (prev[type] || 0) + amount)
+    }));
+     toast({
+      title: "Experience Updated",
+      description: `${amount > 0 ? '+' : ''}${amount} ${type.toUpperCase()} applied.`,
+    });
+  };
+
+
   const handleRoll = async (
     projectDetails: {
       type: ProjectType;
       artifactRating: number;
       objectivesMet: number;
     },
+    dicePool: {
+        base: number;
+        excellency: number;
+    },
+    willpowerSpent: number,
+    isTriumphForgingEyeActive: boolean,
     assignedProjectId?: string
   ) => {
     setIsLoading(true);
@@ -118,15 +134,25 @@ export default function Home() {
     setOutcome(null);
 
     try {
-      const { character, activeCharms, craftingXp } = appState;
+      const { character, activeCharms } = appState;
 
       // --- 1. Calculate Costs & Effects from Charms ---
       let moteCost = 0;
-      let willpowerCost = willpowerSpent;
+      let willpowerCost = 0;
       let sxpCost = 0;
       let gxpCost = 0;
       let wxpCost = 0;
       let tnModifier = 0;
+
+      // Add excellency cost if not using Triumph-Forging Eye
+      if (dicePool.excellency > 0 && !isTriumphForgingEyeActive) {
+          moteCost += dicePool.excellency;
+      }
+      
+      if(activeCharms.includes("will-forging-discipline")) {
+          willpowerCost += willpowerSpent;
+      }
+
 
       const activeCharmDetails = allCharms.flatMap(charm => {
           const charms = [];
@@ -153,7 +179,10 @@ export default function Home() {
             const moteMatch = charm.cost.match(/(\d+)m/);
             if (moteMatch) moteCost += parseInt(moteMatch[1], 10);
             const willpowerMatch = charm.cost.match(/(\d+)wp/);
-            if (willpowerMatch && charm.id !== 'will-forging-discipline') willpowerCost += parseInt(willpowerMatch[1], 10);
+            // Willpower for Will-Forging Discipline is handled separately
+            if (willpowerMatch && charm.id !== 'will-forging-discipline') {
+                willpowerCost += parseInt(willpowerMatch[1], 10);
+            }
             const sxpMatch = charm.cost.match(/(\d+)sxp/);
             if (sxpMatch) sxpCost += parseInt(sxpMatch[1], 10);
             const gxpMatch = charm.cost.match(/(\d+)gxp/);
@@ -184,12 +213,10 @@ export default function Home() {
       }));
 
       // --- 3. Perform the Dice Roll using the pure function ---
-      const finalTargetNumber = Math.max(1, targetNumber + tnModifier);
       const rollResult = await performDiceRoll({
           character,
           activeCharms,
-          targetNumber: finalTargetNumber,
-          willpowerSpent,
+          dicePool,
           onProgress: (interimRoll) => {
               setDiceRoll(interimRoll);
           }
@@ -198,9 +225,12 @@ export default function Home() {
       setDiceRoll(rollResult);
 
       // --- 4. Calculate Final Outcome and Update State ---
-      const isExceptional = (projectDetails.type.startsWith("basic-") || projectDetails.type.startsWith("major-")) && rollResult.totalSuccesses >= finalTargetNumber + 3;
-
-      const result = calculateCraftingOutcome({ project: projectDetails, successes: rollResult.totalSuccesses, targetNumber: finalTargetNumber, isExceptional });
+      const result = calculateCraftingOutcome({ 
+        project: projectDetails, 
+        successes: rollResult.totalSuccesses, 
+        isExceptional: rollResult.isExceptional,
+        activeCharms
+      });
 
       if (result.isSuccess) {
         handleStateChange('craftingXp', prev => ({
@@ -242,7 +272,6 @@ export default function Home() {
         setAppState(initialAppState);
         setDiceRoll(null);
         setOutcome(null);
-        setTargetNumber(5);
         toast({ title: "Data Reset", description: "All character data and projects have been reset." });
     }
   }
@@ -306,15 +335,11 @@ export default function Home() {
                 <DiceRoller
                   character={character}
                   activeCharms={activeCharms}
-                  targetNumber={targetNumber}
-                  setTargetNumber={setTargetNumber}
                   onRoll={handleRoll}
                   isLoading={isLoading}
                   diceRoll={diceRoll}
                   aiOutcome={outcome}
                   activeProjects={activeProjects.filter(p => !p.isComplete)}
-                  willpowerSpent={willpowerSpent}
-                  setWillpowerSpent={setWillpowerSpent}
                 />
               </TabsContent>
               <TabsContent value="journal">
@@ -324,6 +349,7 @@ export default function Home() {
                   maxProjects={majorProjectSlots}
                   onAddProject={addProject}
                   onRemoveProject={removeProject}
+                  onExperienceChange={handleExperienceChange}
                 />
               </TabsContent>
                <TabsContent value="reference">
@@ -343,3 +369,5 @@ export default function Home() {
     </div>
   );
 }
+
+    

@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import type { ActiveProject, ProjectType } from "@/lib/types";
+import type { ActiveProject, CraftingExperience, ProjectType } from "@/lib/types";
 import { PROJECT_TYPES } from "@/lib/types";
 import {
   Card,
@@ -23,19 +23,16 @@ import {
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { BookOpen, Star, Sun, Moon, PlusCircle, Trash2 } from "lucide-react";
+import { BookOpen, Star, Sun, Moon, PlusCircle, Trash2, Pencil, Check } from "lucide-react";
 
 
 interface CraftingJournalProps {
-  experience: {
-    sxp: number;
-    gxp: number;
-    wxp: number;
-  };
+  experience: CraftingExperience;
   projects: ActiveProject[];
   maxProjects: number;
   onAddProject: (project: Omit<ActiveProject, "id" | "isComplete">) => void;
   onRemoveProject: (projectId: string) => void;
+  onExperienceChange: (type: keyof CraftingExperience, amount: number) => void;
 }
 
 export default function CraftingJournal({
@@ -44,11 +41,16 @@ export default function CraftingJournal({
   maxProjects,
   onAddProject,
   onRemoveProject,
+  onExperienceChange
 }: CraftingJournalProps) {
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectType, setNewProjectType] =
     useState<ProjectType>("major-project");
   const [newProjectGoal, setNewProjectGoal] = useState(25);
+  
+  const [xpAmount, setXpAmount] = useState<number>(0);
+  const [xpType, setXpType] = useState<keyof CraftingExperience>('sxp');
+
 
   const handleAddProject = (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,6 +66,14 @@ export default function CraftingJournal({
     setNewProjectGoal(25);
   };
   
+  const handleXpChange = (e: React.FormEvent) => {
+      e.preventDefault();
+      if (xpAmount !== 0) {
+        onExperienceChange(xpType, xpAmount);
+        setXpAmount(0);
+      }
+  }
+
   const canAddProject = projects.filter(p => p.type.startsWith("major")).length < maxProjects;
 
   return (
@@ -122,6 +132,42 @@ export default function CraftingJournal({
               </p>
             </div>
           </div>
+          
+           {/* Manual XP Adjustment */}
+            <form onSubmit={handleXpChange} className="mt-4 p-3 bg-secondary/50 rounded-lg">
+                 <h4 className="font-headline text-lg mb-2 flex items-center gap-2">
+                    <Pencil className="w-4 h-4"/>
+                    Adjust Experience
+                 </h4>
+                 <div className="flex items-end gap-2">
+                     <div className="flex-grow">
+                        <Label htmlFor="xp-amount" className="sr-only">Amount</Label>
+                        <Input 
+                            id="xp-amount"
+                            type="number"
+                            value={xpAmount || ''}
+                            onChange={(e) => setXpAmount(parseInt(e.target.value, 10) || 0)}
+                            placeholder="Amount (+/-)"
+                        />
+                     </div>
+                     <div>
+                        <Label htmlFor="xp-type" className="sr-only">Type</Label>
+                        <Select value={xpType} onValueChange={(v) => setXpType(v as keyof CraftingExperience)}>
+                            <SelectTrigger id="xp-type" className="w-[100px]">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="sxp">SXP</SelectItem>
+                                <SelectItem value="gxp">GXP</SelectItem>
+                                <SelectItem value="wxp">WXP</SelectItem>
+                            </SelectContent>
+                        </Select>
+                     </div>
+                     <Button type="submit" size="icon" aria-label="Apply XP Change">
+                        <Check className="w-5 h-5"/>
+                     </Button>
+                 </div>
+            </form>
         </div>
 
         <Separator />
@@ -246,3 +292,5 @@ export default function CraftingJournal({
     </Card>
   );
 }
+
+    
