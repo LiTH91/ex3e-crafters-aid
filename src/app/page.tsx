@@ -47,6 +47,8 @@ const initialAppState = {
     activeCharms: [],
     craftingXp: initialExperience,
     activeProjects: [],
+    isTriumphForgingEyeActive: false,
+    divineInspirationUses: 0,
 };
 
 interface AppState {
@@ -54,6 +56,8 @@ interface AppState {
   activeCharms: string[];
   craftingXp: CraftingExperience;
   activeProjects: ActiveProject[];
+  isTriumphForgingEyeActive: boolean;
+  divineInspirationUses: number;
 }
 
 export default function Home() {
@@ -75,7 +79,7 @@ export default function Home() {
         // Ensure knownCharms is always up-to-date with the latest from allCharms
         parsedState.character.knownCharms = allCharms.map(c => c.id);
         if (parsedState.character && parsedState.activeProjects) {
-            setAppState(parsedState);
+            setAppState(prevState => ({...prevState, ...parsedState}));
         }
       }
     } catch (error) {
@@ -103,7 +107,7 @@ export default function Home() {
     });
   };
 
-  const handleExperienceChange = (type: keyof CraftingExperience, amount: number) => {
+   const handleExperienceChange = (type: keyof CraftingExperience, amount: number) => {
     handleStateChange('craftingXp', prev => ({
       ...prev,
       [type]: Math.max(0, (prev[type] || 0) + amount)
@@ -223,12 +227,13 @@ export default function Home() {
       });
 
       setDiceRoll(rollResult);
+      handleStateChange('isTriumphForgingEyeActive', false);
+
 
       // --- 4. Calculate Final Outcome and Update State ---
       const result = calculateCraftingOutcome({ 
         project: projectDetails, 
-        successes: rollResult.totalSuccesses, 
-        isExceptional: rollResult.isExceptional,
+        successes: rollResult.totalSuccesses,
         activeCharms
       });
 
@@ -276,7 +281,7 @@ export default function Home() {
     }
   }
 
-  const { character, activeCharms, craftingXp, activeProjects } = appState;
+  const { character, activeCharms, craftingXp, activeProjects, isTriumphForgingEyeActive, divineInspirationUses } = appState;
   const hasTirelessWorkhorse = activeCharms.includes("tireless-workhorse-method");
   const majorProjectSlots = hasTirelessWorkhorse ? character.essence * 2 : 0;
 
@@ -321,6 +326,12 @@ export default function Home() {
               setActiveCharms={(value) => handleStateChange('activeCharms', value)}
               character={character}
               experience={craftingXp}
+              storyUses={{'divine-inspiration-technique': divineInspirationUses}}
+              setStoryUses={(charmId, uses) => {
+                if (charmId === 'divine-inspiration-technique') {
+                  handleStateChange('divineInspirationUses', uses)
+                }
+              }}
             />
           </div>
 
@@ -340,6 +351,8 @@ export default function Home() {
                   diceRoll={diceRoll}
                   aiOutcome={outcome}
                   activeProjects={activeProjects.filter(p => !p.isComplete)}
+                  isTriumphForgingEyeActive={isTriumphForgingEyeActive}
+                  setTriumphForgingEyeActive={(val) => handleStateChange('isTriumphForgingEyeActive', val)}
                 />
               </TabsContent>
               <TabsContent value="journal">
@@ -369,5 +382,3 @@ export default function Home() {
     </div>
   );
 }
-
-    
