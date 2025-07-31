@@ -34,13 +34,15 @@ import {
   ArrowRight,
   Book,
   Gem,
-  Star,
   Shield,
   Sun,
   Flame,
   RotateCw,
   Replace,
   Eye,
+  Check,
+  X,
+  Star,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -71,16 +73,18 @@ interface DiceRollerProps {
   activeProjects: ActiveProject[];
   isTriumphForgingEyeActive: boolean;
   setTriumphForgingEyeActive: (value: boolean) => void;
+  isColorblindMode: boolean;
 }
 
-const getDieStyle = (roll: number, activeCharms: string[]): string => {
-  const isSpecialSuccess =
-    roll === 10 ||
+const isSpecialSuccess = (roll: number, activeCharms: string[]): boolean => {
+  return roll === 10 ||
     (roll >= 9 && activeCharms.includes('supreme-masterwork-focus-1')) ||
     (roll >= 8 && activeCharms.includes('supreme-masterwork-focus-2')) ||
     (roll >= 7 && activeCharms.includes('supreme-masterwork-focus-3'));
+};
 
-  if (isSpecialSuccess) {
+const getDieStyle = (roll: number, activeCharms: string[]): string => {
+  if (isSpecialSuccess(roll, activeCharms)) {
     return "bg-yellow-400 text-black border-yellow-600";
   }
   if (roll >= 7) {
@@ -92,20 +96,30 @@ const getDieStyle = (roll: number, activeCharms: string[]): string => {
   return "bg-red-500 text-white border-red-700";
 };
 
-const DiceDisplay = ({ waves, activeCharms }: { waves: DieResult[][], activeCharms: string[] }) => (
+const DiceDisplay = ({ waves, activeCharms, isColorblindMode }: { waves: DieResult[][], activeCharms: string[], isColorblindMode: boolean }) => (
     <TooltipProvider>
     <div className="flex items-center justify-center gap-4 flex-wrap p-4 bg-secondary/30 rounded-lg">
         {waves.map((wave, waveIndex) => (
            <React.Fragment key={`wave-${waveIndex}`}>
             <div className="flex items-center gap-2 flex-wrap justify-center">
                 {wave.map((die, rollIndex) => {
-                    const style = getDieStyle(die.value, activeCharms);
-                    const icon = 
+                    const specialSuccess = isSpecialSuccess(die.value, activeCharms);
+                    const normalSuccess = die.value >= 7 && die.value < 10 && !specialSuccess;
+                    const isFailure = die.value === 1;
+
+                    const style = isColorblindMode ? "bg-gray-400 text-black border-gray-600" : getDieStyle(die.value, activeCharms);
+                    const modificationIcon = 
                         die.modification === 'explosion' ? <Flame className="w-3 h-3" /> :
                         die.modification === 'reroll' ? <RotateCw className="w-3 h-3" /> :
                         die.modification === 'conversion' ? <Replace className="w-3 h-3" /> :
                         die.modificationSource === 'Divine Inspiration Technique' || die.modificationSource === 'Holistic Miracle Understanding' ? <Eye className="w-3 h-3" /> :
                         null;
+
+                    const colorblindIcon = isColorblindMode ? (
+                        specialSuccess ? <Star className="w-5 h-5 text-yellow-300" /> :
+                        normalSuccess ? <Check className="w-5 h-5 text-green-300" /> :
+                        isFailure ? <X className="w-5 h-5 text-red-400" /> : null
+                    ) : null;
 
                     const tooltipText = 
                         die.modification === 'reroll' ? `Rerolled a ${die.initialValue}` :
@@ -118,13 +132,13 @@ const DiceDisplay = ({ waves, activeCharms }: { waves: DieResult[][], activeChar
                     return (
                         <div key={`wave-${waveIndex}-roll-${rollIndex}`} className="relative">
                             <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${style}`}>
-                                <span className="text-lg font-bold">{die.value}</span>
+                               {colorblindIcon || <span className="text-lg font-bold">{die.value}</span>}
                             </div>
-                            {icon && (
+                            {modificationIcon && (
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full p-0.5">
-                                            {icon}
+                                            {modificationIcon}
                                         </span>
                                     </TooltipTrigger>
                                     <TooltipContent>
@@ -218,6 +232,7 @@ export default function DiceRoller({
   activeProjects,
   isTriumphForgingEyeActive,
   setTriumphForgingEyeActive,
+  isColorblindMode,
 }: DiceRollerProps) {
   const [projectType, setProjectType] = useState<ProjectType>("major-project");
   const [artifactRating, setArtifactRating] = useState(2);
@@ -400,7 +415,7 @@ export default function DiceRoller({
               Roll Results
             </h3>
             {diceRoll.diceHistories.length > 0 && (
-                <DiceDisplay waves={diceRoll.diceHistories} activeCharms={diceRoll.activeCharmIds}/>
+                <DiceDisplay waves={diceRoll.diceHistories} activeCharms={diceRoll.activeCharmIds} isColorblindMode={isColorblindMode} />
             )}
              {diceRoll.bonusDiceFromDivineInspiration > 0 && (
                  <p className="text-center text-sm text-muted-foreground">

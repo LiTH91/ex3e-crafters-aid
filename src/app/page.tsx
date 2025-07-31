@@ -14,8 +14,11 @@ import DiceRoller from "@/components/dice-roller";
 import CraftingJournal from "@/components/crafting-journal";
 import CraftingReference from "@/components/crafting-reference";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Hammer } from "lucide-react";
+import { Hammer, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+
 
 const initialCharacter: Character = {
   intelligence: 3,
@@ -49,6 +52,7 @@ const initialAppState = {
     activeProjects: [],
     isTriumphForgingEyeActive: false,
     divineInspirationUses: 0,
+    isColorblindMode: false,
 };
 
 interface AppState {
@@ -58,6 +62,7 @@ interface AppState {
   activeProjects: ActiveProject[];
   isTriumphForgingEyeActive: boolean;
   divineInspirationUses: number;
+  isColorblindMode: boolean;
 }
 
 export default function Home() {
@@ -286,7 +291,7 @@ export default function Home() {
     }
   }
 
-  const { character, activeCharms, craftingXp, activeProjects, isTriumphForgingEyeActive, divineInspirationUses } = appState;
+  const { character, activeCharms, craftingXp, activeProjects, isTriumphForgingEyeActive, divineInspirationUses, isColorblindMode } = appState;
   
   const addProject = (project: Omit<ActiveProject, 'id' | 'isComplete'>) => {
     handleStateChange('activeProjects', prev => [...prev, { ...project, id: crypto.randomUUID(), isComplete: false }]);
@@ -353,6 +358,7 @@ export default function Home() {
                   activeProjects={activeProjects.filter(p => !p.isComplete)}
                   isTriumphForgingEyeActive={isTriumphForgingEyeActive}
                   setTriumphForgingEyeActive={(val) => handleStateChange('isTriumphForgingEyeActive', val)}
+                  isColorblindMode={isColorblindMode}
                 />
               </TabsContent>
               <TabsContent value="journal">
@@ -373,7 +379,13 @@ export default function Home() {
         </div>
       </main>
       <footer className="text-center mt-12 text-sm text-muted-foreground">
-        <Button variant="outline" onClick={resetState} className="mb-4">Reset All Data</Button>
+        <div className="flex justify-center items-center gap-4 mb-4">
+          <Button variant="outline" onClick={resetState}>Reset All Data</Button>
+          <div className="flex items-center space-x-2">
+            <Switch id="colorblind-mode" checked={isColorblindMode} onCheckedChange={(val) => handleStateChange('isColorblindMode', val)} />
+            <Label htmlFor="colorblind-mode" className="flex items-center gap-1"><Eye className="w-4 h-4"/> Colorblind Mode</Label>
+          </div>
+        </div>
         <p>
           Exalted and its concepts are trademarks of Onyx Path Publishing. This
           is an unofficial fan utility.
