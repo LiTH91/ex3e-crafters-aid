@@ -2,7 +2,7 @@
 
 "use client";
 
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import type { DiceRoll, CraftingOutcome, Character, ProjectType, ActiveProject, Charm, DieResult } from "@/lib/types";
 import { PROJECT_TYPES } from "@/lib/types";
 import { allCharms } from "@/lib/charms";
@@ -16,6 +16,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import {
   Select,
   SelectContent,
@@ -38,7 +39,8 @@ import {
   Sun,
   Flame,
   RotateCw,
-  Replace
+  Replace,
+  Eye,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -48,22 +50,27 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 interface DiceRollerProps {
   character: Character;
   activeCharms: string[];
-  targetNumber: number;
-  setTargetNumber: (value: number) => void;
   onRoll: (
     projectDetails: {
       type: ProjectType;
       artifactRating: number;
       objectivesMet: number;
+      targetNumber: number;
     },
+    dicePool: {
+        base: number;
+        excellency: number;
+    },
+    willpowerSpent: number,
+    isTriumphForgingEyeActive: boolean,
     assignedProjectId?: string
   ) => void;
   isLoading: boolean;
   diceRoll: DiceRoll | null;
   aiOutcome: CraftingOutcome | null;
   activeProjects: ActiveProject[];
-  willpowerSpent: number;
-  setWillpowerSpent: (value: number) => void;
+  isTriumphForgingEyeActive: boolean;
+  setTriumphForgingEyeActive: (value: boolean) => void;
 }
 
 const getDieStyle = (roll: number, activeCharms: string[]): string => {
@@ -89,53 +96,68 @@ const DiceDisplay = ({ waves, activeCharms }: { waves: DieResult[][], activeChar
     <TooltipProvider>
     <div className="flex items-center justify-center gap-4 flex-wrap p-4 bg-secondary/30 rounded-lg">
         {waves.map((wave, waveIndex) => (
-           <div key={`wave-${waveIndex}`} className="flex items-center gap-4">
-                <div className="flex items-center gap-2 flex-wrap justify-center">
-                    {wave.map((die, rollIndex) => {
-                       const style = getDieStyle(die.value, activeCharms);
-                       return (
-                           <div key={`wave-${waveIndex}-roll-${rollIndex}`} className="relative">
-                               <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${style}`}>
-                                   <span className="text-lg font-bold">{die.value}</span>
-                               </div>
-                               {die.modification && (
-                                   <Tooltip>
-                                       <TooltipTrigger asChild>
-                                            <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full p-0.5">
-                                                {die.modification === 'explosion' && <Flame className="w-3 h-3" />}
-                                                {die.modification === 'reroll' && <RotateCw className="w-3 h-3" />}
-                                                {die.modification === 'conversion' && <Replace className="w-3 h-3" />}
-                                            </span>
-                                       </TooltipTrigger>
-                                       <TooltipContent>
-                                           <p>
-                                               {die.modification === 'reroll' && `Rerolled a ${die.initialValue}`}
-                                               {die.modification === 'explosion' && `Exploded from a ${die.initialValue}`}
-                                               {die.modification === 'conversion' && `Converted a ${die.initialValue} to 10`}
-                                               {die.modificationSource && ` due to ${die.modificationSource}`}
-                                           </p>
-                                       </TooltipContent>
-                                   </Tooltip>
-                               )}
-                           </div>
-                       )
-                    })}
-                </div>
-                {waveIndex < waves.length - 1 && (
-                     <ArrowRight className="w-6 h-6 text-muted-foreground hidden md:block" />
-                )}
-           </div>
+           <React.Fragment key={`wave-${waveIndex}`}>
+            <div className="flex items-center gap-2 flex-wrap justify-center">
+                {wave.map((die, rollIndex) => {
+                    const style = getDieStyle(die.value, activeCharms);
+                    const icon = 
+                        die.modification === 'explosion' ? <Flame className="w-3 h-3" /> :
+                        die.modification === 'reroll' ? <RotateCw className="w-3 h-3" /> :
+                        die.modification === 'conversion' ? <Replace className="w-3 h-3" /> :
+                        die.modificationSource === 'Divine Inspiration Technique' ? <Eye className="w-3 h-3" /> :
+                        null;
+
+                    const tooltipText = 
+                        die.modification === 'reroll' ? `Rerolled a ${die.initialValue}` :
+                        die.modification === 'explosion' ? `Exploded from a ${die.initialValue}` :
+                        die.modification === 'conversion' ? `Converted a ${die.initialValue} to 10` :
+                        die.modificationSource === 'Divine Inspiration Technique' ? 'Bonus die from Divine Inspiration Technique' :
+                        null;
+
+                    return (
+                        <div key={`wave-${waveIndex}-roll-${rollIndex}`} className="relative">
+                            <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${style}`}>
+                                <span className="text-lg font-bold">{die.value}</span>
+                            </div>
+                            {icon && (
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full p-0.5">
+                                            {icon}
+                                        </span>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>
+                                            {tooltipText}
+                                            {die.modification && die.modificationSource && die.modificationSource !== 'Divine Inspiration Technique' && ` due to ${die.modificationSource}`}
+                                        </p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            )}
+                        </div>
+                    )
+                })}
+            </div>
+            {waveIndex < waves.length - 1 && (
+                    <ArrowRight className="w-6 h-6 text-muted-foreground hidden md:block" />
+            )}
+           </React.Fragment>
         ))}
     </div>
     </TooltipProvider>
 );
 
-const calculateCharmCost = (activeCharmIds: string[], allCharms: Charm[], projectType: ProjectType) => {
+const calculateCharmCost = (activeCharmIds: string[], allCharms: Charm[], projectType: ProjectType, excellencyDice: number, isTriumphForgingEyeActive: boolean) => {
   let motes = 0;
   let willpower = 0;
   let sxp = 0;
   let gxp = 0;
   let wxp = 0;
+
+  // Excellency cost
+  if (excellencyDice > 0 && !isTriumphForgingEyeActive) {
+    motes += excellencyDice;
+  }
 
   for (const id of activeCharmIds) {
     let charmToCost: Partial<Charm> | undefined;
@@ -188,33 +210,49 @@ const calculateCharmCost = (activeCharmIds: string[], allCharms: Charm[], projec
 export default function DiceRoller({
   character,
   activeCharms,
-  targetNumber,
-  setTargetNumber,
   onRoll,
   isLoading,
   diceRoll,
   aiOutcome,
   activeProjects,
-  willpowerSpent,
-  setWillpowerSpent,
+  isTriumphForgingEyeActive,
+  setTriumphForgingEyeActive,
 }: DiceRollerProps) {
   const [projectType, setProjectType] = useState<ProjectType>("major-project");
   const [artifactRating, setArtifactRating] = useState(2);
   const [objectivesMet, setObjectivesMet] = useState(1);
+  const [targetNumber, setTargetNumber] = useState(7);
   const [assignedProjectId, setAssignedProjectId] = useState<string | undefined>(undefined);
+  const [willpowerSpent, setWillpowerSpent] = useState(0);
+  const [excellencyDice, setExcellencyDice] = useState(0);
+
+  const baseDicePool = character[character.selectedAttribute] + character.craft;
+  const maxExcellency = character[character.selectedAttribute] + character.craft;
+
+   useEffect(() => {
+    if (isTriumphForgingEyeActive) {
+      setExcellencyDice(maxExcellency);
+    }
+  }, [isTriumphForgingEyeActive, maxExcellency]);
 
   const handleRollClick = () => {
     onRoll({
       type: projectType,
       artifactRating: projectType.startsWith("superior-") ? artifactRating : 0,
       objectivesMet,
-    }, assignedProjectId);
+      targetNumber
+    }, 
+    { base: baseDicePool, excellency: excellencyDice },
+    willpowerSpent,
+    isTriumphForgingEyeActive,
+    assignedProjectId);
   };
 
-  const dicePool = character[character.selectedAttribute] + character.craft;
-  const charmCosts = calculateCharmCost(activeCharms, allCharms, projectType);
+  
+  const charmCosts = calculateCharmCost(activeCharms, allCharms, projectType, excellencyDice, isTriumphForgingEyeActive);
   const isWillForgingActive = activeCharms.includes("will-forging-discipline");
   const totalWillpowerCost = charmCosts.willpower + (isWillForgingActive ? willpowerSpent : 0);
+  const isTriumphForgingEyeAvailable = activeCharms.includes("triumph-forging-eye");
 
   const hasCosts = Object.values(charmCosts).some(cost => cost > 0) || (isWillForgingActive && willpowerSpent > 0);
 
@@ -288,6 +326,20 @@ export default function DiceRoller({
         </div>
         <Separator />
          <div className="space-y-4">
+            <div>
+                <Label htmlFor="excellency-dice" className="font-bold flex items-center gap-2">Craft Excellency</Label>
+                <div className="flex items-center gap-4">
+                    <Input id="excellency-dice" type="range" value={excellencyDice} onChange={(e) => setExcellencyDice(Math.max(0, parseInt(e.target.value, 10) || 0))} min={0} max={maxExcellency} disabled={isTriumphForgingEyeActive}/>
+                    <span className="font-bold text-lg w-12 text-center">{excellencyDice}</span>
+                </div>
+                 <p className="text-sm text-muted-foreground mt-1">Add up to {maxExcellency} dice to your roll for 1 mote per die.</p>
+            </div>
+            {isTriumphForgingEyeAvailable && (
+              <div className="flex items-center space-x-2">
+                  <Switch id="triumph-forging-eye" checked={isTriumphForgingEyeActive} onCheckedChange={setTriumphForgingEyeActive} />
+                  <Label htmlFor="triumph-forging-eye" className="font-bold">Use Triumph-Forging Eye (Once per week)</Label>
+              </div>
+            )}
             {isWillForgingActive && (
               <div>
                   <Label htmlFor="willpower-spent" className="font-bold flex items-center gap-2">Will-Forging Discipline</Label>
@@ -321,13 +373,13 @@ export default function DiceRoller({
                     )}
                      {charmCosts.gxp > 0 && (
                          <Badge variant="outline" className="flex items-center gap-2 text-base py-1 px-3">
-                             <Shield className="w-4 h-4 text-green-400"/>
+                             <Sun className="w-4 h-4 text-green-400"/>
                              <span>{charmCosts.gxp} GXP</span>
                         </Badge>
                     )}
                      {charmCosts.wxp > 0 && (
                          <Badge variant="outline" className="flex items-center gap-2 text-base py-1 px-3">
-                            <Sun className="w-4 h-4 text-orange-400"/>
+                            <Star className="w-4 h-4 text-orange-400"/>
                              <span>{charmCosts.wxp} WXP</span>
                         </Badge>
                     )}
@@ -337,7 +389,7 @@ export default function DiceRoller({
           <div className="text-center">
             <Button onClick={handleRollClick} disabled={isLoading} size="lg" className="font-headline text-xl">
               {isLoading ? (<Loader2 className="mr-2 h-6 w-6 animate-spin" />) : (<Dices className="mr-2 h-6 w-6" />)}
-              Roll {dicePool} Dice
+              Roll {baseDicePool + excellencyDice} Dice
             </Button>
           </div>
         </div>
@@ -349,18 +401,21 @@ export default function DiceRoller({
             {diceRoll.diceHistories.length > 0 && (
                 <DiceDisplay waves={diceRoll.diceHistories} activeCharms={diceRoll.activeCharmIds}/>
             )}
-            {diceRoll.totalSuccesses > 0 && (
-              <div className="text-center font-bold text-2xl font-headline flex items-center justify-center gap-2">
-                {diceRoll.totalSuccesses >= diceRoll.targetNumber ? (
-                  <CheckCircle2 className="w-8 h-8 text-green-500" />
-                ) : (
-                  <XCircle className="w-8 h-8 text-red-500" />
-                )}
-                <span>
-                  {diceRoll.totalSuccesses} Successes vs TN {diceRoll.targetNumber}
-                </span>
-              </div>
-            )}
+             {diceRoll.bonusDiceFromDivineInspiration > 0 && (
+                 <p className="text-center text-sm text-muted-foreground">
+                    Gained {diceRoll.bonusDiceFromDivineInspiration} bonus dice from Divine Inspiration Technique.
+                </p>
+             )}
+            <div className="text-center font-bold text-2xl font-headline flex items-center justify-center gap-2">
+              {diceRoll.totalSuccesses >= diceRoll.targetNumber ? (
+                <CheckCircle2 className="w-8 h-8 text-green-500" />
+              ) : (
+                <XCircle className="w-8 h-8 text-red-500" />
+              )}
+              <span>
+                {diceRoll.totalSuccesses} Successes vs TN {diceRoll.targetNumber}
+              </span>
+            </div>
              {diceRoll.automaticSuccesses > 0 && (
                 <p className="text-center text-sm text-muted-foreground">
                     (+{diceRoll.automaticSuccesses} from Charms)
@@ -416,3 +471,5 @@ export default function DiceRoller({
     </Card>
   );
 }
+
+    

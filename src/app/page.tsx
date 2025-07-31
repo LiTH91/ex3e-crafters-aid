@@ -124,6 +124,7 @@ export default function Home() {
       type: ProjectType;
       artifactRating: number;
       objectivesMet: number;
+      targetNumber: number;
     },
     dicePool: {
         base: number;
@@ -221,6 +222,8 @@ export default function Home() {
           character,
           activeCharms,
           dicePool,
+          targetNumber: projectDetails.targetNumber,
+          willpowerSpent,
           onProgress: (interimRoll) => {
               setDiceRoll(interimRoll);
           }
@@ -234,6 +237,8 @@ export default function Home() {
       const result = calculateCraftingOutcome({ 
         project: projectDetails, 
         successes: rollResult.totalSuccesses,
+        targetNumber: projectDetails.targetNumber,
+        isExceptional: rollResult.totalSuccesses >= projectDetails.targetNumber + 3,
         activeCharms
       });
 
@@ -282,9 +287,7 @@ export default function Home() {
   }
 
   const { character, activeCharms, craftingXp, activeProjects, isTriumphForgingEyeActive, divineInspirationUses } = appState;
-  const hasTirelessWorkhorse = activeCharms.includes("tireless-workhorse-method");
-  const majorProjectSlots = hasTirelessWorkhorse ? character.essence * 2 : 0;
-
+  
   const addProject = (project: Omit<ActiveProject, 'id' | 'isComplete'>) => {
     handleStateChange('activeProjects', prev => [...prev, { ...project, id: crypto.randomUUID(), isComplete: false }]);
   }
@@ -292,6 +295,9 @@ export default function Home() {
   const removeProject = (projectId: string) => {
     handleStateChange('activeProjects', prev => prev.filter(p => p.id !== projectId));
   }
+
+  const hasTirelessWorkhorse = activeCharms.includes("tireless-workhorse-method") || allCharms.find(c => c.id === "chains-fall-away" && activeCharms.includes(c.id));
+  const majorProjectSlots = hasTirelessWorkhorse ? (character.essence * 2) : 0;
   
   if (!isMounted) {
     // Render a loading state or null on the server and initial client render
@@ -326,12 +332,6 @@ export default function Home() {
               setActiveCharms={(value) => handleStateChange('activeCharms', value)}
               character={character}
               experience={craftingXp}
-              storyUses={{'divine-inspiration-technique': divineInspirationUses}}
-              setStoryUses={(charmId, uses) => {
-                if (charmId === 'divine-inspiration-technique') {
-                  handleStateChange('divineInspirationUses', uses)
-                }
-              }}
             />
           </div>
 
@@ -382,3 +382,5 @@ export default function Home() {
     </div>
   );
 }
+
+    
