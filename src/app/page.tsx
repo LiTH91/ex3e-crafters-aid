@@ -118,7 +118,7 @@ export default function Home() {
     setOutcome(null);
 
     try {
-      const { character, activeCharms } = appState;
+      const { character, activeCharms, craftingXp } = appState;
 
       // --- 1. Calculate Costs & Effects from Charms ---
       let moteCost = 0;
