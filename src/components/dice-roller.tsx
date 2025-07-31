@@ -1,9 +1,9 @@
 
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import type { DiceRoll, CraftingOutcome, Character, ProjectType, ActiveProject, Charm } from "@/lib/types";
-import { PROJECT_TYPES } from "@/lib/types";
+import { PROJECT_TYPES } from "@/lib/constants";
 import { allCharms } from "@/lib/charms";
 import {
   Card,
@@ -95,7 +95,7 @@ const DiceDisplay = ({ waves, activeCharms }: { waves: number[][], activeCharms:
 );
 
 
-export default function DiceRoller({
+const DiceRoller = React.memo(({
   character,
   activeCharms,
   targetNumber,
@@ -107,7 +107,7 @@ export default function DiceRoller({
   activeProjects,
   willpowerSpent,
   setWillpowerSpent,
-}: DiceRollerProps) {
+}: DiceRollerProps) => {
   const [projectType, setProjectType] = useState<ProjectType>("basic-project");
   const [artifactRating, setArtifactRating] = useState(2);
   const [objectivesMet, setObjectivesMet] = useState(1);
@@ -349,4 +349,7 @@ export default function DiceRoller({
       </CardContent>
     </Card>
   );
-}
+});
+
+DiceRoller.displayName = "DiceRoller";
+export default DiceRoller;

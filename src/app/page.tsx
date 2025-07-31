@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import type { Character, DiceRoll, CraftingOutcome, ProjectType, ActiveProject, CraftingExperience } from "@/lib/types";
 import { allCharms } from "@/lib/charms";
 import { calculateCraftingOutcome } from "@/lib/crafting-calculator";
@@ -98,14 +98,14 @@ export default function Home() {
     }
   }, [appState, isMounted]);
 
-  const handleStateChange = <K extends keyof AppState>(key: K, value: AppState[K] | ((prevState: AppState[K]) => AppState[K])) => {
+  const handleStateChange = useCallback(<K extends keyof AppState>(key: K, value: AppState[K] | ((prevState: AppState[K]) => AppState[K])) => {
     setAppState(prev => {
         const newValue = typeof value === 'function' ? (value as (prevState: AppState[K]) => AppState[K])(prev[key]) : value;
         return { ...prev, [key]: newValue };
     });
-  };
+  }, []);
 
-  const handleRoll = async (
+  const handleRoll = useCallback(async (
     projectDetails: {
       type: ProjectType;
       artifactRating: number;
@@ -142,15 +142,15 @@ export default function Home() {
       activeCharmDetails.forEach((charm) => {
         if (charm.effect.type === "lower_repair_difficulty" && projectDetails.type.includes("repair")) tnModifier -= charm.effect.value;
         if (charm.cost) {
-            const moteMatch = charm.cost.match(/(\d+)m/);
+            const moteMatch = charm.cost.match(/(\\d+)m/);
             if (moteMatch) moteCost += parseInt(moteMatch[1], 10);
-            const willpowerMatch = charm.cost.match(/(\d+)wp/);
+            const willpowerMatch = charm.cost.match(/(\\d+)wp/);
             if (willpowerMatch && charm.id !== 'will-forging-discipline') willpowerCost += parseInt(willpowerMatch[1], 10);
-            const sxpMatch = charm.cost.match(/(\d+)sxp/);
+            const sxpMatch = charm.cost.match(/(\\d+)sxp/);
             if (sxpMatch) sxpCost += parseInt(sxpMatch[1], 10);
-            const gxpMatch = charm.cost.match(/(\d+)gxp/);
+            const gxpMatch = charm.cost.match(/(\\d+)gxp/);
             if (gxpMatch) gxpCost += parseInt(gxpMatch[1], 10);
-            const wxpMatch = charm.cost.match(/(\d+)wxp/);
+            const wxpMatch = charm.cost.match(/(\\d+)wxp/);
             if (wxpMatch) wxpCost += parseInt(wxpMatch[1], 10);
         }
       });
@@ -226,9 +226,9 @@ export default function Home() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [appState, willpowerSpent, targetNumber, handleStateChange, toast]);
 
-  const resetState = () => {
+  const resetState = useCallback(() => {
     if (window.confirm("Are you sure you want to reset all data? This cannot be undone.")) {
         localStorage.removeItem("exaltedCrafterState");
         setAppState(initialAppState);
@@ -237,23 +237,21 @@ export default function Home() {
         setTargetNumber(5);
         toast({ title: "Data Reset", description: "All character data and projects have been reset." });
     }
-  }
+  }, [toast]);
 
+  const addProject = useCallback((project: Omit<ActiveProject, 'id' | 'isComplete'>) => {
+    handleStateChange('activeProjects', prev => [...prev, { ...project, id: crypto.randomUUID(), isComplete: false }]);
+  }, [handleStateChange]);
+
+  const removeProject = useCallback((projectId: string) => {
+    handleStateChange('activeProjects', prev => prev.filter(p => p.id !== projectId));
+  }, [handleStateChange]);
+  
   const { character, activeCharms, craftingXp, activeProjects } = appState;
   const hasTirelessWorkhorse = activeCharms.includes("tireless-workhorse-method");
   const majorProjectSlots = hasTirelessWorkhorse ? character.essence * 2 : 0;
 
-  const addProject = (project: Omit<ActiveProject, 'id' | 'isComplete'>) => {
-    handleStateChange('activeProjects', prev => [...prev, { ...project, id: crypto.randomUUID(), isComplete: false }]);
-  }
-
-  const removeProject = (projectId: string) => {
-    handleStateChange('activeProjects', prev => prev.filter(p => p.id !== projectId));
-  }
-  
   if (!isMounted) {
-    // Render a loading state or null on the server and initial client render
-    // to prevent hydration mismatch. This can be a skeleton loader.
     return null; 
   }
 

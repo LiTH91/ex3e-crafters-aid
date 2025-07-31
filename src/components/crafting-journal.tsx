@@ -1,9 +1,9 @@
 
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import type { ActiveProject, ProjectType } from "@/lib/types";
-import { PROJECT_TYPES } from "@/lib/types";
+import { PROJECT_TYPES } from "@/lib/constants";
 import {
   Card,
   CardContent,
@@ -38,13 +38,13 @@ interface CraftingJournalProps {
   onRemoveProject: (projectId: string) => void;
 }
 
-export default function CraftingJournal({
+const CraftingJournal = React.memo(({
   experience,
   projects,
   maxProjects,
   onAddProject,
   onRemoveProject,
-}: CraftingJournalProps) {
+}: CraftingJournalProps) => {
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectType, setNewProjectType] =
     useState<ProjectType>("major-project");
@@ -180,7 +180,7 @@ export default function CraftingJournal({
                         <SelectContent>
                             {PROJECT_TYPES.filter(t => t.endsWith("project")).map((type) => (
                             <SelectItem key={type} value={type}>
-                                {type.replace("-", " ").replace(/\b\w/g, l => l.toUpperCase())}
+                                {type.replace("-", " ").replace(/\\b\\w/g, l => l.toUpperCase())}
                             </SelectItem>
                             ))}
                         </SelectContent>
@@ -207,7 +207,7 @@ export default function CraftingJournal({
                     <div>
                       <p className="font-bold font-body">{p.name}</p>
                       <p className="text-sm text-muted-foreground font-body">
-                        {p.type.replace("-", " ").replace(/\b\w/g, l => l.toUpperCase())}
+                        {p.type.replace("-", " ").replace(/\\b\\w/g, l => l.toUpperCase())}
                       </p>
                     </div>
                     <Button variant="ghost" size="icon" onClick={() => onRemoveProject(p.id)}>
@@ -245,4 +245,7 @@ export default function CraftingJournal({
       </CardContent>
     </Card>
   );
-}
+});
+
+CraftingJournal.displayName = "CraftingJournal";
+export default CraftingJournal;

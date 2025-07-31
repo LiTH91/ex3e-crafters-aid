@@ -1,7 +1,7 @@
 "use client";
 
 import type { Project, ProjectType } from "@/lib/types";
-import { PROJECT_TYPES } from "@/lib/types";
+import { PROJECT_TYPES } from "@/lib/constants";
 import {
   Card,
   CardContent,
@@ -67,7 +67,7 @@ export default function ProjectDetails({
             <SelectContent>
               {PROJECT_TYPES.map((type) => (
                 <SelectItem key={type} value={type}>
-                  {type.replace("-", " ").replace(/\w/g, (l) => l.toUpperCase())}
+                  {type.replace("-", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
                 </SelectItem>
               ))}
             </SelectContent>

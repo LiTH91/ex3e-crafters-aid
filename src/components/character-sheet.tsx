@@ -1,7 +1,8 @@
 "use client";
 
+import React from 'react';
 import type { Character, Attribute } from "@/lib/types";
-import { ATTRIBUTES } from "@/lib/types";
+import { ATTRIBUTES } from "@/lib/constants";
 import {
   Card,
   CardContent,
@@ -25,10 +26,10 @@ interface CharacterSheetProps {
   setCharacter: (value: (prev: Character) => Character) => void;
 }
 
-export default function CharacterSheet({
+const CharacterSheet = React.memo(({
   character,
   setCharacter,
-}: CharacterSheetProps) {
+}: CharacterSheetProps) => {
   const handleStatChange = (stat: keyof Character, value: string | number) => {
     const numValue = typeof value === 'string' ? parseInt(value, 10) : value;
 
@@ -201,6 +202,7 @@ export default function CharacterSheet({
       </CardContent>
     </Card>
   );
-}
+});
 
-    
+CharacterSheet.displayName = "CharacterSheet";
+export default CharacterSheet;

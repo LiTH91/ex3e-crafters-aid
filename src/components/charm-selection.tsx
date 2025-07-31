@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import type { Charm, Character, CraftingExperience } from "@/lib/types";
 import { allCharms } from "@/lib/charms";
 import {
@@ -61,13 +61,13 @@ const CharmItem = ({ charm, activeCharms, handleCharmToggle, isDisabled }: { cha
 );
 
 
-export default function CharmSelection({
+const CharmSelection = React.memo(({
   knownCharms,
   activeCharms,
   setActiveCharms,
   character,
   experience,
-}: CharmSelectionProps) {
+}: CharmSelectionProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("name");
 
@@ -263,4 +263,7 @@ export default function CharmSelection({
       </CardContent>
     </Card>
   );
-}
+});
+
+CharmSelection.displayName = "CharmSelection";
+export default CharmSelection;

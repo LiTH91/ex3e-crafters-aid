@@ -1,30 +1,24 @@
 
-export const ATTRIBUTES = [
-  "intelligence",
-  "wits",
-  "perception",
-  "strength",
-  "dexterity",
-  "stamina",
-  "charisma",
-  "manipulation",
-  "appearance",
-] as const;
+export type Attribute = 
+  | "intelligence"
+  | "wits"
+  | "perception"
+  | "strength"
+  | "dexterity"
+  | "stamina"
+  | "charisma"
+  | "manipulation"
+  | "appearance";
 
-export type Attribute = (typeof ATTRIBUTES)[number];
-
-export const PROJECT_TYPES = [
-    "basic-project",
-    "major-project",
-    "superior-project",
-    "legendary-project",
-    "basic-repair",
-    "major-repair",
-    "superior-repair",
-    "legendary-repair",
-  ] as const;
-
-export type ProjectType = (typeof PROJECT_TYPES)[number];
+export type ProjectType = 
+  | "basic-project"
+  | "major-project"
+  | "superior-project"
+  | "legendary-project"
+  | "basic-repair"
+  | "major-repair"
+  | "superior-repair"
+  | "legendary-repair";
 
 export interface Project {
   type: ProjectType;
@@ -46,7 +40,6 @@ export interface CraftingExperience {
   gxp: number;
   wxp: number;
 }
-
 
 export interface Character {
   intelligence: number;
