@@ -108,6 +108,7 @@ export interface DiceRoll {
   targetNumber: number;
   activeCharmNames: string[];
   activeCharmIds: string[];
+  bonusDiceFromDivineInspiration: number;
 }
 
 export interface CraftingOutcome {

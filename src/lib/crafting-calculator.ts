@@ -9,6 +9,7 @@ interface CraftingInput {
   successes: number;
   targetNumber: number;
   isExceptional: boolean;
+  activeCharms: string[];
   intervalsRemaining?: number;
   legendaryBonusRoll?: number[];
 }

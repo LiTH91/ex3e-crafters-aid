@@ -104,7 +104,7 @@ const DiceDisplay = ({ waves, activeCharms }: { waves: DieResult[][], activeChar
                         die.modification === 'explosion' ? <Flame className="w-3 h-3" /> :
                         die.modification === 'reroll' ? <RotateCw className="w-3 h-3" /> :
                         die.modification === 'conversion' ? <Replace className="w-3 h-3" /> :
-                        die.modificationSource === 'Divine Inspiration Technique' ? <Eye className="w-3 h-3" /> :
+                        die.modificationSource === 'Divine Inspiration Technique' || die.modificationSource === 'Holistic Miracle Understanding' ? <Eye className="w-3 h-3" /> :
                         null;
 
                     const tooltipText = 
@@ -112,6 +112,7 @@ const DiceDisplay = ({ waves, activeCharms }: { waves: DieResult[][], activeChar
                         die.modification === 'explosion' ? `Exploded from a ${die.initialValue}` :
                         die.modification === 'conversion' ? `Converted a ${die.initialValue} to 10` :
                         die.modificationSource === 'Divine Inspiration Technique' ? 'Bonus die from Divine Inspiration Technique' :
+                        die.modificationSource === 'Holistic Miracle Understanding' ? 'Bonus die from Holistic Miracle Understanding' :
                         null;
 
                     return (
@@ -129,7 +130,7 @@ const DiceDisplay = ({ waves, activeCharms }: { waves: DieResult[][], activeChar
                                     <TooltipContent>
                                         <p>
                                             {tooltipText}
-                                            {die.modification && die.modificationSource && die.modificationSource !== 'Divine Inspiration Technique' && ` due to ${die.modificationSource}`}
+                                            {die.modification && die.modificationSource && !['Divine Inspiration Technique', 'Holistic Miracle Understanding'].includes(die.modificationSource) && ` due to ${die.modificationSource}`}
                                         </p>
                                     </TooltipContent>
                                 </Tooltip>
@@ -471,5 +472,3 @@ export default function DiceRoller({
     </Card>
   );
 }
-
-    

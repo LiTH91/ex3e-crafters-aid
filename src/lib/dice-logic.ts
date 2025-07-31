@@ -42,17 +42,21 @@ const calculateSuccesses = (roll: number, activeCharms: string[]) => {
 interface DiceRollInput {
   character: Character;
   activeCharms: string[];
+  dicePool: {
+    base: number;
+    excellency: number;
+  };
   targetNumber: number;
   willpowerSpent: number;
   onProgress: (interimRoll: DiceRoll) => void;
 }
 
 export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> => {
-    const { character, activeCharms, targetNumber, willpowerSpent, onProgress } = input;
+    const { character, activeCharms, dicePool, targetNumber, willpowerSpent, onProgress } = input;
     
     await new Promise(resolve => setTimeout(resolve, 50));
 
-    let initialDicePool = character[character.selectedAttribute] + character.craft;
+    let initialDicePool = dicePool.base + dicePool.excellency;
     let automaticSuccesses = 0;
     
     const isVoidConjuringActive = activeCharms.includes('experiential-conjuring-of-true-void');
@@ -105,7 +109,7 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
     }
 
 
-    // --- Step 3: Calculate Successes and Explosions ---
+    // --- Step 3: Calculate Successes and Explosions from initial roll ---
     let diceToExplode: DieResult[] = [];
     for (const die of firstWaveRolls) {
         totalSuccesses += calculateSuccesses(die.value, activeCharms);
@@ -115,7 +119,7 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
     }
 
     onProgress({
-        diceHistories: allRolls, totalSuccesses, automaticSuccesses, targetNumber, activeCharmNames: [], activeCharmIds: []
+        diceHistories: allRolls, totalSuccesses, automaticSuccesses, targetNumber, activeCharmNames: [], activeCharmIds: [], bonusDiceFromDivineInspiration: 0
     });
     await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY));
 
@@ -145,7 +149,7 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
         }
         
         onProgress({
-            diceHistories: allRolls, totalSuccesses, automaticSuccesses, targetNumber, activeCharmNames: [], activeCharmIds: []
+            diceHistories: allRolls, totalSuccesses, automaticSuccesses, targetNumber, activeCharmNames: [], activeCharmIds: [], bonusDiceFromDivineInspiration: 0
         });
 
         if (explosionsForNextWave.length > 0) {
@@ -153,7 +157,53 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
         }
     }
     
-    // --- Step 5: Final Calculation & Return ---
+    // --- Step 5: Divine Inspiration Technique Loop ---
+    let continueRecursion = activeCharms.includes('divine-inspiration-technique');
+    let totalBonusDice = 0;
+
+    while (continueRecursion) {
+        const currentTotalSuccesses = totalSuccesses + automaticSuccesses; // Recalculate with autosuccesses
+        let bonusDiceFromSuccesses = Math.floor(currentTotalSuccesses / 3) - totalBonusDice;
+        
+        if (bonusDiceFromSuccesses <= 0) {
+            continueRecursion = false;
+            break;
+        }
+
+        const bonusWave: DieResult[] = [];
+        let waveSuccesses = 0;
+
+        for (let i = 0; i < bonusDiceFromSuccesses; i++) {
+            const die = rollDie();
+            die.modificationSource = 'Divine Inspiration Technique';
+            waveSuccesses += calculateSuccesses(die.value, activeCharms);
+            bonusWave.push(die);
+        }
+
+        totalBonusDice += bonusDiceFromSuccesses;
+
+        // Holistic Miracle Understanding check
+        if (activeCharms.includes('holistic-miracle-understanding') && waveSuccesses >= 3) {
+            for (let i = 0; i < 3; i++) {
+                const die = rollDie();
+                die.modificationSource = 'Holistic Miracle Understanding';
+                waveSuccesses += calculateSuccesses(die.value, activeCharms);
+                bonusWave.push(die);
+            }
+            totalBonusDice += 3;
+        }
+
+        totalSuccesses += waveSuccesses;
+        allRolls.push(bonusWave);
+
+        onProgress({
+            diceHistories: allRolls, totalSuccesses, automaticSuccesses, targetNumber, activeCharmNames: [], activeCharmIds: [], bonusDiceFromDivineInspiration: totalBonusDice
+        });
+        await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY));
+    }
+
+
+    // --- Step 6: Final Calculation & Return ---
     const activeCharmDetails = allCharms.flatMap(charm => {
         const charms = [];
         if (activeCharms.includes(charm.id)) charms.push(charm);
@@ -186,6 +236,7 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
         targetNumber: targetNumber,
         activeCharmNames: activeCharmDetails.filter(c => c.category === 'functional').map(c => c.name),
         activeCharmIds: activeCharms,
+        bonusDiceFromDivineInspiration: totalBonusDice,
     };
 
     // Final progress update with all data
