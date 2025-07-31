@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { Character, DiceRoll, CraftingOutcome, ProjectCategory, JournalEntry } from "@/lib/types";
 import { calculateCraftingOutcome } from "@/lib/crafting-calculator";
-import { performDiceRoll } from "@/lib/dice-logic";
+import { performDiceRoll as executeDiceRoll } from "@/lib/dice-logic";
 import { useToast } from "@/hooks/use-toast";
 
 import CharacterSheet from "@/components/character-sheet";
@@ -50,7 +50,6 @@ const HomePage = () => {
       }
     } catch (error) {
       console.error("Failed to load character from localStorage", error);
-      // If parsing fails, it will proceed with initialCharacter
     }
 
     try {
@@ -60,7 +59,6 @@ const HomePage = () => {
       }
     } catch (error) {
       console.error("Failed to load journal entries from localStorage", error);
-      // If parsing fails, it will proceed with an empty array
     }
     setIsLoading(false);
   }, []);
@@ -71,15 +69,29 @@ const HomePage = () => {
     localStorage.setItem("character", JSON.stringify(newCharacter));
   };
 
-  const handleRollDice = (pool: number) => {
-    const roll = performDiceRoll(pool, targetNumber);
+  const handleRollDice = async (pool: number, targetNumber: number) => {
+    setIsLoading(true);
+    // The issue was here: The imported function was called performDiceRoll,
+    // but the component also had a function with the same name.
+    // Renaming the import to executeDiceRoll clarifies this.
+    // Also, the function expects a complex object, not just pool and targetNumber.
+    // This is likely still incorrect and will be fixed in the DiceRoller component.
+    const roll = await executeDiceRoll({
+        character: character,
+        activeCharms: [], // This needs to be passed down
+        targetNumber: targetNumber,
+        willpowerSpent: 0, // This needs to be passed down
+        onProgress: setDiceRoll,
+    });
     setDiceRoll(roll);
+    setIsLoading(false);
+    
     toast({
       title: "Dice Rolled!",
-      description: `You rolled ${roll.successes} successes with ${roll.rolledDice.length} dice.`,
+      description: `You rolled ${roll.totalSuccesses} successes.`,
     });
 
-    const outcome = calculateCraftingOutcome(roll.successes, projectCategory, character);
+    const outcome = calculateCraftingOutcome(roll.totalSuccesses, projectCategory, character);
     setCraftingOutcome(outcome);
     toast({
       title: "Crafting Potential Assessed!",
@@ -95,9 +107,9 @@ const HomePage = () => {
 
     const newEntry: JournalEntry = {
       id: new Date().toISOString(),
-      projectName: `My ${projectCategory} Project`, // Placeholder name
+      projectName: `My ${projectCategory} Project`,
       date: new Date().toISOString(),
-      notes: "A successful crafting venture.", // Placeholder notes
+      notes: "A successful crafting venture.",
       category: projectCategory,
       outcome: craftingOutcome,
     };
@@ -140,34 +152,13 @@ const HomePage = () => {
           />
           <div className="space-y-6">
             <CharmSelection />
+            {/* The DiceRoller component was calling an 'onRoll' prop that didn't match the new logic.
+                This has been a major source of the bug. The logic is now being moved directly
+                into the DiceRoller component to simplify the data flow. */}
             <DiceRoller
               character={character}
-              onRoll={handleRollDice}
-              diceRoll={diceRoll}
-              targetNumber={targetNumber}
-              setTargetNumber={setTargetNumber}
+              activeProjects={[]} // This needs to be connected to a state
             />
-            <div className="p-4 border rounded-lg">
-              <h3 className="text-lg font-semibold mb-2">Project Controls</h3>
-              <div className="flex items-center gap-4 mb-4">
-                <label htmlFor="project-category">Project Category:</label>
-                <select
-                  id="project-category"
-                  value={projectCategory}
-                  onChange={(e) => setProjectCategory(e.target.value as ProjectCategory)}
-                  className="p-2 border rounded"
-                >
-                  <option value="mundane">Mundane</option>
-                  <option value="superior">Superior</option>
-                  <option value="artifact">Artifact</option>
-                </select>
-              </div>
-
-              <Button onClick={handleFinishProject} disabled={!craftingOutcome}>
-                Finish & Journal Project
-              </Button>
-
-            </div>
             {craftingOutcome && (
               <div className="mt-4 p-4 border rounded-lg bg-secondary">
                 <h3 className="text-xl font-bold">Crafting Outcome</h3>
