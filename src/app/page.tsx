@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { Character, DiceRoll, CraftingOutcome, ProjectType, ActiveProject, CraftingExperience } from "@/lib/types";
-import { allCharms } from "@/lib/charms";
+import type { Character, DiceRoll, CraftingOutcome, ProjectCategory, ActiveProject, JournalEntry } from "@/lib/types";
 import { calculateCraftingOutcome } from "@/lib/crafting-calculator";
 import { performDiceRoll } from "@/lib/dice-logic";
 import { useToast } from "@/hooks/use-toast";
@@ -28,69 +27,33 @@ const initialCharacter: Character = {
   manipulation: 1,
   appearance: 1,
   craft: 5,
-  occult: 0,
-  medicine: 0,
-  larceny: 0,
-  sail: 0,
-  performance: 0,
-  survival: 0,
-  investigation: 0,
-  lore: 0,
-  athletics: 0,
-  awareness: 0,
-  bureaucracy: 0,
-  integrity: 0,
-  melee: 0,
-  presence: 0,
-  resistance: 0,
-  ride: 0,
-  socialize: 0,
-  stealth: 0,
-  war: 0,
-  archery: 0,
-  brawl: 0,
-  dodge: 0,
-  linguistics: 0,
-  thrown: 0,
   specialty: 0,
 };
-
-// Dummy data and functions to satisfy CraftingJournal's props
-const initialExperience = { sxp: 0, gxp: 0, wxp: 0 };
-const handleAddProject = () => console.log("Add project dummy function");
-const handleRemoveProject = () => console.log("Remove project dummy function");
-
 
 const HomePage = () => {
   const [character, setCharacter] = useState<Character>(initialCharacter);
   const [diceRoll, setDiceRoll] = useState<DiceRoll | null>(null);
   const [craftingOutcome, setCraftingOutcome] = useState<CraftingOutcome | null>(null);
   const [activeProject, setActiveProject] = useState<ActiveProject | null>(null);
-  const [projectType, setProjectType] = useState<ProjectType>("mundane");
+  const [projectCategory, setProjectCategory] = useState<ProjectCategory>("mundane");
   const [targetNumber, setTargetNumber] = useState<number>(7);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isJournalOpen, setIsJournalOpen] = useState(false);
-  const [craftingExperiences, setCraftingExperiences] = useState<CraftingExperience[]>([]);
+  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Simulate initial data loading
-    const timer = setTimeout(() => {
-      setIsLoading(false);
-    }, 1500); // Adjust time as needed
-
     // Load data from localStorage on component mount
+    setIsLoading(true);
     const savedCharacter = localStorage.getItem("character");
     if (savedCharacter) {
       setCharacter(JSON.parse(savedCharacter));
     }
-    const savedExperiences = localStorage.getItem("craftingExperiences");
-    if (savedExperiences) {
-      // NOTE: We are loading CraftingExperience[] but the journal expects ActiveProject[]
-      // This might need to be reconciled later, but for now, we'll pass it.
-      setCraftingExperiences(JSON.parse(savedExperiences));
+    const savedEntries = localStorage.getItem("journalEntries");
+    if (savedEntries) {
+      setJournalEntries(JSON.parse(savedEntries));
     }
+    setIsLoading(false);
   }, []);
 
   const handleCharacterChange = (field: keyof Character, value: number) => {
@@ -106,65 +69,44 @@ const HomePage = () => {
       title: "Dice Rolled!",
       description: `You rolled ${roll.successes} successes with ${roll.rolledDice.length} dice.`,
     });
+
+    // Directly calculate and set outcome after rolling
+    const outcome = calculateCraftingOutcome(roll.successes, projectCategory, character);
+    setCraftingOutcome(outcome);
+    toast({
+      title: "Crafting Potential Assessed!",
+      description: `You can achieve ${outcome.successes} successes, taking ${outcome.time}.`,
+    });
   };
 
-  const handleStartProject = useCallback(() => {
-    if (!diceRoll) {
-      toast({
-        title: "Error",
-        description: "You must roll the dice first.",
-        variant: "destructive",
-      });
+  const handleFinishProject = useCallback(() => {
+    if (!craftingOutcome) {
+       toast({ title: "Error", description: "No crafting outcome to record.", variant: "destructive" });
       return;
     }
 
-    const outcome = calculateCraftingOutcome(diceRoll.successes, projectType, character);
-    setCraftingOutcome(outcome);
-    const newProject: ActiveProject = {
-      id: new Date().toISOString(), // Simple unique ID
-      name: `New ${projectType} Project`,
-      type: 'major-project', // This needs to be reconciled with the old system
-      goal: 100, // Placeholder
-      progress: outcome.successes,
-      isComplete: outcome.successes >= 100,
+    const newEntry: JournalEntry = {
+      id: new Date().toISOString(),
+      projectName: `My ${projectCategory} Project`, // Placeholder name
+      date: new Date().toISOString(),
+      notes: "A successful crafting venture.", // Placeholder notes
+      category: projectCategory,
+      outcome: craftingOutcome,
     };
-    setActiveProject(newProject);
+
+    const newEntries = [...journalEntries, newEntry];
+    setJournalEntries(newEntries);
+    localStorage.setItem("journalEntries", JSON.stringify(newEntries));
+
+    // Reset for next project
+    setCraftingOutcome(null);
+    setDiceRoll(null);
 
     toast({
-      title: "Project Started!",
-      description: `Your ${projectType} project has begun. You achieved ${outcome.successes} successes.`,
+      title: "Project Finished!",
+      description: "The project has been added to your journal.",
     });
-  }, [diceRoll, projectType, character, toast]);
-
-
-  const handleFinishProject = useCallback(() => {
-    if (activeProject) {
-      const finishedProject: CraftingExperience = {
-        ...activeProject,
-        isFinished: true,
-        projectName: activeProject.name,
-        notes: "This was a challenging but rewarding project.", // Placeholder
-        date: new Date().toISOString(),
-        // These fields are missing from ActiveProject, need reconciliation
-        projectType: 'mundane',
-        characterStats: character,
-        diceRoll: diceRoll || { rolledDice: [], successes: 0, botches: 0 },
-        successes: activeProject.progress,
-        time: "N/A",
-        resources: "N/A"
-      };
-      const newExperiences = [...craftingExperiences, finishedProject];
-      setCraftingExperiences(newExperiences);
-      localStorage.setItem("craftingExperiences", JSON.stringify(newExperiences));
-      setActiveProject(null);
-      setCraftingOutcome(null);
-      setDiceRoll(null);
-      toast({
-        title: "Project Finished!",
-        description: "The project has been added to your journal.",
-      });
-    }
-  }, [activeProject, craftingExperiences, toast, character, diceRoll]);
+  }, [craftingOutcome, journalEntries, projectCategory, toast]);
 
 
   const renderContent = () => {
@@ -201,28 +143,22 @@ const HomePage = () => {
             <div className="p-4 border rounded-lg">
               <h3 className="text-lg font-semibold mb-2">Project Controls</h3>
               <div className="flex items-center gap-4 mb-4">
-                <label htmlFor="project-type">Project Type:</label>
+                <label htmlFor="project-category">Project Category:</label>
                 <select
-                  id="project-type"
-                  value={projectType}
-                  onChange={(e) => setProjectType(e.target.value as ProjectType)}
+                  id="project-category"
+                  value={projectCategory}
+                  onChange={(e) => setProjectCategory(e.target.value as ProjectCategory)}
                   className="p-2 border rounded"
                 >
-
+                  <option value="mundane">Mundane</option>
                   <option value="superior">Superior</option>
                   <option value="artifact">Artifact</option>
                 </select>
               </div>
 
-              {!activeProject ? (
-                <Button onClick={handleStartProject} disabled={!diceRoll}>
-                  Start Project
-                </Button>
-              ) : (
-                <Button onClick={handleFinishProject}>
-                  Finish & Journal Project
-                </Button>
-              )}
+              <Button onClick={handleFinishProject} disabled={!craftingOutcome}>
+                Finish & Journal Project
+              </Button>
 
             </div>
             {craftingOutcome && (
@@ -265,20 +201,11 @@ const HomePage = () => {
         </TabsContent>
       </Tabs>
 
-      {/*
-        This is a temporary fix for the build error.
-        The `CraftingJournal` component expects props that are not fully
-        supported by the main page's state yet. We are passing dummy data
-        to prevent the build from crashing.
-        Note that the `craftingExperiences` state holds a different data type
-        than what `CraftingJournal`'s `projects` prop expects.
-      */}
+
       <CraftingJournal
-        experience={initialExperience}
-        projects={craftingExperiences as any[]} // Type assertion to satisfy prop type
-        maxProjects={0} // Placeholder
-        onAddProject={handleAddProject}
-        onRemoveProject={handleRemoveProject}
+        isOpen={isJournalOpen}
+        onClose={() => setIsJournalOpen(false)}
+        entries={journalEntries}
       />
     </main>
   );

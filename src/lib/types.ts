@@ -10,35 +10,34 @@ export type Attribute =
   | "manipulation"
   | "appearance";
 
-export type ProjectType = 
-  | "basic-project"
-  | "major-project"
-  | "superior-project"
-  | "legendary-project"
-  | "basic-repair"
-  | "major-repair"
-  | "superior-repair"
-  | "legendary-repair";
+export type ProjectCategory = "mundane" | "superior" | "artifact";
 
-export interface Project {
-  type: ProjectType;
-  artifactRating: number; // 0 for non-artifacts
-  objectivesMet: number;
-}
-
+// This represents an active, ongoing project.
 export interface ActiveProject {
   id: string;
   name: string;
-  type: ProjectType;
+  category: ProjectCategory;
   goal: number;
   progress: number;
   isComplete: boolean;
 }
 
+// This represents the accumulated experience points.
 export interface CraftingExperience {
   sxp: number;
   gxp: number;
   wxp: number;
+}
+
+// This represents a finished project stored in the journal.
+// It combines details from the project with the outcome.
+export interface JournalEntry {
+  id: string;
+  projectName: string;
+  date: string;
+  notes?: string;
+  category: ProjectCategory;
+  outcome: CraftingOutcome; // Include the outcome for detailed view
 }
 
 export interface Character {
@@ -52,50 +51,28 @@ export interface Character {
   manipulation: number;
   appearance: number;
   craft: number;
-  essence: number;
-  personalMotes: number;
-  peripheralMotes: number;
-  willpower: number;
-  selectedAttribute: Attribute;
-  knownCharms: string[]; // Array of charm IDs
-}
-
-export interface CharmEffect {
-  type:
-    | "add_successes"
-    | "add_successes_per_essence"
-    | "reroll_failures"
-    | "reroll_tens"
-    | "double_success"
-    | "lower_repair_difficulty"
-    | "custom";
-  value?: number;
+  specialty: number;
+  // ... other abilities can be added here as needed
 }
 
 export interface Charm {
-  id: string;
-  name:string;
-  cost?: string;
-  description: string;
-  minCraft: number;
+  name: string;
+  ability: string;
+  type: string;
   minEssence: number;
-  effect: CharmEffect;
-  category?: 'functional' | 'narrative';
-  subEffects?: Charm[];
 }
+
 
 export interface DiceRoll {
-  diceHistories: number[][];
-  totalSuccesses: number;
-  automaticSuccesses: number;
-  targetNumber: number;
-  activeCharmNames: string[];
-  activeCharmIds: string[];
+  rolledDice: number[];
+  successes: number;
+  botches: number;
 }
 
+// This represents the calculated outcome of a crafting roll.
 export interface CraftingOutcome {
-  isSuccess: boolean;
-  outcomeTitle: string;
-  outcomeDescription: string;
-  experienceGained: CraftingExperience;
+  successes: number;
+  time: string;
+  resources: string;
+  notes?: string;
 }
