@@ -1,5 +1,5 @@
 
-import type { Character, DiceRoll } from "./types";
+import type { Character, DiceRoll, DieResult } from "./types";
 import { allCharms } from "./charms";
 
 const ANIMATION_DELAY = 100;
@@ -15,6 +15,14 @@ const shouldDieExplode = (roll: number, activeCharms: string[]): boolean => {
   if (activeCharms.includes('supreme-masterwork-focus-1') && roll >= 9) return true;
   return false;
 };
+
+const getExplosionSource = (roll: number, activeCharms: string[]): string | undefined => {
+    if (activeCharms.includes("flawless-handiwork-method") && roll === 10) return "Flawless Handiwork Method";
+    if (activeCharms.includes('supreme-masterwork-focus-3') && roll >= 7) return "Supreme Masterwork Focus";
+    if (activeCharms.includes('supreme-masterwork-focus-2') && roll >= 8) return "Supreme Masterwork Focus";
+    if (activeCharms.includes('supreme-masterwork-focus-1') && roll >= 9) return "Supreme Masterwork Focus";
+    return undefined;
+}
 
 const calculateSuccesses = (roll: number, activeCharms: string[]) => {
   const smf1 = activeCharms.includes('supreme-masterwork-focus-1');
@@ -46,77 +54,70 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
     await new Promise(resolve => setTimeout(resolve, 50));
 
     const initialDicePool = character[character.selectedAttribute] + character.craft;
-    const allRolls: number[][] = [];
+    const allRolls: DieResult[][] = [];
     let totalSuccesses = 0;
     
     // --- Step 1: Initial Roll & Reroll ---
-    let firstWaveRolls = Array.from({ length: initialDicePool }, rollDie);
-    let diceToExplode: number[] = [];
+    let firstWaveRolls: DieResult[] = Array.from({ length: initialDicePool }, () => ({ value: rollDie() }));
+    let diceToExplode: DieResult[] = [];
 
     const willRerollFailures = activeCharms.includes("first-movement-of-the-demiurge");
     if (willRerollFailures) {
-        // Show the pre-reroll dice for a moment
-        allRolls.push([...firstWaveRolls]);
-        onProgress({
-            diceHistories: allRolls, totalSuccesses: 0, automaticSuccesses: 0, targetNumber, activeCharmNames: [], activeCharmIds: []
-        });
-        await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY + 200));
-
         // Reroll failures and update the first wave
-        const rerolledWave = firstWaveRolls.map(die => (die < 7 ? rollDie() : die));
-        allRolls[0] = rerolledWave; // Replace the first wave with the rerolled dice
+        const rerolledWave = firstWaveRolls.map(die => {
+            if (die.value < 7) {
+                return { value: rollDie(), initialValue: die.value, modification: 'reroll', modificationSource: 'First Movement of the Demiurge' };
+            }
+            return die;
+        });
         firstWaveRolls = rerolledWave;
-    } else {
-        allRolls.push(firstWaveRolls);
-    }
+    } 
+    
+    allRolls.push(firstWaveRolls);
     
     // Calculate successes and gather explosions for the first wave
     for (const die of firstWaveRolls) {
-        totalSuccesses += calculateSuccesses(die, activeCharms);
-        if (shouldDieExplode(die, activeCharms)) {
+        totalSuccesses += calculateSuccesses(die.value, activeCharms);
+        if (shouldDieExplode(die.value, activeCharms)) {
             diceToExplode.push(die);
         }
     }
 
-    // Update progress after the first wave is fully processed
     onProgress({
-        diceHistories: allRolls,
-        totalSuccesses,
-        automaticSuccesses: 0, 
-        targetNumber,
-        activeCharmNames: [],
-        activeCharmIds: []
+        diceHistories: allRolls, totalSuccesses, automaticSuccesses: 0, targetNumber, activeCharmNames: [], activeCharmIds: []
     });
     await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY));
 
 
     // --- Step 2: Explosion Loop (Waves) ---
-    let diceForNextWave = diceToExplode.length;
+    let explosionsForNextWave = diceToExplode;
 
-    while (diceForNextWave > 0) {
-        const currentWaveRolls = Array.from({ length: diceForNextWave }, rollDie);
+    while (explosionsForNextWave.length > 0) {
+        const currentWaveRolls: DieResult[] = explosionsForNextWave.map(explodingDie => {
+            const newValue = rollDie();
+            return {
+                value: newValue,
+                initialValue: explodingDie.value,
+                modification: 'explosion',
+                modificationSource: getExplosionSource(explodingDie.value, activeCharms)
+            }
+        });
+
         allRolls.push(currentWaveRolls);
+        explosionsForNextWave = [];
 
-        let explosionsInThisWave = 0;
         for (const die of currentWaveRolls) {
-            totalSuccesses += calculateSuccesses(die, activeCharms);
-            if (shouldDieExplode(die, activeCharms)) {
-                explosionsInThisWave++;
+            totalSuccesses += calculateSuccesses(die.value, activeCharms);
+            if (shouldDieExplode(die.value, activeCharms)) {
+                explosionsForNextWave.push(die);
             }
         }
         
-        diceForNextWave = explosionsInThisWave;
-
         onProgress({
-            diceHistories: allRolls,
-            totalSuccesses,
-            automaticSuccesses: 0,
-            targetNumber,
-            activeCharmNames: [],
-            activeCharmIds: []
+            diceHistories: allRolls, totalSuccesses, automaticSuccesses: 0, targetNumber, activeCharmNames: [], activeCharmIds: []
         });
 
-        if (diceForNextWave > 0) {
+        if (explosionsForNextWave.length > 0) {
             await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY));
         }
     }

@@ -1,4 +1,5 @@
 
+
 export const ATTRIBUTES = [
   "intelligence",
   "wits",
@@ -91,8 +92,17 @@ export interface Charm {
   subEffects?: Charm[];
 }
 
+export type DieModification = 'reroll' | 'explosion';
+
+export interface DieResult {
+    value: number;
+    initialValue?: number;
+    modification?: DieModification;
+    modificationSource?: string;
+}
+
 export interface DiceRoll {
-  diceHistories: number[][];
+  diceHistories: DieResult[][];
   totalSuccesses: number;
   automaticSuccesses: number;
   targetNumber: number;

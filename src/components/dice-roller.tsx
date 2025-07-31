@@ -1,8 +1,9 @@
 
+
 "use client";
 
 import { useState } from "react";
-import type { DiceRoll, CraftingOutcome, Character, ProjectType, ActiveProject, Charm } from "@/lib/types";
+import type { DiceRoll, CraftingOutcome, Character, ProjectType, ActiveProject, Charm, DieResult } from "@/lib/types";
 import { PROJECT_TYPES } from "@/lib/types";
 import { allCharms } from "@/lib/charms";
 import {
@@ -34,10 +35,14 @@ import {
   Gem,
   Star,
   Shield,
-  Sun
+  Sun,
+  Flame,
+  RotateCw
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+
 
 interface DiceRollerProps {
   character: Character;
@@ -73,22 +78,41 @@ const getDieStyle = (roll: number, activeCharms: string[]): string => {
   if (roll >= 7) {
     return "bg-green-500 text-white border-green-700";
   }
-  if (roll === 1) {
-    return "bg-red-500 text-white border-red-700";
+    if (roll > 1) {
+    return "bg-gray-400 text-black border-gray-600";
   }
-  return "bg-gray-400 text-black border-gray-600";
+  return "bg-red-500 text-white border-red-700";
 };
 
-const DiceDisplay = ({ waves, activeCharms }: { waves: number[][], activeCharms: string[] }) => (
+const DiceDisplay = ({ waves, activeCharms }: { waves: DieResult[][], activeCharms: string[] }) => (
+    <TooltipProvider>
     <div className="flex items-center justify-center gap-4 flex-wrap p-4 bg-secondary/30 rounded-lg">
         {waves.map((wave, waveIndex) => (
            <div key={`wave-${waveIndex}`} className="flex items-center gap-4">
                 <div className="flex items-center gap-2 flex-wrap justify-center">
-                    {wave.map((roll, rollIndex) => {
-                       const style = getDieStyle(roll, activeCharms);
+                    {wave.map((die, rollIndex) => {
+                       const style = getDieStyle(die.value, activeCharms);
                        return (
-                           <div key={`wave-${waveIndex}-roll-${rollIndex}`} className={`relative flex items-center justify-center w-10 h-10 rounded-full border-2 ${style}`}>
-                               <span className="absolute text-lg font-bold">{roll}</span>
+                           <div key={`wave-${waveIndex}-roll-${rollIndex}`} className="relative">
+                               <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${style}`}>
+                                   <span className="text-lg font-bold">{die.value}</span>
+                               </div>
+                               {die.modification && (
+                                   <Tooltip>
+                                       <TooltipTrigger asChild>
+                                            <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full p-0.5">
+                                                {die.modification === 'explosion' && <Flame className="w-3 h-3" />}
+                                                {die.modification === 'reroll' && <RotateCw className="w-3 h-3" />}
+                                            </span>
+                                       </TooltipTrigger>
+                                       <TooltipContent>
+                                           <p>
+                                               {die.modification === 'reroll' ? `Rerolled a ${die.initialValue}` : `Exploded from a ${die.initialValue}`}
+                                               {die.modificationSource && ` due to ${die.modificationSource}`}
+                                           </p>
+                                       </TooltipContent>
+                                   </Tooltip>
+                               )}
                            </div>
                        )
                     })}
@@ -99,6 +123,7 @@ const DiceDisplay = ({ waves, activeCharms }: { waves: number[][], activeCharms:
            </div>
         ))}
     </div>
+    </TooltipProvider>
 );
 
 const calculateCharmCost = (activeCharmIds: string[], allCharms: Charm[]) => {
