@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -28,338 +27,236 @@ const initialCharacter: Character = {
   charisma: 1,
   manipulation: 1,
   appearance: 1,
-  craft: 3,
-  essence: 1,
-  personalMotes: 10,
-  peripheralMotes: 25,
-  willpower: 5,
-  selectedAttribute: "intelligence",
-  knownCharms: allCharms.map((c) => c.id),
+  craft: 5,
+  occult: 0,
+  medicine: 0,
+  larceny: 0,
+  sail: 0,
+  performance: 0,
+  survival: 0,
+  investigation: 0,
+  lore: 0,
+  athletics: 0,
+  awareness: 0,
+  bureaucracy: 0,
+  integrity: 0,
+  melee: 0,
+  presence: 0,
+  resistance: 0,
+  ride: 0,
+  socialize: 0,
+  stealth: 0,
+  war: 0,
+  archery: 0,
+  brawl: 0,
+  dodge: 0,
+  linguistics: 0,
+  thrown: 0,
+  specialty: 0,
 };
 
-const initialExperience: CraftingExperience = {
-  sxp: 0,
-  gxp: 0,
-  wxp: 0,
-}
-
-const initialAppState = {
-    character: initialCharacter,
-    activeCharms: [],
-    craftingXp: initialExperience,
-    activeProjects: [],
-};
-
-interface AppState {
-  character: Character;
-  activeCharms: string[];
-  craftingXp: CraftingExperience;
-  activeProjects: ActiveProject[];
-}
-
-// Skeleton component to show during server-side rendering and initial load
-const AppSkeleton = () => (
-  <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8">
-    <main className="max-w-7xl mx-auto">
-      <header className="text-center mb-8 md:mb-12">
-        <div className="flex justify-center items-center gap-4 mb-2">
-          <Hammer className="w-10 h-10 text-primary" />
-          <h1 className="font-headline text-4xl sm:text-5xl md:text-6xl font-bold text-primary">
-            Exalted Crafter's Aid
-          </h1>
-        </div>
-        <p className="font-body text-lg text-muted-foreground">
-          Your assistant for epic crafting in the world of Exalted.
-        </p>
-      </header>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1 flex flex-col gap-8">
-          <Skeleton className="h-[200px] w-full" />
-          <Skeleton className="h-[400px] w-full" />
-        </div>
-        <div className="lg:col-span-2">
-          <Skeleton className="h-[600px] w-full" />
-        </div>
-      </div>
-    </main>
-  </div>
-);
-
-
-export default function Home() {
-  const [appState, setAppState] = useState<AppState>(initialAppState);
-  const [isMounted, setIsMounted] = useState(false); // To prevent hydration errors
-
-  const [targetNumber, setTargetNumber] = useState<number>(5);
+const HomePage = () => {
+  const [character, setCharacter] = useState<Character>(initialCharacter);
   const [diceRoll, setDiceRoll] = useState<DiceRoll | null>(null);
-  const [outcome, setOutcome] = useState<CraftingOutcome | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [craftingOutcome, setCraftingOutcome] = useState<CraftingOutcome | null>(null);
+  const [activeProject, setActiveProject] = useState<ActiveProject | null>(null);
+  const [projectType, setProjectType] = useState<ProjectType>("mundane");
+  const [targetNumber, setTargetNumber] = useState<number>(7);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isJournalOpen, setIsJournalOpen] = useState(false);
+  const [craftingExperiences, setCraftingExperiences] = useState<CraftingExperience[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const [willpowerSpent, setWillpowerSpent] = useState(0);
 
-  // Load state from localStorage on client-side mount
   useEffect(() => {
-    try {
-      const savedState = localStorage.getItem("exaltedCrafterState");
-      if (savedState) {
-        const parsedState = JSON.parse(savedState);
-        // Ensure knownCharms is always up-to-date with the latest from allCharms
-        parsedState.character.knownCharms = allCharms.map(c => c.id);
-        if (parsedState.character && parsedState.activeProjects) {
-            setAppState(parsedState);
-        }
-      }
-    } catch (error) {
-      console.error("Failed to load state from localStorage", error);
-    }
-    setIsMounted(true);
-  }, []);
-
-  // Save state to localStorage whenever it changes
-  useEffect(() => {
-    // Only save state after the component has mounted and loaded initial state
-    if (isMounted) {
-        try {
-          const stateToSave = JSON.stringify(appState);
-          localStorage.setItem("exaltedCrafterState", stateToSave);
-        } catch (error) {
-          console.error("Failed to save state to localStorage", error);
-        }
-    }
-  }, [appState, isMounted]);
-
-  const handleStateChange = useCallback(<K extends keyof AppState>(key: K, value: AppState[K] | ((prevState: AppState[K]) => AppState[K])) => {
-    setAppState(prev => {
-        const newValue = typeof value === 'function' ? (value as (prevState: AppState[K]) => AppState[K])(prev[key]) : value;
-        return { ...prev, [key]: newValue };
-    });
-  }, []);
-
-  const handleRoll = useCallback(async (
-    projectDetails: {
-      type: ProjectType;
-      artifactRating: number;
-      objectivesMet: number;
-    },
-    assignedProjectId?: string
-  ) => {
-    setIsLoading(true);
-    setDiceRoll(null);
-    setOutcome(null);
-
-    try {
-      const { character, activeCharms, craftingXp } = appState;
-
-      // --- 1. Calculate Costs & Effects from Charms ---
-      let moteCost = 0;
-      let willpowerCost = willpowerSpent;
-      let sxpCost = 0;
-      let gxpCost = 0;
-      let wxpCost = 0;
-      let tnModifier = 0;
-
-      const activeCharmDetails = allCharms.flatMap(charm => {
-          const charms = [];
-          if (activeCharms.includes(charm.id)) charms.push(charm);
-          if (charm.subEffects) {
-              charm.subEffects.forEach(subCharm => {
-                  if (activeCharms.includes(subCharm.id)) charms.push(subCharm);
-              });
-          }
-          return charms;
-      });
-
-      activeCharmDetails.forEach((charm) => {
-        if (charm.effect.type === "lower_repair_difficulty" && projectDetails.type.includes("repair")) tnModifier -= charm.effect.value;
-        if (charm.cost) {
-            const moteMatch = charm.cost.match(/(\d+)m/);
-            if (moteMatch) moteCost += parseInt(moteMatch[1], 10);
-            const willpowerMatch = charm.cost.match(/(\d+)wp/);
-            if (willpowerMatch && charm.id !== 'will-forging-discipline') willpowerCost += parseInt(willpowerMatch[1], 10);
-            const sxpMatch = charm.cost.match(/(\d+)sxp/);
-            if (sxpMatch) sxpCost += parseInt(sxpMatch[1], 10);
-            const gxpMatch = charm.cost.match(/(\d+)gxp/);
-            if (gxpMatch) gxpCost += parseInt(gxpMatch[1], 10);
-            const wxpMatch = charm.cost.match(/(\d+)wxp/);
-            if (wxpMatch) wxpCost += parseInt(wxpMatch[1], 10);
-        }
-      });
-      
-
-      // --- 2. Spend Costs ---
-      handleStateChange('character', prev => {
-        let personal = prev.personalMotes;
-        let peripheral = prev.peripheralMotes;
-        let remainingMoteCost = moteCost;
-        const personalToSpend = Math.min(personal, remainingMoteCost);
-        personal -= personalToSpend;
-        remainingMoteCost -= personalToSpend;
-        const peripheralToSpend = Math.min(peripheral, remainingMoteCost);
-        peripheral -= peripheralToSpend;
-        return { ...prev, personalMotes: personal, peripheralMotes: peripheral, willpower: prev.willpower - willpowerCost };
-      });
-
-      handleStateChange('craftingXp', prev => ({
-          sxp: prev.sxp - sxpCost,
-          gxp: prev.gxp - gxpCost,
-          wxp: prev.wxp - wxpCost,
-      }));
-
-      // --- 3. Perform the Dice Roll using the pure function ---
-      const finalTargetNumber = Math.max(1, targetNumber + tnModifier);
-      const rollResult = await performDiceRoll({
-          character,
-          activeCharms,
-          targetNumber: finalTargetNumber,
-          willpowerSpent,
-          onProgress: (interimRoll) => {
-              setDiceRoll(interimRoll);
-          }
-      });
-
-      setDiceRoll(rollResult);
-
-      // --- 4. Calculate Final Outcome and Update State ---
-      const isExceptional = (projectDetails.type.startsWith("basic-") || projectDetails.type.startsWith("major-")) && rollResult.totalSuccesses >= finalTargetNumber + 3;
-
-      const result = calculateCraftingOutcome({ project: projectDetails, successes: rollResult.totalSuccesses, targetNumber: finalTargetNumber, isExceptional });
-
-      if (result.isSuccess) {
-        handleStateChange('craftingXp', prev => ({
-          sxp: prev.sxp + result.experienceGained.sxp,
-          gxp: prev.gxp + result.experienceGained.gxp,
-          wxp: prev.wxp + result.experienceGained.wxp,
-        }));
-
-        if (assignedProjectId) {
-          handleStateChange('activeProjects', prevProjects => 
-            prevProjects.map(p => {
-              if (p.id === assignedProjectId) {
-                const newProgress = p.progress + rollResult.totalSuccesses;
-                const isComplete = newProgress >= p.goal;
-                if(isComplete) {
-                    toast({ title: "Project Complete!", description: `You have completed "${p.name}".`});
-                }
-                return { ...p, progress: newProgress, isComplete };
-              }
-              return p;
-            })
-          );
-        }
-      }
-
-      setOutcome(result);
-
-    } catch (error) {
-      console.error("Error calculating crafting outcome:", error);
-      toast({ variant: "destructive", title: "Error", description: "Failed to calculate the crafting outcome. Please try again." });
-    } finally {
+    // Simulate initial data loading
+    const timer = setTimeout(() => {
       setIsLoading(false);
+    }, 1500); // Adjust time as needed
+
+    // Load data from localStorage on component mount
+    const savedCharacter = localStorage.getItem("character");
+    if (savedCharacter) {
+      setCharacter(JSON.parse(savedCharacter));
     }
-  }, [appState, willpowerSpent, targetNumber, handleStateChange, toast]);
-
-  const resetState = useCallback(() => {
-    if (window.confirm("Are you sure you want to reset all data? This cannot be undone.")) {
-        localStorage.removeItem("exaltedCrafterState");
-        setAppState(initialAppState);
-        setDiceRoll(null);
-        setOutcome(null);
-        setTargetNumber(5);
-        toast({ title: "Data Reset", description: "All character data and projects have been reset." });
+    const savedExperiences = localStorage.getItem("craftingExperiences");
+    if (savedExperiences) {
+      setCraftingExperiences(JSON.parse(savedExperiences));
     }
-  }, [toast]);
+  }, []);
 
-  const addProject = useCallback((project: Omit<ActiveProject, 'id' | 'isComplete'>) => {
-    handleStateChange('activeProjects', prev => [...prev, { ...project, id: crypto.randomUUID(), isComplete: false }]);
-  }, [handleStateChange]);
+  const handleCharacterChange = (field: keyof Character, value: number) => {
+    const newCharacter = { ...character, [field]: value };
+    setCharacter(newCharacter);
+    localStorage.setItem("character", JSON.stringify(newCharacter));
+  };
 
-  const removeProject = useCallback((projectId: string) => {
-    handleStateChange('activeProjects', prev => prev.filter(p => p.id !== projectId));
-  }, [handleStateChange]);
-  
-  const { character, activeCharms, craftingXp, activeProjects } = appState;
-  const hasTirelessWorkhorse = activeCharms.includes("tireless-workhorse-method");
-  const majorProjectSlots = hasTirelessWorkhorse ? character.essence * 2 : 0;
+  const handleRollDice = (pool: number) => {
+    const roll = performDiceRoll(pool, targetNumber);
+    setDiceRoll(roll);
+    toast({
+      title: "Dice Rolled!",
+      description: `You rolled ${roll.successes} successes with ${roll.rolledDice.length} dice.`,
+    });
+  };
 
-  if (!isMounted) {
-    return <AppSkeleton />;
+  const handleStartProject = useCallback(() => {
+    if (!diceRoll) {
+      toast({
+        title: "Error",
+        description: "You must roll the dice first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const outcome = calculateCraftingOutcome(diceRoll.successes, projectType, character);
+    setCraftingOutcome(outcome);
+    const newProject = {
+      ...outcome,
+      projectType,
+      characterStats: character,
+      diceRoll,
+      isFinished: false,
+    };
+    setActiveProject(newProject);
+
+    toast({
+      title: "Project Started!",
+      description: `Your ${projectType} project has begun. You achieved ${outcome.successes} successes.`,
+    });
+  }, [diceRoll, projectType, character, toast]);
+
+
+  const handleFinishProject = useCallback(() => {
+    if (activeProject) {
+      const finishedProject: CraftingExperience = {
+        ...activeProject,
+        isFinished: true,
+        projectName: "My Great Work", // Placeholder for user input
+        notes: "This was a challenging but rewarding project.", // Placeholder
+        date: new Date().toISOString(),
+      };
+      const newExperiences = [...craftingExperiences, finishedProject];
+      setCraftingExperiences(newExperiences);
+      localStorage.setItem("craftingExperiences", JSON.stringify(newExperiences));
+      setActiveProject(null);
+      setCraftingOutcome(null);
+      setDiceRoll(null);
+      toast({
+        title: "Project Finished!",
+        description: "The project has been added to your journal.",
+      });
+    }
+  }, [activeProject, craftingExperiences, toast]);
+
+
+  const renderContent = () => {
+    if (isLoading) {
+      return (
+        <div className="space-y-4 p-4">
+          <Skeleton className="h-8 w-1/4" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-3/4" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Skeleton className="h-64" />
+            <Skeleton className="h-64" />
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <TabsContent value="main">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <CharacterSheet
+            character={character}
+            onCharacterChange={handleCharacterChange}
+          />
+          <div className="space-y-6">
+            <CharmSelection />
+            <DiceRoller
+              character={character}
+              onRoll={handleRollDice}
+              diceRoll={diceRoll}
+              targetNumber={targetNumber}
+              setTargetNumber={setTargetNumber}
+            />
+            <div className="p-4 border rounded-lg">
+              <h3 className="text-lg font-semibold mb-2">Project Controls</h3>
+              <div className="flex items-center gap-4 mb-4">
+                <label htmlFor="project-type">Project Type:</label>
+                <select
+                  id="project-type"
+                  value={projectType}
+                  onChange={(e) => setProjectType(e.target.value as ProjectType)}
+                  className="p-2 border rounded"
+                >
+                  <option value="mundane">Mundane</option>
+                  <option value="superior">Superior</option>
+                  <option value="artifact">Artifact</option>
+                </select>
+              </div>
+
+              {!activeProject ? (
+                <Button onClick={handleStartProject} disabled={!diceRoll}>
+                  Start Project
+                </Button>
+              ) : (
+                <Button onClick={handleFinishProject}>
+                  Finish & Journal Project
+                </Button>
+              )}
+
+            </div>
+            {craftingOutcome && (
+              <div className="mt-4 p-4 border rounded-lg bg-secondary">
+                <h3 className="text-xl font-bold">Crafting Outcome</h3>
+                <p>Successes: {craftingOutcome.successes}</p>
+                <p>Time Required: {craftingOutcome.time}</p>
+                <p>Resources: {craftingOutcome.resources}</p>
+                {craftingOutcome.notes && <p className="mt-2 text-sm italic">{craftingOutcome.notes}</p>}
+              </div>
+            )}
+          </div>
+        </div>
+      </TabsContent>
+    );
   }
 
+
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8">
-      <main className="max-w-7xl mx-auto">
-        <header className="text-center mb-8 md:mb-12">
-          <div className="flex justify-center items-center gap-4 mb-2">
-            <Hammer className="w-10 h-10 text-primary" />
-            <h1 className="font-headline text-4xl sm:text-5xl md:text-6xl font-bold text-primary">
-              Exalted Crafter's Aid
-            </h1>
-          </div>
-          <p className="font-body text-lg text-muted-foreground">
-            Your assistant for epic crafting in the world of Exalted.
-          </p>
-        </header>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1 flex flex-col gap-8">
-            <CharacterSheet 
-              character={character} 
-              setCharacter={(value) => handleStateChange('character', value)} 
-            />
-            <CharmSelection
-              knownCharms={character.knownCharms}
-              activeCharms={activeCharms}
-              setActiveCharms={(value) => handleStateChange('activeCharms', value)}
-              character={character}
-              experience={craftingXp}
-            />
-          </div>
-
-          <div className="lg:col-span-2">
-            <Tabs defaultValue="roller">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="roller">Dice Roller</TabsTrigger>
-                <TabsTrigger value="journal">Crafting Journal</TabsTrigger>
-                <TabsTrigger value="reference">Crafting Reference</TabsTrigger>
-              </TabsList>
-              <TabsContent value="roller">
-                <DiceRoller
-                  character={character}
-                  activeCharms={activeCharms}
-                  targetNumber={targetNumber}
-                  setTargetNumber={setTargetNumber}
-                  onRoll={handleRoll}
-                  isLoading={isLoading}
-                  diceRoll={diceRoll}
-                  aiOutcome={outcome}
-                  activeProjects={activeProjects.filter(p => !p.isComplete)}
-                  willpowerSpent={willpowerSpent}
-                  setWillpowerSpent={setWillwpowerSpent}
-                />
-              </TabsContent>
-              <TabsContent value="journal">
-                <CraftingJournal
-                  experience={craftingXp}
-                  projects={activeProjects}
-                  maxProjects={majorProjectSlots}
-                  onAddProject={addProject}
-                  onRemoveProject={removeProject}
-                />
-              </TabsContent>
-               <TabsContent value="reference">
-                <CraftingReference />
-              </TabsContent>
-            </Tabs>
-          </div>
+    <main className="container mx-auto p-4">
+      <header className="flex justify-between items-center mb-6">
+        <h1 className="text-4xl font-bold flex items-center gap-2">
+          <Hammer className="w-8 h-8" /> Ex3e Crafter's Aid
+        </h1>
+        <div>
+          <Button onClick={() => setIsJournalOpen(true)} variant="outline">
+            Crafting Journal
+          </Button>
         </div>
-      </main>
-      <footer className="text-center mt-12 text-sm text-muted-foreground">
-        <Button variant="outline" onClick={resetState} className="mb-4">Reset All Data</Button>
-        <p>
-          Exalted and its concepts are trademarks of Onyx Path Publishing. This
-          is an unofficial fan utility.
-        </p>
-      </footer>
-    </div>
+      </header>
+
+      <Tabs defaultValue="main" className="w-full">
+        <TabsList>
+          <TabsTrigger value="main">Main Crafter</TabsTrigger>
+          <TabsTrigger value="reference">Quick Reference</TabsTrigger>
+        </TabsList>
+        {renderContent()}
+        <TabsContent value="reference">
+          <CraftingReference />
+        </TabsContent>
+      </Tabs>
+
+
+      <CraftingJournal
+        isOpen={isJournalOpen}
+        onClose={() => setIsJournalOpen(false)}
+        experiences={craftingExperiences}
+      />
+    </main>
   );
-}
+};
+
+export default HomePage;
