@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 import type { ActiveProject, ProjectType } from "@/lib/types";
 import { PROJECT_TYPES } from "@/lib/types";
 import {
@@ -38,13 +38,13 @@ interface CraftingJournalProps {
   onRemoveProject: (projectId: string) => void;
 }
 
-const CraftingJournal = React.memo(({
+export default function CraftingJournal({
   experience,
   projects,
   maxProjects,
   onAddProject,
   onRemoveProject,
-}: CraftingJournalProps) => {
+}: CraftingJournalProps) {
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectType, setNewProjectType] =
     useState<ProjectType>("major-project");
@@ -245,6 +245,4 @@ const CraftingJournal = React.memo(({
       </CardContent>
     </Card>
   );
-});
-CraftingJournal.displayName = "CraftingJournal";
-export default CraftingJournal;
+}

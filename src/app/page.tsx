@@ -75,9 +75,7 @@ export default function Home() {
       if (savedState) {
         const parsedState = JSON.parse(savedState);
         // Ensure knownCharms is always up-to-date with the latest from allCharms
-        if (parsedState.character) {
-          parsedState.character.knownCharms = allCharms.map(c => c.id);
-        }
+        parsedState.character.knownCharms = allCharms.map(c => c.id);
         if (parsedState.character && parsedState.activeProjects) {
             setAppState(parsedState);
         }
@@ -120,7 +118,7 @@ export default function Home() {
     setOutcome(null);
 
     try {
-      const { character, activeCharms } = appState;
+      const { character, activeCharms, craftingXp } = appState;
 
       // --- 1. Calculate Costs & Effects from Charms ---
       let moteCost = 0;
@@ -159,6 +157,7 @@ export default function Home() {
         }
       });
       
+
       // --- 2. Spend Costs ---
       handleStateChange('character', prev => {
         let personal = prev.personalMotes;

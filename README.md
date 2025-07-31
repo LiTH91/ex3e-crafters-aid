@@ -1,2 +1,5 @@
-# ex3e-crafters-aid
-a repository for my first app, created for the roleplaying game Exalted 3e, which will help with the Skill "Craft"
+# Firebase Studio
+
+This is a NextJS starter in Firebase Studio.
+
+To get started, take a look at src/app/page.tsx.
