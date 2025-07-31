@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type { Character, DiceRoll, CraftingOutcome, ProjectCategory, ActiveProject, JournalEntry } from "@/lib/types";
+import type { Character, DiceRoll, CraftingOutcome, ProjectCategory, JournalEntry } from "@/lib/types";
 import { calculateCraftingOutcome } from "@/lib/crafting-calculator";
 import { performDiceRoll } from "@/lib/dice-logic";
 import { useToast } from "@/hooks/use-toast";
@@ -34,24 +34,33 @@ const HomePage = () => {
   const [character, setCharacter] = useState<Character>(initialCharacter);
   const [diceRoll, setDiceRoll] = useState<DiceRoll | null>(null);
   const [craftingOutcome, setCraftingOutcome] = useState<CraftingOutcome | null>(null);
-  const [activeProject, setActiveProject] = useState<ActiveProject | null>(null);
   const [projectCategory, setProjectCategory] = useState<ProjectCategory>("mundane");
-  const [targetNumber, setTargetNumber] = useState<number>(7);
   const [isJournalOpen, setIsJournalOpen] = useState(false);
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    // Load data from localStorage on component mount
+    // Load data from localStorage safely
     setIsLoading(true);
-    const savedCharacter = localStorage.getItem("character");
-    if (savedCharacter) {
-      setCharacter(JSON.parse(savedCharacter));
+    try {
+      const savedCharacter = localStorage.getItem("character");
+      if (savedCharacter) {
+        setCharacter(JSON.parse(savedCharacter));
+      }
+    } catch (error) {
+      console.error("Failed to load character from localStorage", error);
+      // If parsing fails, it will proceed with initialCharacter
     }
-    const savedEntries = localStorage.getItem("journalEntries");
-    if (savedEntries) {
-      setJournalEntries(JSON.parse(savedEntries));
+
+    try {
+      const savedEntries = localStorage.getItem("journalEntries");
+      if (savedEntries) {
+        setJournalEntries(JSON.parse(savedEntries));
+      }
+    } catch (error) {
+      console.error("Failed to load journal entries from localStorage", error);
+      // If parsing fails, it will proceed with an empty array
     }
     setIsLoading(false);
   }, []);
@@ -70,7 +79,6 @@ const HomePage = () => {
       description: `You rolled ${roll.successes} successes with ${roll.rolledDice.length} dice.`,
     });
 
-    // Directly calculate and set outcome after rolling
     const outcome = calculateCraftingOutcome(roll.successes, projectCategory, character);
     setCraftingOutcome(outcome);
     toast({
@@ -98,7 +106,6 @@ const HomePage = () => {
     setJournalEntries(newEntries);
     localStorage.setItem("journalEntries", JSON.stringify(newEntries));
 
-    // Reset for next project
     setCraftingOutcome(null);
     setDiceRoll(null);
 
