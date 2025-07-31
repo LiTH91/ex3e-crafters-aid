@@ -132,8 +132,7 @@ const essence2Charms: Charm[] = [
       {
         id: toId("First Movement of the Demiurge"),
         name: "Upgrade: First Movement of the Demiurge",
-        cost: "Permanent",
-        description: "Permanent upgrade. For every 3 of a kind successes, convert a non-success die to a 10.",
+        description: "Permanent upgrade. For every three of a kind successes, convert a non-success die to a 10.",
         minCraft: 4,
         minEssence: 2,
         effect: { type: "custom" },

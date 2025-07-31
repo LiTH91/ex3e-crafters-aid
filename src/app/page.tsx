@@ -118,7 +118,7 @@ export default function Home() {
     setOutcome(null);
 
     try {
-      const { character, activeCharms, craftingXp } = appState;
+      const { character, activeCharms } = appState;
 
       // --- 1. Calculate Costs & Effects from Charms ---
       let moteCost = 0;
@@ -143,6 +143,12 @@ export default function Home() {
         if (charm.effect.type === "lower_repair_difficulty" && projectDetails.type.includes("repair")) {
             if(charm.effect.value) tnModifier -= charm.effect.value;
         }
+
+        if (charm.id === 'experiential-conjuring-of-true-void') {
+            if(projectDetails.type.startsWith('major')) gxpCost += 4;
+            else if(projectDetails.type.startsWith('superior') || projectDetails.type.startsWith('legendary')) wxpCost += 4;
+        }
+
         if (charm.cost) {
             const moteMatch = charm.cost.match(/(\d+)m/);
             if (moteMatch) moteCost += parseInt(moteMatch[1], 10);
