@@ -120,14 +120,25 @@ const essence1Charms: Charm[] = [
 
 const essence2Charms: Charm[] = [
   {
-    id: toId("First Movement of the Demiurge"),
-    name: "First Movement of the Demiurge",
-    cost: "5m",
-    description: "Reroll all failed dice (1-6) on a Craft roll.",
-    minCraft: 4,
+    id: toId("Experiential Conjuring of True Void"),
+    name: "Experiential Conjuring of True Void",
+    cost: "4m, 4xp", // XP cost is variable
+    description: "Grants 1 automatic success and adds (Essence) dice, or (Intelligence + Essence) at E3+. Cannot be used on basic projects.",
+    minCraft: 3,
     minEssence: 2,
-    effect: { type: "reroll_failures" },
+    effect: { type: "custom" },
     category: 'functional',
+    subEffects: [
+      {
+        id: toId("First Movement of the Demiurge"),
+        name: "Upgrade: First Movement of the Demiurge",
+        cost: "Permanent",
+        description: "Permanent upgrade. For every 3 of a kind successes, convert a non-success die to a 10.",
+        minCraft: 4,
+        minEssence: 2,
+        effect: { type: "custom" },
+      }
+    ]
   },
   {
     id: toId("Hundred-Hand Style"),

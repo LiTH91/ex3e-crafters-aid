@@ -37,7 +37,8 @@ import {
   Shield,
   Sun,
   Flame,
-  RotateCw
+  RotateCw,
+  Replace
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -103,11 +104,14 @@ const DiceDisplay = ({ waves, activeCharms }: { waves: DieResult[][], activeChar
                                             <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full p-0.5">
                                                 {die.modification === 'explosion' && <Flame className="w-3 h-3" />}
                                                 {die.modification === 'reroll' && <RotateCw className="w-3 h-3" />}
+                                                {die.modification === 'conversion' && <Replace className="w-3 h-3" />}
                                             </span>
                                        </TooltipTrigger>
                                        <TooltipContent>
                                            <p>
-                                               {die.modification === 'reroll' ? `Rerolled a ${die.initialValue}` : `Exploded from a ${die.initialValue}`}
+                                               {die.modification === 'reroll' && `Rerolled a ${die.initialValue}`}
+                                               {die.modification === 'explosion' && `Exploded from a ${die.initialValue}`}
+                                               {die.modification === 'conversion' && `Converted a ${die.initialValue} to 10`}
                                                {die.modificationSource && ` due to ${die.modificationSource}`}
                                            </p>
                                        </TooltipContent>
@@ -126,9 +130,10 @@ const DiceDisplay = ({ waves, activeCharms }: { waves: DieResult[][], activeChar
     </TooltipProvider>
 );
 
-const calculateCharmCost = (activeCharmIds: string[], allCharms: Charm[]) => {
+const calculateCharmCost = (activeCharmIds: string[], allCharms: Charm[], projectType: ProjectType) => {
   let motes = 0;
   let willpower = 0;
+  let sxp = 0;
   let gxp = 0;
   let wxp = 0;
 
@@ -149,8 +154,14 @@ const calculateCharmCost = (activeCharmIds: string[], allCharms: Charm[]) => {
       }
     }
 
-    if (!charmToCost || !charmToCost.cost || charmToCost.cost === '—' || charmToCost.id === 'will-forging-discipline') {
+    if (!charmToCost || !charmToCost.cost || charmToCost.cost === '—') {
       continue;
+    }
+    
+    if (charmToCost.id === 'experiential-conjuring-of-true-void') {
+      if(projectType.startsWith('major')) gxp += 4;
+      else if(projectType.startsWith('superior') || projectType.startsWith('legendary')) wxp += 4;
+      // Basic projects not allowed, handled in disabling logic.
     }
 
     const costParts = charmToCost.cost.split(',').map(s => s.trim());
@@ -158,17 +169,19 @@ const calculateCharmCost = (activeCharmIds: string[], allCharms: Charm[]) => {
     for (const part of costParts) {
       if (part.endsWith('m')) {
         motes += parseInt(part, 10) || 0;
-      } else if (part.endsWith('wp')) {
+      } else if (part.endsWith('wp') && charmToCost.id !== 'will-forging-discipline') {
         willpower += parseInt(part, 10) || 0;
       } else if (part.endsWith('gxp')) {
         gxp += parseInt(part, 10) || 0;
       } else if (part.endsWith('wxp')) {
         wxp += parseInt(part, 10) || 0;
+      } else if (part.endsWith('sxp')) {
+        sxp += parseInt(part, 10) || 0;
       }
     }
   }
 
-  return { motes, willpower, gxp, wxp };
+  return { motes, willpower, sxp, gxp, wxp };
 };
 
 
@@ -185,7 +198,7 @@ export default function DiceRoller({
   willpowerSpent,
   setWillpowerSpent,
 }: DiceRollerProps) {
-  const [projectType, setProjectType] = useState<ProjectType>("basic-project");
+  const [projectType, setProjectType] = useState<ProjectType>("major-project");
   const [artifactRating, setArtifactRating] = useState(2);
   const [objectivesMet, setObjectivesMet] = useState(1);
   const [assignedProjectId, setAssignedProjectId] = useState<string | undefined>(undefined);
@@ -199,7 +212,7 @@ export default function DiceRoller({
   };
 
   const dicePool = character[character.selectedAttribute] + character.craft;
-  const charmCosts = calculateCharmCost(activeCharms, allCharms);
+  const charmCosts = calculateCharmCost(activeCharms, allCharms, projectType);
   const isWillForgingActive = activeCharms.includes("will-forging-discipline");
   const totalWillpowerCost = charmCosts.willpower + (isWillForgingActive ? willpowerSpent : 0);
 
@@ -298,6 +311,12 @@ export default function DiceRoller({
                          <Badge variant="outline" className="flex items-center gap-2 text-base py-1 px-3">
                             <Star className="w-4 h-4 text-yellow-400"/>
                             <span>{totalWillpowerCost} Willpower</span>
+                        </Badge>
+                    )}
+                     {charmCosts.sxp > 0 && (
+                         <Badge variant="outline" className="flex items-center gap-2 text-base py-1 px-3">
+                             <Shield className="w-4 h-4 text-gray-400"/>
+                             <span>{charmCosts.sxp} SXP</span>
                         </Badge>
                     )}
                      {charmCosts.gxp > 0 && (

@@ -92,7 +92,7 @@ export interface Charm {
   subEffects?: Charm[];
 }
 
-export type DieModification = 'reroll' | 'explosion';
+export type DieModification = 'reroll' | 'explosion' | 'conversion';
 
 export interface DieResult {
     value: number;
