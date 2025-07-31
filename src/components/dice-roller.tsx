@@ -31,8 +31,13 @@ import {
   Hammer,
   ArrowRight,
   Book,
+  Gem,
+  Star,
+  Shield,
+  Sun
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 
 interface DiceRollerProps {
   character: Character;
@@ -71,10 +76,8 @@ const getDieStyle = (roll: number, activeCharms: string[]): string => {
   if (roll === 1) {
     return "bg-red-500 text-white border-red-700";
   }
-  // Neutral style for rolls 2-6
   return "bg-gray-400 text-black border-gray-600";
 };
-
 
 const DiceDisplay = ({ waves, activeCharms }: { waves: number[][], activeCharms: string[] }) => (
     <div className="flex items-center justify-center gap-4 flex-wrap p-4 bg-secondary/30 rounded-lg">
@@ -98,6 +101,51 @@ const DiceDisplay = ({ waves, activeCharms }: { waves: number[][], activeCharms:
     </div>
 );
 
+const calculateCharmCost = (activeCharmIds: string[], allCharms: Charm[]) => {
+  let motes = 0;
+  let willpower = 0;
+  let gxp = 0;
+  let wxp = 0;
+
+  for (const id of activeCharmIds) {
+    let charmToCost: Partial<Charm> | undefined;
+
+    for (const charm of allCharms) {
+      if (charm.id === id) {
+        charmToCost = charm;
+        break;
+      }
+      if (charm.subEffects) {
+        const subEffect = charm.subEffects.find(se => se.id === id);
+        if (subEffect) {
+          charmToCost = { ...subEffect, name: `${charm.name}: ${subEffect.name}` };
+          break;
+        }
+      }
+    }
+
+    if (!charmToCost || !charmToCost.cost || charmToCost.cost === '—' || charmToCost.id === 'will-forging-discipline') {
+      continue;
+    }
+
+    const costParts = charmToCost.cost.split(',').map(s => s.trim());
+
+    for (const part of costParts) {
+      if (part.endsWith('m')) {
+        motes += parseInt(part, 10) || 0;
+      } else if (part.endsWith('wp')) {
+        willpower += parseInt(part, 10) || 0;
+      } else if (part.endsWith('gxp')) {
+        gxp += parseInt(part, 10) || 0;
+      } else if (part.endsWith('wxp')) {
+        wxp += parseInt(part, 10) || 0;
+      }
+    }
+  }
+
+  return { motes, willpower, gxp, wxp };
+};
+
 
 export default function DiceRoller({
   character,
@@ -117,7 +165,6 @@ export default function DiceRoller({
   const [objectivesMet, setObjectivesMet] = useState(1);
   const [assignedProjectId, setAssignedProjectId] = useState<string | undefined>(undefined);
 
-
   const handleRollClick = () => {
     onRoll({
       type: projectType,
@@ -127,21 +174,22 @@ export default function DiceRoller({
   };
 
   const dicePool = character[character.selectedAttribute] + character.craft;
+  const charmCosts = calculateCharmCost(activeCharms, allCharms);
+  const isWillForgingActive = activeCharms.includes("will-forging-discipline");
+  const totalWillpowerCost = charmCosts.willpower + (isWillForgingActive ? willpowerSpent : 0);
+
+  const hasCosts = Object.values(charmCosts).some(cost => cost > 0) || (isWillForgingActive && willpowerSpent > 0);
+
 
   const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
   const formatProjectTypeName = (type: ProjectType) => {
-    return type
-      .split("-")
-      .map(capitalize)
-      .join(" ");
+    return type.split("-").map(capitalize).join(" ");
   };
   
   const activeNarrativeCharms = allCharms.filter(
     (charm) =>
       diceRoll?.activeCharmIds.includes(charm.id) && charm.category === 'narrative'
   );
-
-  const isWillForgingActive = activeCharms.includes("will-forging-discipline");
 
   return (
     <Card className="bg-card/80 backdrop-blur-sm border-2 border-primary/20 shadow-lg">
@@ -164,120 +212,90 @@ export default function DiceRoller({
             <Label htmlFor="project-type" className="font-bold">
               Project Type
             </Label>
-            <Select
-              value={projectType}
-              onValueChange={(v) => setProjectType(v as ProjectType)}
-            >
-              <SelectTrigger id="project-type">
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
+            <Select value={projectType} onValueChange={(v) => setProjectType(v as ProjectType)}>
+              <SelectTrigger id="project-type"><SelectValue placeholder="Select type" /></SelectTrigger>
               <SelectContent>
                 {PROJECT_TYPES.map((type) => (
-                   <SelectItem key={type} value={type}>
-                     {formatProjectTypeName(type)}
-                   </SelectItem>
+                   <SelectItem key={type} value={type}>{formatProjectTypeName(type)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           {projectType.startsWith("superior-") && (
             <div>
-              <Label htmlFor="artifact-rating" className="font-bold">
-                Artifact Rating
-              </Label>
-              <Input
-                id="artifact-rating"
-                type="number"
-                value={artifactRating}
-                onChange={(e) =>
-                  setArtifactRating(parseInt(e.target.value, 10))
-                }
-                min={2}
-                max={5}
-              />
+              <Label htmlFor="artifact-rating" className="font-bold">Artifact Rating</Label>
+              <Input id="artifact-rating" type="number" value={artifactRating} onChange={(e) => setArtifactRating(parseInt(e.target.value, 10))} min={2} max={5}/>
             </div>
           )}
           <div>
-            <Label htmlFor="objectives-met" className="font-bold">
-              Objectives Met (0-3)
-            </Label>
-            <Input
-              id="objectives-met"
-              type="number"
-              value={objectivesMet}
-              onChange={(e) => setObjectivesMet(parseInt(e.target.value, 10))}
-              min={0}
-              max={3}
-            />
+            <Label htmlFor="objectives-met" className="font-bold">Objectives Met (0-3)</Label>
+            <Input id="objectives-met" type="number" value={objectivesMet} onChange={(e) => setObjectivesMet(parseInt(e.target.value, 10))} min={0} max={3}/>
           </div>
            <div>
-            <Label htmlFor="target-number" className="font-bold">
-              Target Number (TN)
-            </Label>
-            <Input
-              id="target-number"
-              type="number"
-              value={targetNumber}
-              onChange={(e) => setTargetNumber(parseInt(e.target.value, 10))}
-              min={1}
-            />
+            <Label htmlFor="target-number" className="font-bold">Target Number (TN)</Label>
+            <Input id="target-number" type="number" value={targetNumber} onChange={(e) => setTargetNumber(parseInt(e.target.value, 10))} min={1}/>
           </div>
            <div className="md:col-span-2">
-            <Label htmlFor="assign-project" className="font-bold">
-              Assign Roll to Project (Optional)
-            </Label>
-             <Select
-              value={assignedProjectId}
-              onValueChange={(v) => setAssignedProjectId(v === "none" ? undefined : v)}
-            >
-              <SelectTrigger id="assign-project">
-                <SelectValue placeholder="Select project to add progress..." />
-              </SelectTrigger>
+            <Label htmlFor="assign-project" className="font-bold">Assign Roll to Project (Optional)</Label>
+             <Select value={assignedProjectId} onValueChange={(v) => setAssignedProjectId(v === "none" ? undefined : v)}>
+              <SelectTrigger id="assign-project"><SelectValue placeholder="Select project to add progress..." /></SelectTrigger>
               <SelectContent>
-                 <SelectItem value="none">
-                    Don't assign to a project
-                 </SelectItem>
+                 <SelectItem value="none">Don't assign to a project</SelectItem>
                 {activeProjects.map((proj) => (
-                   <SelectItem key={proj.id} value={proj.id}>
-                     {proj.name} ({proj.progress}/{proj.goal})
-                   </SelectItem>
+                   <SelectItem key={proj.id} value={proj.id}>{proj.name} ({proj.progress}/{proj.goal})</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-           {isWillForgingActive && (
-              <div className="md:col-span-2">
-                  <Label htmlFor="willpower-spent" className="font-bold flex items-center gap-2">
-                      Will-Forging Discipline
-                  </Label>
-                   <Input
-                      id="willpower-spent"
-                      type="number"
-                      value={willpowerSpent}
-                      onChange={(e) => setWillpowerSpent(Math.max(0, parseInt(e.target.value, 10) || 0))}
-                      min={0}
-                      max={character.willpower}
-                      placeholder={`Spend WP (Max: ${character.willpower})`}
-                  />
+        </div>
+        <Separator />
+         <div className="space-y-4">
+            {isWillForgingActive && (
+              <div>
+                  <Label htmlFor="willpower-spent" className="font-bold flex items-center gap-2">Will-Forging Discipline</Label>
+                   <Input id="willpower-spent" type="number" value={willpowerSpent} onChange={(e) => setWillpowerSpent(Math.max(0, parseInt(e.target.value, 10) || 0))} min={0} max={character.willpower} placeholder={`Spend WP (Max: ${character.willpower})`}/>
                   <p className="text-sm text-muted-foreground mt-1">Spend Willpower to add 2 successes per point.</p>
               </div>
             )}
-        </div>
-        <Separator />
-        <div className="text-center">
-          <Button
-            onClick={handleRollClick}
-            disabled={isLoading}
-            size="lg"
-            className="font-headline text-xl"
-          >
-            {isLoading ? (
-              <Loader2 className="mr-2 h-6 w-6 animate-spin" />
-            ) : (
-              <Dices className="mr-2 h-6 w-6" />
-            )}
-            Roll {dicePool} Dice
-          </Button>
+             {hasCosts && (
+            <div className="p-3 bg-secondary/30 rounded-lg">
+                <h4 className="text-sm font-bold uppercase text-muted-foreground tracking-wider mb-2">
+                    Total Costs for this Action
+                </h4>
+                <div className="flex justify-center items-center gap-2 md:gap-4 flex-wrap">
+                    {charmCosts.motes > 0 && (
+                        <Badge variant="outline" className="flex items-center gap-2 text-base py-1 px-3">
+                            <Gem className="w-4 h-4 text-cyan-400"/>
+                            <span>{charmCosts.motes} Motes</span>
+                        </Badge>
+                    )}
+                    {totalWillpowerCost > 0 && (
+                         <Badge variant="outline" className="flex items-center gap-2 text-base py-1 px-3">
+                            <Star className="w-4 h-4 text-yellow-400"/>
+                            <span>{totalWillpowerCost} Willpower</span>
+                        </Badge>
+                    )}
+                     {charmCosts.gxp > 0 && (
+                         <Badge variant="outline" className="flex items-center gap-2 text-base py-1 px-3">
+                             <Shield className="w-4 h-4 text-green-400"/>
+                             <span>{charmCosts.gxp} GXP</span>
+                        </Badge>
+                    )}
+                     {charmCosts.wxp > 0 && (
+                         <Badge variant="outline" className="flex items-center gap-2 text-base py-1 px-3">
+                            <Sun className="w-4 h-4 text-orange-400"/>
+                             <span>{charmCosts.wxp} WXP</span>
+                        </Badge>
+                    )}
+                </div>
+            </div>
+          )}
+          <div className="text-center">
+            <Button onClick={handleRollClick} disabled={isLoading} size="lg" className="font-headline text-xl">
+              {isLoading ? (<Loader2 className="mr-2 h-6 w-6 animate-spin" />) : (<Dices className="mr-2 h-6 w-6" />)}
+              Roll {dicePool} Dice
+            </Button>
+          </div>
         </div>
         {diceRoll && (
           <div className="pt-6 space-y-4">

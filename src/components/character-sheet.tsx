@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { UserCircle, Sparkles, BrainCircuit, Droplets, HeartPulse, Hammer } from "lucide-react";
+import { RatingControl } from "@/components/ui/rating-control";
 
 interface CharacterSheetProps {
   character: Character;
@@ -39,6 +40,10 @@ export default function CharacterSheet({
 
   const handleAttributeChange = (value: string) => {
     setCharacter(prev => ({ ...prev, selectedAttribute: value as Attribute }));
+  };
+
+  const handleRatingChange = (stat: keyof Character, value: number) => {
+    setCharacter(prev => ({ ...prev, [stat]: value }));
   };
 
   const statOptions = [1, 2, 3, 4, 5];
@@ -84,23 +89,11 @@ export default function CharacterSheet({
                         ))}
                     </SelectContent>
                     </Select>
-                    <Select
-                    value={character[character.selectedAttribute].toString()}
-                    onValueChange={(value) =>
-                        handleStatChange(character.selectedAttribute, value)
-                    }
-                    >
-                    <SelectTrigger className="w-[80px] bg-background">
-                        <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {statOptions.map((val) => (
-                        <SelectItem key={val} value={val.toString()}>
-                            {val}
-                        </SelectItem>
-                        ))}
-                    </SelectContent>
-                    </Select>
+                    <RatingControl
+                        value={character[character.selectedAttribute]}
+                        max={5}
+                        onValueChange={(value) => handleRatingChange(character.selectedAttribute, value)}
+                    />
                 </div>
             </div>
             <div className="grid w-full items-center gap-2.5">
@@ -108,21 +101,11 @@ export default function CharacterSheet({
                     <Hammer className="w-5 h-5 text-orange-500" />
                     Craft Skill
                 </Label>
-                <Select
-                    value={character.craft.toString()}
-                    onValueChange={(value) => handleStatChange("craft", value)}
-                >
-                    <SelectTrigger id="craft" className="bg-background">
-                    <SelectValue placeholder="Select Craft Skill" />
-                    </SelectTrigger>
-                    <SelectContent>
-                    {statOptions.map((val) => (
-                        <SelectItem key={val} value={val.toString()}>
-                        {val}
-                        </SelectItem>
-                    ))}
-                    </SelectContent>
-                </Select>
+                 <RatingControl
+                    value={character.craft}
+                    max={5}
+                    onValueChange={(value) => handleRatingChange("craft", value)}
+                />
             </div>
         </div>
 
