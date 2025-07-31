@@ -11,33 +11,38 @@ export type Attribute =
   | "appearance";
 
 export type ProjectCategory = "mundane" | "superior" | "artifact";
+export type ProjectType = 
+  | "basic-project"
+  | "major-project"
+  | "superior-project"
+  | "legendary-project"
+  | "basic-repair"
+  | "major-repair"
+  | "superior-repair"
+  | "legendary-repair";
 
-// This represents an active, ongoing project.
 export interface ActiveProject {
   id: string;
   name: string;
-  category: ProjectCategory;
+  type: ProjectType;
   goal: number;
   progress: number;
   isComplete: boolean;
 }
 
-// This represents the accumulated experience points.
 export interface CraftingExperience {
   sxp: number;
   gxp: number;
   wxp: number;
 }
 
-// This represents a finished project stored in the journal.
-// It combines details from the project with the outcome.
 export interface JournalEntry {
   id: string;
   projectName: string;
   date: string;
   notes?: string;
   category: ProjectCategory;
-  outcome: CraftingOutcome; // Include the outcome for detailed view
+  outcome: CraftingOutcome;
 }
 
 export interface Character {
@@ -51,27 +56,37 @@ export interface Character {
   manipulation: number;
   appearance: number;
   craft: number;
-  specialty: number;
-  // ... other abilities can be added here as needed
+  willpower: number;
+  essence: number;
+  selectedAttribute: Attribute; // This was missing
 }
 
 export interface Charm {
+  id: string;
   name: string;
   ability: string;
-  type: string;
+  category: 'functional' | 'narrative';
+  description: string;
+  minCraft: number;
   minEssence: number;
+  effect: any; // Simplified for now
+  subEffects?: Charm[];
 }
-
 
 export interface DiceRoll {
-  rolledDice: number[];
-  successes: number;
-  botches: number;
+  diceHistories: number[][];
+  totalSuccesses: number;
+  automaticSuccesses: number;
+  targetNumber: number;
+  activeCharmNames: string[];
+  activeCharmIds: string[];
 }
 
-// This represents the calculated outcome of a crafting roll.
 export interface CraftingOutcome {
-  successes: number;
+  outcomeTitle: string;
+  outcomeDescription: string;
+  experienceGained: CraftingExperience;
+  successes: number; // Duplicated for easier access, to be cleaned up
   time: string;
   resources: string;
   notes?: string;
