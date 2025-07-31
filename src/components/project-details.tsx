@@ -1,7 +1,7 @@
 "use client";
 
 import type { Project, ProjectType } from "@/lib/types";
-import { PROJECT_TYPES } from "@/lib/constants";
+import { PROJECT_TYPES } from "@/lib/types";
 import {
   Card,
   CardContent,

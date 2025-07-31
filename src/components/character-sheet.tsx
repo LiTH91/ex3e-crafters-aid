@@ -1,4 +1,3 @@
-
 "use client";
 
 import type { Character, Attribute } from "@/lib/types";
@@ -20,15 +19,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { UserCircle, Sparkles, BrainCircuit, Droplets, HeartPulse, Hammer } from "lucide-react";
-import * as React from 'react'
-
 
 interface CharacterSheetProps {
   character: Character;
   setCharacter: (value: (prev: Character) => Character) => void;
 }
 
-const CharacterSheet = React.memo(function CharacterSheet({
+export default function CharacterSheet({
   character,
   setCharacter,
 }: CharacterSheetProps) {
@@ -204,6 +201,4 @@ const CharacterSheet = React.memo(function CharacterSheet({
       </CardContent>
     </Card>
   );
-})
-
-export default CharacterSheet;
+}

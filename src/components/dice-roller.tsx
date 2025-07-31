@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState } from "react";
 import type { DiceRoll, CraftingOutcome, Character, ProjectType, ActiveProject, Charm } from "@/lib/types";
 import { PROJECT_TYPES } from "@/lib/types";
 import { allCharms } from "@/lib/charms";
@@ -33,8 +33,6 @@ import {
   Book,
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import * as React from 'react'
-
 
 interface DiceRollerProps {
   character: Character;
@@ -60,9 +58,9 @@ interface DiceRollerProps {
 const getDieStyle = (roll: number, activeCharms: string[]): string => {
   const isSpecialSuccess = 
     roll === 10 ||
-    (activeCharms.includes('supreme-masterwork-focus-3') && roll >= 7) ||
-    (activeCharms.includes('supreme-masterwork-focus-2') && roll >= 8) ||
-    (activeCharms.includes('supreme-masterwork-focus-1') && roll >= 9);
+    (roll >= 9 && activeCharms.includes('supreme-masterwork-focus-1')) ||
+    (roll >= 8 && activeCharms.includes('supreme-masterwork-focus-2')) ||
+    (roll >= 7 && activeCharms.includes('supreme-masterwork-focus-3'));
 
   if (isSpecialSuccess) {
     return "bg-yellow-400 text-black border-yellow-600";
@@ -97,7 +95,7 @@ const DiceDisplay = ({ waves, activeCharms }: { waves: number[][], activeCharms:
 );
 
 
-const DiceRoller = React.memo(function DiceRoller({
+export default function DiceRoller({
   character,
   activeCharms,
   targetNumber,
@@ -116,13 +114,13 @@ const DiceRoller = React.memo(function DiceRoller({
   const [assignedProjectId, setAssignedProjectId] = useState<string | undefined>(undefined);
 
 
-  const handleRollClick = useCallback(() => {
+  const handleRollClick = () => {
     onRoll({
       type: projectType,
       artifactRating: projectType.startsWith("superior-") ? artifactRating : 0,
       objectivesMet,
     }, assignedProjectId);
-  }, [onRoll, projectType, artifactRating, objectivesMet, assignedProjectId]);
+  };
 
   const dicePool = character[character.selectedAttribute] + character.craft;
 
@@ -134,10 +132,10 @@ const DiceRoller = React.memo(function DiceRoller({
       .join(" ");
   };
   
-  const activeNarrativeCharms = useMemo(() => allCharms.filter(
+  const activeNarrativeCharms = allCharms.filter(
     (charm) =>
       diceRoll?.activeCharmIds.includes(charm.id) && charm.category === 'narrative'
-  ), [diceRoll]);
+  );
 
   const isWillForgingActive = activeCharms.includes("will-forging-discipline");
 
@@ -351,8 +349,4 @@ const DiceRoller = React.memo(function DiceRoller({
       </CardContent>
     </Card>
   );
-});
-
-export default DiceRoller;
-
-    
+}

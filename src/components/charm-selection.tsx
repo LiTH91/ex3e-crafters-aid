@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo, memo } from "react";
+import React, { useState, useMemo } from "react";
 import type { Charm, Character, CraftingExperience } from "@/lib/types";
 import { allCharms } from "@/lib/charms";
 import {
@@ -33,7 +33,7 @@ interface CharmSelectionProps {
   experience: CraftingExperience;
 }
 
-const CharmItem = ({ charm, activeCharms, handleCharmToggle, isDisabled }: { charm: Charm, activeCharms: string[], handleCharmToggle: (charmId: string, isSubCharm?: boolean) => void, isDisabled: boolean }) => (
+const CharmItem = ({ charm, activeCharms, handleCharmToggle, isDisabled }: { charm: Charm, activeCharms: string[], handleCharmToggle: (charmId: string) => void, isDisabled: boolean }) => (
     <div
         key={charm.id}
         className={`flex items-start gap-3 p-3 rounded-md transition-colors ${isDisabled ? 'opacity-50' : 'hover:bg-secondary'}`}
@@ -61,13 +61,13 @@ const CharmItem = ({ charm, activeCharms, handleCharmToggle, isDisabled }: { cha
 );
 
 
-const CharmSelection = memo(function CharmSelection({
+const CharmSelection = React.memo(({
   knownCharms,
   activeCharms,
   setActiveCharms,
   character,
   experience,
-}: CharmSelectionProps) {
+}: CharmSelectionProps) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("name");
 
@@ -149,7 +149,7 @@ const CharmSelection = memo(function CharmSelection({
         functionalCharms: charms.filter(c => c.category === 'functional'),
         narrativeCharms: charms.filter(c => c.category === 'narrative'),
     }
-  }, [searchTerm, sortBy, character.craft, character.essence]);
+  }, [searchTerm, sortBy]);
 
   return (
     <Card className="bg-card/80 backdrop-blur-sm border-2 border-primary/20 shadow-lg">
@@ -264,5 +264,5 @@ const CharmSelection = memo(function CharmSelection({
     </Card>
   );
 });
-
+CharmSelection.displayName = "CharmSelection";
 export default CharmSelection;

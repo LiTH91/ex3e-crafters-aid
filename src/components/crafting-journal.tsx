@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useCallback } from "react";
+import React, { useState } from "react";
 import type { ActiveProject, ProjectType } from "@/lib/types";
 import { PROJECT_TYPES } from "@/lib/types";
 import {
@@ -24,7 +24,6 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { BookOpen, Star, Sun, Moon, PlusCircle, Trash2 } from "lucide-react";
-import * as React from 'react'
 
 
 interface CraftingJournalProps {
@@ -39,19 +38,19 @@ interface CraftingJournalProps {
   onRemoveProject: (projectId: string) => void;
 }
 
-const CraftingJournal = React.memo(function CraftingJournal({
+const CraftingJournal = React.memo(({
   experience,
   projects,
   maxProjects,
   onAddProject,
   onRemoveProject,
-}: CraftingJournalProps) {
+}: CraftingJournalProps) => {
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectType, setNewProjectType] =
     useState<ProjectType>("major-project");
   const [newProjectGoal, setNewProjectGoal] = useState(25);
 
-  const handleAddProject = useCallback((e: React.FormEvent) => {
+  const handleAddProject = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProjectName || newProjectGoal <= 0) return;
     onAddProject({
@@ -63,7 +62,7 @@ const CraftingJournal = React.memo(function CraftingJournal({
     setNewProjectName("");
     setNewProjectType("major-project");
     setNewProjectGoal(25);
-  }, [newProjectName, newProjectGoal, newProjectType, onAddProject]);
+  };
   
   const canAddProject = projects.filter(p => p.type.startsWith("major")).length < maxProjects;
 
@@ -181,7 +180,7 @@ const CraftingJournal = React.memo(function CraftingJournal({
                         <SelectContent>
                             {PROJECT_TYPES.filter(t => t.endsWith("project")).map((type) => (
                             <SelectItem key={type} value={type}>
-                                {type.replace("-", " ").replace(/\\b\\w/g, l => l.toUpperCase())}
+                                {type.replace("-", " ").replace(/\b\w/g, l => l.toUpperCase())}
                             </SelectItem>
                             ))}
                         </SelectContent>
@@ -208,7 +207,7 @@ const CraftingJournal = React.memo(function CraftingJournal({
                     <div>
                       <p className="font-bold font-body">{p.name}</p>
                       <p className="text-sm text-muted-foreground font-body">
-                        {p.type.replace("-", " ").replace(/\\b\\w/g, l => l.toUpperCase())}
+                        {p.type.replace("-", " ").replace(/\b\w/g, l => l.toUpperCase())}
                       </p>
                     </div>
                     <Button variant="ghost" size="icon" onClick={() => onRemoveProject(p.id)}>
@@ -247,5 +246,5 @@ const CraftingJournal = React.memo(function CraftingJournal({
     </Card>
   );
 });
-
+CraftingJournal.displayName = "CraftingJournal";
 export default CraftingJournal;
