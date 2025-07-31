@@ -103,10 +103,6 @@ const DiceDisplay = ({ waves, activeCharms, isColorblindMode }: { waves: DieResu
            <React.Fragment key={`wave-${waveIndex}`}>
             <div className="flex items-center gap-2 flex-wrap justify-center">
                 {wave.map((die, rollIndex) => {
-                    const specialSuccess = isSpecialSuccess(die.value, activeCharms);
-                    const normalSuccess = die.value >= 7 && die.value < 10 && !specialSuccess;
-                    const isFailure = die.value === 1;
-
                     const style = isColorblindMode ? "bg-gray-400 text-black border-gray-600" : getDieStyle(die.value, activeCharms);
                     const modificationIcon = 
                         die.modification === 'explosion' ? <Flame className="w-3 h-3" /> :
@@ -114,12 +110,6 @@ const DiceDisplay = ({ waves, activeCharms, isColorblindMode }: { waves: DieResu
                         die.modification === 'conversion' ? <Replace className="w-3 h-3" /> :
                         die.modificationSource === 'Divine Inspiration Technique' || die.modificationSource === 'Holistic Miracle Understanding' ? <Eye className="w-3 h-3" /> :
                         null;
-
-                    const colorblindIcon = isColorblindMode ? (
-                        specialSuccess ? <Star className="w-5 h-5 text-yellow-300" /> :
-                        normalSuccess ? <Check className="w-5 h-5 text-green-300" /> :
-                        isFailure ? <X className="w-5 h-5 text-red-400" /> : null
-                    ) : null;
 
                     const tooltipText = 
                         die.modification === 'reroll' ? `Rerolled a ${die.initialValue}` :
@@ -132,7 +122,7 @@ const DiceDisplay = ({ waves, activeCharms, isColorblindMode }: { waves: DieResu
                     return (
                         <div key={`wave-${waveIndex}-roll-${rollIndex}`} className="relative">
                             <div className={`flex items-center justify-center w-10 h-10 rounded-full border-2 ${style}`}>
-                               {colorblindIcon || <span className="text-lg font-bold">{die.value}</span>}
+                               <span className="text-lg font-bold">{die.value}</span>
                             </div>
                             {modificationIcon && (
                                 <Tooltip>
