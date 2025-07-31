@@ -1,25 +1,36 @@
 
-export type Attribute = 
-  | "intelligence"
-  | "wits"
-  | "perception"
-  | "strength"
-  | "dexterity"
-  | "stamina"
-  | "charisma"
-  | "manipulation"
-  | "appearance";
+export const ATTRIBUTES = [
+  "intelligence",
+  "wits",
+  "perception",
+  "strength",
+  "dexterity",
+  "stamina",
+  "charisma",
+  "manipulation",
+  "appearance",
+] as const;
 
-export type ProjectCategory = "mundane" | "superior" | "artifact";
-export type ProjectType = 
-  | "basic-project"
-  | "major-project"
-  | "superior-project"
-  | "legendary-project"
-  | "basic-repair"
-  | "major-repair"
-  | "superior-repair"
-  | "legendary-repair";
+export type Attribute = (typeof ATTRIBUTES)[number];
+
+export const PROJECT_TYPES = [
+    "basic-project",
+    "major-project",
+    "superior-project",
+    "legendary-project",
+    "basic-repair",
+    "major-repair",
+    "superior-repair",
+    "legendary-repair",
+  ] as const;
+
+export type ProjectType = (typeof PROJECT_TYPES)[number];
+
+export interface Project {
+  type: ProjectType;
+  artifactRating: number; // 0 for non-artifacts
+  objectivesMet: number;
+}
 
 export interface ActiveProject {
   id: string;
@@ -36,14 +47,6 @@ export interface CraftingExperience {
   wxp: number;
 }
 
-export interface JournalEntry {
-  id: string;
-  projectName: string;
-  date: string;
-  notes?: string;
-  category: ProjectCategory;
-  outcome: CraftingOutcome;
-}
 
 export interface Character {
   intelligence: number;
@@ -56,9 +59,12 @@ export interface Character {
   manipulation: number;
   appearance: number;
   craft: number;
-  willpower: number;
   essence: number;
-  selectedAttribute: Attribute; // This was missing
+  personalMotes: number;
+  peripheralMotes: number;
+  willpower: number;
+  selectedAttribute: Attribute;
+  knownCharms: string[]; // Array of charm IDs
 }
 
 export interface CharmEffect {
@@ -73,18 +79,16 @@ export interface CharmEffect {
   value?: number;
 }
 
-
 export interface Charm {
   id: string;
-  name: string;
-  ability: string;
-  category: 'functional' | 'narrative';
+  name:string;
+  cost?: string;
   description: string;
   minCraft: number;
   minEssence: number;
   effect: CharmEffect;
+  category?: 'functional' | 'narrative';
   subEffects?: Charm[];
-  cost?: string;
 }
 
 export interface DiceRoll {
@@ -101,5 +105,4 @@ export interface CraftingOutcome {
   outcomeTitle: string;
   outcomeDescription: string;
   experienceGained: CraftingExperience;
-  successes: number; // Duplicated for easier access, to be cleaned up
 }

@@ -4,7 +4,6 @@
 import { useState, useMemo, memo } from "react";
 import type { Charm, Character, CraftingExperience } from "@/lib/types";
 import { allCharms } from "@/lib/charms";
-import { PROJECT_TYPES } from "@/lib/constants";
 import {
   Card,
   CardContent,
@@ -150,7 +149,7 @@ const CharmSelection = memo(function CharmSelection({
         functionalCharms: charms.filter(c => c.category === 'functional'),
         narrativeCharms: charms.filter(c => c.category === 'narrative'),
     }
-  }, [searchTerm, sortBy]);
+  }, [searchTerm, sortBy, character.craft, character.essence]);
 
   return (
     <Card className="bg-card/80 backdrop-blur-sm border-2 border-primary/20 shadow-lg">
@@ -265,4 +264,5 @@ const CharmSelection = memo(function CharmSelection({
     </Card>
   );
 });
+
 export default CharmSelection;
