@@ -16,6 +16,7 @@ import CraftingReference from "@/components/crafting-reference";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Hammer } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton"; // Import Skeleton
 
 const initialCharacter: Character = {
   intelligence: 3,
@@ -56,6 +57,35 @@ interface AppState {
   activeProjects: ActiveProject[];
 }
 
+// Skeleton component to show during server-side rendering and initial load
+const AppSkeleton = () => (
+  <div className="min-h-screen bg-background text-foreground p-4 sm:p-6 md:p-8">
+    <main className="max-w-7xl mx-auto">
+      <header className="text-center mb-8 md:mb-12">
+        <div className="flex justify-center items-center gap-4 mb-2">
+          <Hammer className="w-10 h-10 text-primary" />
+          <h1 className="font-headline text-4xl sm:text-5xl md:text-6xl font-bold text-primary">
+            Exalted Crafter's Aid
+          </h1>
+        </div>
+        <p className="font-body text-lg text-muted-foreground">
+          Your assistant for epic crafting in the world of Exalted.
+        </p>
+      </header>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-1 flex flex-col gap-8">
+          <Skeleton className="h-[200px] w-full" />
+          <Skeleton className="h-[400px] w-full" />
+        </div>
+        <div className="lg:col-span-2">
+          <Skeleton className="h-[600px] w-full" />
+        </div>
+      </div>
+    </main>
+  </div>
+);
+
+
 export default function Home() {
   const [appState, setAppState] = useState<AppState>(initialAppState);
   const [isMounted, setIsMounted] = useState(false); // To prevent hydration errors
@@ -69,7 +99,6 @@ export default function Home() {
 
   // Load state from localStorage on client-side mount
   useEffect(() => {
-    setIsMounted(true);
     try {
       const savedState = localStorage.getItem("exaltedCrafterState");
       if (savedState) {
@@ -83,6 +112,7 @@ export default function Home() {
     } catch (error) {
       console.error("Failed to load state from localStorage", error);
     }
+    setIsMounted(true);
   }, []);
 
   // Save state to localStorage whenever it changes
@@ -142,15 +172,15 @@ export default function Home() {
       activeCharmDetails.forEach((charm) => {
         if (charm.effect.type === "lower_repair_difficulty" && projectDetails.type.includes("repair")) tnModifier -= charm.effect.value;
         if (charm.cost) {
-            const moteMatch = charm.cost.match(/(\\d+)m/);
+            const moteMatch = charm.cost.match(/(\d+)m/);
             if (moteMatch) moteCost += parseInt(moteMatch[1], 10);
-            const willpowerMatch = charm.cost.match(/(\\d+)wp/);
+            const willpowerMatch = charm.cost.match(/(\d+)wp/);
             if (willpowerMatch && charm.id !== 'will-forging-discipline') willpowerCost += parseInt(willpowerMatch[1], 10);
-            const sxpMatch = charm.cost.match(/(\\d+)sxp/);
+            const sxpMatch = charm.cost.match(/(\d+)sxp/);
             if (sxpMatch) sxpCost += parseInt(sxpMatch[1], 10);
-            const gxpMatch = charm.cost.match(/(\\d+)gxp/);
+            const gxpMatch = charm.cost.match(/(\d+)gxp/);
             if (gxpMatch) gxpCost += parseInt(gxpMatch[1], 10);
-            const wxpMatch = charm.cost.match(/(\\d+)wxp/);
+            const wxpMatch = charm.cost.match(/(\d+)wxp/);
             if (wxpMatch) wxpCost += parseInt(wxpMatch[1], 10);
         }
       });
@@ -252,7 +282,7 @@ export default function Home() {
   const majorProjectSlots = hasTirelessWorkhorse ? character.essence * 2 : 0;
 
   if (!isMounted) {
-    return null; 
+    return <AppSkeleton />;
   }
 
   return (
@@ -304,7 +334,7 @@ export default function Home() {
                   aiOutcome={outcome}
                   activeProjects={activeProjects.filter(p => !p.isComplete)}
                   willpowerSpent={willpowerSpent}
-                  setWillpowerSpent={setWillpowerSpent}
+                  setWillpowerSpent={setWillwpowerSpent}
                 />
               </TabsContent>
               <TabsContent value="journal">
