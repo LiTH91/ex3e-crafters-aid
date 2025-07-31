@@ -56,7 +56,7 @@ interface DiceRollerProps {
 }
 
 const getDieStyle = (roll: number, activeCharms: string[]): string => {
-  const isSpecialSuccess = 
+  const isSpecialSuccess =
     roll === 10 ||
     (roll >= 9 && activeCharms.includes('supreme-masterwork-focus-1')) ||
     (roll >= 8 && activeCharms.includes('supreme-masterwork-focus-2')) ||
@@ -68,7 +68,11 @@ const getDieStyle = (roll: number, activeCharms: string[]): string => {
   if (roll >= 7) {
     return "bg-green-500 text-white border-green-700";
   }
-  return "bg-red-500 text-white border-red-700";
+  if (roll === 1) {
+    return "bg-red-500 text-white border-red-700";
+  }
+  // Neutral style for rolls 2-6
+  return "bg-gray-400 text-black border-gray-600";
 };
 
 
