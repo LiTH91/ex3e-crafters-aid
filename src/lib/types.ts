@@ -61,6 +61,19 @@ export interface Character {
   selectedAttribute: Attribute; // This was missing
 }
 
+export interface CharmEffect {
+  type:
+    | "add_successes"
+    | "add_successes_per_essence"
+    | "reroll_failures"
+    | "reroll_tens"
+    | "double_success"
+    | "lower_repair_difficulty"
+    | "custom";
+  value?: number;
+}
+
+
 export interface Charm {
   id: string;
   name: string;
@@ -69,8 +82,9 @@ export interface Charm {
   description: string;
   minCraft: number;
   minEssence: number;
-  effect: any; // Simplified for now
+  effect: CharmEffect;
   subEffects?: Charm[];
+  cost?: string;
 }
 
 export interface DiceRoll {
@@ -83,11 +97,9 @@ export interface DiceRoll {
 }
 
 export interface CraftingOutcome {
+  isSuccess: boolean;
   outcomeTitle: string;
   outcomeDescription: string;
   experienceGained: CraftingExperience;
   successes: number; // Duplicated for easier access, to be cleaned up
-  time: string;
-  resources: string;
-  notes?: string;
 }
