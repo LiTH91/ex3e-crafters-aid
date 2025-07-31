@@ -60,9 +60,9 @@ interface DiceRollerProps {
 const getDieStyle = (roll: number, activeCharms: string[]): string => {
   const isSpecialSuccess = 
     roll === 10 ||
-    (roll >= 9 && activeCharms.includes('supreme-masterwork-focus-1')) ||
-    (roll >= 8 && activeCharms.includes('supreme-masterwork-focus-2')) ||
-    (roll >= 7 && activeCharms.includes('supreme-masterwork-focus-3'));
+    (activeCharms.includes('supreme-masterwork-focus-3') && roll >= 7) ||
+    (activeCharms.includes('supreme-masterwork-focus-2') && roll >= 8) ||
+    (activeCharms.includes('supreme-masterwork-focus-1') && roll >= 9);
 
   if (isSpecialSuccess) {
     return "bg-yellow-400 text-black border-yellow-600";
@@ -354,3 +354,5 @@ const DiceRoller = React.memo(function DiceRoller({
 });
 
 export default DiceRoller;
+
+    
