@@ -71,32 +71,31 @@ const CharmSelection = React.memo(({
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("name");
 
-  const handleCharmToggle = (charmId: string, isSubCharm: boolean = false) => {
+  const handleCharmToggle = (charmId: string) => {
     let newActiveCharms = [...activeCharms];
-    
-    // Find the base charm and the specific sub-effect if applicable
     const baseCharm = allCharms.find(c => c.id === charmId || c.subEffects?.some(sub => sub.id === charmId));
-    const subCharm = baseCharm?.subEffects?.find(sub => sub.id === charmId);
-    
+    const isSubEffect = baseCharm && baseCharm.id !== charmId;
+
     if (newActiveCharms.includes(charmId)) {
         // --- DESELECTING ---
         newActiveCharms = newActiveCharms.filter(id => id !== charmId);
 
-        // If deselecting a sub-charm, also deselect higher-tier sub-charms
-        if (subCharm && baseCharm?.subEffects) {
+        // If deselecting a base charm, deselect all its sub-charms
+        if (baseCharm && !isSubEffect && baseCharm.subEffects) {
+            baseCharm.subEffects.forEach(sub => {
+                newActiveCharms = newActiveCharms.filter(id => id !== sub.id);
+            });
+        }
+        
+        // If deselecting a sub-charm, deselect higher-tier sub-charms of the same family
+        if (isSubEffect && baseCharm && baseCharm.subEffects) {
             const subCharmIndex = baseCharm.subEffects.findIndex(s => s.id === charmId);
             if (subCharmIndex !== -1) {
                 for (let i = subCharmIndex + 1; i < baseCharm.subEffects.length; i++) {
-                    newActiveCharms = newActiveCharms.filter(id => id !== baseCharm.subEffects![i].id);
+                    const higherTierId = baseCharm.subEffects[i].id;
+                    newActiveCharms = newActiveCharms.filter(id => id !== higherTierId);
                 }
             }
-        }
-        
-        // If deselecting the base charm, deselect all its sub-charms
-        if (!subCharm && baseCharm?.subEffects) {
-             baseCharm.subEffects.forEach(sub => {
-                newActiveCharms = newActiveCharms.filter(id => id !== sub.id);
-             });
         }
         
     } else {
@@ -104,7 +103,7 @@ const CharmSelection = React.memo(({
         newActiveCharms.push(charmId);
 
         // If selecting a sub-charm, also select its base charm and any lower-tier sub-charms
-        if (subCharm && baseCharm?.subEffects) {
+        if (isSubEffect && baseCharm && baseCharm.subEffects) {
             if (!newActiveCharms.includes(baseCharm.id)) {
                 newActiveCharms.push(baseCharm.id);
             }
@@ -122,6 +121,11 @@ const CharmSelection = React.memo(({
 
 
   const isCharmDisabled = (charm: Charm): boolean => {
+    // An active charm can always be deselected.
+    if (activeCharms.includes(charm.id)) {
+        return false;
+    }
+      
     // Cost checks
     const costSxp = charm.cost?.match(/(\d+)sxp/);
     const costGxp = charm.cost?.match(/(\d+)gxp/);
@@ -172,7 +176,7 @@ const CharmSelection = React.memo(({
           <Checkbox 
             id={subCharm.id} 
             checked={activeCharms.includes(subCharm.id)} 
-            onCheckedChange={() => handleCharmToggle(subCharm.id, true)} 
+            onCheckedChange={() => handleCharmToggle(subCharm.id)} 
             className="mt-1" 
             disabled={isDisabled}
           />
