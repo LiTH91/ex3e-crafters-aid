@@ -40,7 +40,7 @@ const getExplosionSource = (roll: number, activeCharms: string[]): string | unde
 }
 
 
-const calculateSuccesses = (roll: number, activeCharms: string[]) => {
+export const calculateSuccesses = (roll: number, activeCharms: string[]) => {
   // 10 always counts as 2 successes
   if (roll >= 10) return 2;
   

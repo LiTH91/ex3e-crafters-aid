@@ -5,7 +5,7 @@ import React, { useState, useEffect } from "react";
 import type { DiceRoll, CraftingOutcome, Character, ProjectType, ActiveProject, Charm, DieResult } from "@/lib/types";
 import { PROJECT_TYPES } from "@/lib/types";
 import { allCharms } from "@/lib/charms";
-import { shouldDieExplode } from "@/lib/dice-logic";
+import { shouldDieExplode, calculateSuccesses } from "@/lib/dice-logic";
 import {
   Card,
   CardContent,
@@ -80,10 +80,8 @@ const getDieStyle = (die: DieResult, isColorblindMode: boolean, activeCharms: st
     return { style: "bg-purple-300 text-black border-purple-500" };
   }
 
-  // A die is a special success if its value is 10, or if it's the source/result of an explosion/conversion.
-  const isExplosionSource = shouldDieExplode(die, activeCharms);
-  const isSpecialSuccess = die.value === 10 || (die.value >= 7 && (isExplosionSource || die.modification === 'conversion' || die.modification === 'explosion'));
-
+  // A die is a special success if it counts as 2 successes.
+  const isSpecialSuccess = calculateSuccesses(die.value, activeCharms) === 2;
 
   if (isColorblindMode) {
       if (die.value === 1) return { style: "bg-rose-700 text-white border-rose-900" }; // Vermillion for 1
