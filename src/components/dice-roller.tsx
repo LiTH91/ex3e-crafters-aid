@@ -81,7 +81,8 @@ const getDieStyle = (die: DieResult, isColorblindMode: boolean, activeCharms: st
   }
 
   const isExplosionSource = shouldDieExplode(die, activeCharms);
-  const isSpecialSuccess = isExplosionSource || die.modification === 'conversion' || die.modification === 'explosion';
+  const isSpecialSuccess = die.value >= 7 && (isExplosionSource || die.modification === 'conversion' || die.modification === 'explosion');
+
 
   if (isColorblindMode) {
       if (isSpecialSuccess) return { style: "bg-orange-500 text-white border-orange-700" };
