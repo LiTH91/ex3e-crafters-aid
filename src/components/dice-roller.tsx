@@ -81,7 +81,8 @@ const getDieStyle = (die: DieResult, isColorblindMode: boolean, activeCharms: st
   }
 
   const isExplosionSource = shouldDieExplode(die, activeCharms);
-  const isSpecialSuccess = (die.value >= 7 && (isExplosionSource || die.modification === 'conversion' || die.modification === 'explosion'));
+  // A die is a special success if its value is 10, or if it's the source/result of an explosion/conversion.
+  const isSpecialSuccess = die.value === 10 || (die.value >= 7 && (isExplosionSource || die.modification === 'conversion' || die.modification === 'explosion'));
 
   if (isColorblindMode) {
       if (die.value === 1) return { style: "bg-rose-700 text-white border-rose-900" }; // Vermillion for 1
@@ -541,5 +542,7 @@ export default function DiceRoller({
     </Card>
   );
 }
+
+    
 
     
