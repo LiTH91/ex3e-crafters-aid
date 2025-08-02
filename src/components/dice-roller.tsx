@@ -83,14 +83,24 @@ const isSpecialSuccess = (roll: number, activeCharms: string[]): boolean => {
     (roll >= 7 && activeCharms.includes('supreme-masterwork-focus-3'));
 };
 
-const getDieStyle = (roll: number, activeCharms: string[]): string => {
-  if (isSpecialSuccess(roll, activeCharms)) {
+const getDieStyle = (roll: number, activeCharms: string[], isColorblindMode: boolean): string => {
+  const isSpecial = isSpecialSuccess(roll, activeCharms);
+
+  if (isColorblindMode) {
+    if (roll === 1) return "bg-[#E34234] text-white border-black"; // Vermillion
+    if (isSpecial) return "bg-[#FFA500] text-black border-black"; // Orange
+    if (roll >= 7) return "bg-[#87CEEB] text-black border-black"; // Sky Blue
+    return "bg-black text-white border-gray-400"; // Black with white text
+  }
+
+  // Original colors
+  if (isSpecial) {
     return "bg-yellow-400 text-black border-yellow-600";
   }
   if (roll >= 7) {
     return "bg-green-500 text-white border-green-700";
   }
-    if (roll > 1) {
+  if (roll > 1) {
     return "bg-gray-400 text-black border-gray-600";
   }
   return "bg-red-500 text-white border-red-700";
@@ -103,7 +113,7 @@ const DiceDisplay = ({ waves, activeCharms, isColorblindMode }: { waves: DieResu
            <React.Fragment key={`wave-${waveIndex}`}>
             <div className="flex items-center gap-2 flex-wrap justify-center">
                 {wave.map((die, rollIndex) => {
-                    const style = isColorblindMode ? "bg-gray-400 text-black border-gray-600" : getDieStyle(die.value, activeCharms);
+                    const style = getDieStyle(die.value, activeCharms, isColorblindMode);
                     const modificationIcon = 
                         die.modification === 'explosion' ? <Flame className="w-3 h-3" /> :
                         die.modification === 'reroll' ? <RotateCw className="w-3 h-3" /> :
