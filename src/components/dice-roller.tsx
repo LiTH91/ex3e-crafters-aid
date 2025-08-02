@@ -113,7 +113,8 @@ const DiceDisplay = ({ diceRoll, isColorblindMode }: { diceRoll: DiceRoll, isCol
                        
                        return (
                            <div key={`wave-${waveIndex}-roll-${rollIndex}`} className="relative">
-                               <div className={`relative flex items-center justify-center w-10 h-10 border-2 rounded-md ${style}`}>\n                                   <span className="text-lg font-bold">{valueToShow}</span>
+                               <div className={`relative flex items-center justify-center w-10 h-10 border-2 rounded-md ${style}`}>
+                                   <span className="text-lg font-bold">{valueToShow}</span>
                                </div>
                                {die.fmdId && (
                                    <sup className="absolute -top-1 -left-1 bg-purple-500 text-white rounded-full h-4 w-4 text-xs flex items-center justify-center">
@@ -386,10 +387,12 @@ export default function DiceRoller({
                                 className="flex-1"
                                 disabled={isBrassScalesFallingActive || isTriumphForgingEyeActive}
                             />
-                            <Badge variant="outline" className={`flex items-center gap-2 text-base py-1 px-3 w-32 justify-center ${isBrassScalesFallingActive || isTriumphForgingEyeActive ? 'opacity-50' : ''}`}>\n                                <PlusCircle className="w-4 h-4 text-green-500"/>
+                            <Badge variant="outline" className={`flex items-center gap-2 text-base py-1 px-3 w-32 justify-center ${isBrassScalesFallingActive || isTriumphForgingEyeActive ? 'opacity-50' : ''}`}>
+                                <PlusCircle className="w-4 h-4 text-green-500"/>
                                 <span>{currentExcellencyDice} Dice</span>
                             </Badge>
-                            <Badge variant="outline" className={`flex items-center gap-2 text-base py-1 px-3 w-32 justify-center ${isBrassScalesFallingActive || isTriumphForgingEyeActive ? 'opacity-50' : ''}`}>\n                                <Gem className="w-4 h-4 text-cyan-400"/>
+                            <Badge variant="outline" className={`flex items-center gap-2 text-base py-1 px-3 w-32 justify-center ${isBrassScalesFallingActive || isTriumphForgingEyeActive ? 'opacity-50' : ''}`}>
+                                <Gem className="w-4 h-4 text-cyan-400"/>
                                 <span>{isTriumphForgingEyeActive ? 0 : currentExcellencyDice} Motes</span>
                             </Badge>
                         </div>
