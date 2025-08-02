@@ -9,9 +9,9 @@ interface CraftingInput {
   successes: number;
   targetNumber: number;
   isExceptional: boolean;
-  activeCharms: string[];
   intervalsRemaining?: number;
   legendaryBonusRoll?: number[];
+  activeCharms: string[];
 }
 
 const outcomes = {
@@ -43,7 +43,7 @@ const outcomes = {
 export function calculateCraftingOutcome(
   input: CraftingInput,
 ): CraftingOutcome {
-  const { project, successes, targetNumber, isExceptional } = input;
+  const { project, successes, targetNumber, isExceptional, activeCharms } = input;
   const isSuccess = successes >= targetNumber;
 
   let sxp = 0;
@@ -113,7 +113,16 @@ export function calculateCraftingOutcome(
         // No XP for legendary repair
         break;
     }
+    
+    // Apply charm effects on XP
+    if (activeCharms.includes("red-anvils-ringing")) {
+        if (project.type === "basic-project" || project.type === "basic-repair") {
+            sxp += project.objectivesMet;
+        }
+    }
   }
+
+
 
   return {
     isSuccess,

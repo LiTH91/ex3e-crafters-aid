@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import type { ActiveProject, CraftingExperience, ProjectType } from "@/lib/types";
+import type { ActiveProject, ProjectType } from "@/lib/types";
 import { PROJECT_TYPES } from "@/lib/types";
 import {
   Card,
@@ -23,44 +23,19 @@ import {
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { BookOpen, Star, Sun, Moon, PlusCircle, Trash2, Plus, Minus } from "lucide-react";
+import { BookOpen, Star, Sun, Moon, PlusCircle, Trash2 } from "lucide-react";
 
 
 interface CraftingJournalProps {
-  experience: CraftingExperience;
+  experience: {
+    sxp: number;
+    gxp: number;
+    wxp: number;
+  };
   projects: ActiveProject[];
   maxProjects: number;
   onAddProject: (project: Omit<ActiveProject, "id" | "isComplete">) => void;
   onRemoveProject: (projectId: string) => void;
-  onExperienceChange: (type: keyof CraftingExperience, amount: number) => void;
-}
-
-const ExperienceAdjuster = ({ type, onAdjust }: { type: keyof CraftingExperience, onAdjust: (amount: number) => void }) => {
-    const [amount, setAmount] = useState(1);
-
-    const handleAdjust = (multiplier: 1 | -1) => {
-        if(amount > 0) {
-            onAdjust(amount * multiplier);
-        }
-    }
-
-    return (
-        <div className="flex items-center justify-center gap-2 mt-2">
-            <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => handleAdjust(-1)}>
-                <Minus className="w-4 h-4"/>
-            </Button>
-             <Input 
-                type="number"
-                value={amount}
-                onChange={(e) => setAmount(Math.max(1, parseInt(e.target.value, 10) || 1))}
-                className="w-16 h-8 text-center"
-                min="1"
-            />
-             <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => handleAdjust(1)}>
-                <Plus className="w-4 h-4"/>
-            </Button>
-        </div>
-    )
 }
 
 export default function CraftingJournal({
@@ -69,13 +44,12 @@ export default function CraftingJournal({
   maxProjects,
   onAddProject,
   onRemoveProject,
-  onExperienceChange
 }: CraftingJournalProps) {
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectType, setNewProjectType] =
     useState<ProjectType>("major-project");
   const [newProjectGoal, setNewProjectGoal] = useState(25);
-  
+
   const handleAddProject = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProjectName || newProjectGoal <= 0) return;
@@ -89,7 +63,7 @@ export default function CraftingJournal({
     setNewProjectType("major-project");
     setNewProjectGoal(25);
   };
-
+  
   const canAddProject = projects.filter(p => p.type.startsWith("major")).length < maxProjects;
 
   return (
@@ -110,10 +84,10 @@ export default function CraftingJournal({
       <CardContent className="space-y-6">
         {/* Experience Section */}
         <div>
-          <h3 className="font-headline text-xl text-primary mb-2 text-center">
+          <h3 className="font-headline text-xl text-primary mb-2">
             Crafting Experience
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+          <div className="grid grid-cols-3 gap-4 text-center">
             <div className="p-4 bg-background rounded-lg shadow">
               <div className="flex items-center justify-center gap-2">
                 <Moon className="w-6 h-6 text-gray-400" />
@@ -124,7 +98,6 @@ export default function CraftingJournal({
               <p className="text-sm text-muted-foreground font-body">
                 Silver (SXP)
               </p>
-               <ExperienceAdjuster type="sxp" onAdjust={(amount) => onExperienceChange('sxp', amount)} />
             </div>
             <div className="p-4 bg-background rounded-lg shadow">
               <div className="flex items-center justify-center gap-2">
@@ -136,7 +109,6 @@ export default function CraftingJournal({
               <p className="text-sm text-muted-foreground font-body">
                 Gold (GXP)
               </p>
-              <ExperienceAdjuster type="gxp" onAdjust={(amount) => onExperienceChange('gxp', amount)} />
             </div>
             <div className="p-4 bg-background rounded-lg shadow">
               <div className="flex items-center justify-center gap-2">
@@ -148,7 +120,6 @@ export default function CraftingJournal({
               <p className="text-sm text-muted-foreground font-body">
                 White (WXP)
               </p>
-              <ExperienceAdjuster type="wxp" onAdjust={(amount) => onExperienceChange('wxp', amount)} />
             </div>
           </div>
         </div>

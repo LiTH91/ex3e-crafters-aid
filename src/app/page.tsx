@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -50,9 +51,8 @@ const initialAppState = {
     activeCharms: [],
     craftingXp: initialExperience,
     activeProjects: [],
-    isTriumphForgingEyeActive: false,
-    divineInspirationUses: 0,
     isColorblindMode: false,
+    isTriumphForgingEyeActive: false,
 };
 
 interface AppState {
@@ -60,19 +60,20 @@ interface AppState {
   activeCharms: string[];
   craftingXp: CraftingExperience;
   activeProjects: ActiveProject[];
-  isTriumphForgingEyeActive: boolean;
-  divineInspirationUses: number;
   isColorblindMode: boolean;
+  isTriumphForgingEyeActive: boolean;
 }
 
 export default function Home() {
   const [appState, setAppState] = useState<AppState>(initialAppState);
   const [isMounted, setIsMounted] = useState(false); // To prevent hydration errors
 
+  const [targetNumber, setTargetNumber] = useState<number>(5);
   const [diceRoll, setDiceRoll] = useState<DiceRoll | null>(null);
   const [outcome, setOutcome] = useState<CraftingOutcome | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const [willpowerSpent, setWillpowerSpent] = useState(0);
 
   // Load state from localStorage on client-side mount
   useEffect(() => {
@@ -84,7 +85,7 @@ export default function Home() {
         // Ensure knownCharms is always up-to-date with the latest from allCharms
         parsedState.character.knownCharms = allCharms.map(c => c.id);
         if (parsedState.character && parsedState.activeProjects) {
-            setAppState(prevState => ({...prevState, ...parsedState}));
+            setAppState(parsedState);
         }
       }
     } catch (error) {
@@ -112,31 +113,13 @@ export default function Home() {
     });
   };
 
-   const handleExperienceChange = (type: keyof CraftingExperience, amount: number) => {
-    handleStateChange('craftingXp', prev => ({
-      ...prev,
-      [type]: Math.max(0, (prev[type] || 0) + amount)
-    }));
-     toast({
-      title: "Experience Updated",
-      description: `${amount > 0 ? '+' : ''}${amount} ${type.toUpperCase()} applied.`,
-    });
-  };
-
-
   const handleRoll = async (
     projectDetails: {
       type: ProjectType;
       artifactRating: number;
       objectivesMet: number;
-      targetNumber: number;
     },
-    dicePool: {
-        base: number;
-        excellency: number;
-    },
-    willpowerSpent: number,
-    isTriumphForgingEyeActive: boolean,
+    excellencyDice: number,
     assignedProjectId?: string
   ) => {
     setIsLoading(true);
@@ -144,25 +127,15 @@ export default function Home() {
     setOutcome(null);
 
     try {
-      const { character, activeCharms } = appState;
+      const { character, activeCharms, craftingXp, isTriumphForgingEyeActive } = appState;
 
       // --- 1. Calculate Costs & Effects from Charms ---
-      let moteCost = 0;
-      let willpowerCost = 0;
+      let moteCost = isTriumphForgingEyeActive ? 0 : excellencyDice; // Excellency cost
+      let willpowerCost = willpowerSpent;
       let sxpCost = 0;
       let gxpCost = 0;
       let wxpCost = 0;
       let tnModifier = 0;
-
-      // Add excellency cost if not using Triumph-Forging Eye
-      if (dicePool.excellency > 0 && !isTriumphForgingEyeActive) {
-          moteCost += dicePool.excellency;
-      }
-      
-      if(activeCharms.includes("will-forging-discipline")) {
-          willpowerCost += willpowerSpent;
-      }
-
 
       const activeCharmDetails = allCharms.flatMap(charm => {
           const charms = [];
@@ -183,16 +156,14 @@ export default function Home() {
         if (charm.id === 'experiential-conjuring-of-true-void') {
             if(projectDetails.type.startsWith('major')) gxpCost += 4;
             else if(projectDetails.type.startsWith('superior') || projectDetails.type.startsWith('legendary')) wxpCost += 4;
+            else if(projectDetails.type.startsWith('basic')) sxpCost += 4;
         }
 
         if (charm.cost) {
             const moteMatch = charm.cost.match(/(\d+)m/);
             if (moteMatch) moteCost += parseInt(moteMatch[1], 10);
             const willpowerMatch = charm.cost.match(/(\d+)wp/);
-            // Willpower for Will-Forging Discipline is handled separately
-            if (willpowerMatch && charm.id !== 'will-forging-discipline') {
-                willpowerCost += parseInt(willpowerMatch[1], 10);
-            }
+            if (willpowerMatch && charm.id !== 'will-forging-discipline') willpowerCost += parseInt(willpowerMatch[1], 10);
             const sxpMatch = charm.cost.match(/(\d+)sxp/);
             if (sxpMatch) sxpCost += parseInt(sxpMatch[1], 10);
             const gxpMatch = charm.cost.match(/(\d+)gxp/);
@@ -223,33 +194,34 @@ export default function Home() {
       }));
 
       // --- 3. Perform the Dice Roll using the pure function ---
+      const finalTargetNumber = Math.max(1, targetNumber + tnModifier);
       const rollResult = await performDiceRoll({
           character,
           activeCharms,
-          dicePool,
-          targetNumber: projectDetails.targetNumber,
+          targetNumber: finalTargetNumber,
           willpowerSpent,
+          excellencyDice,
           onProgress: (interimRoll) => {
               setDiceRoll(interimRoll);
           }
       });
 
       setDiceRoll(rollResult);
-      handleStateChange('isTriumphForgingEyeActive', false);
-
 
       // --- 4. Calculate Final Outcome and Update State ---
+      const isExceptional = (projectDetails.type.startsWith("basic-") || projectDetails.type.startsWith("major-")) && rollResult.totalSuccesses >= finalTargetNumber + 3;
+
       const result = calculateCraftingOutcome({ 
         project: projectDetails, 
-        successes: rollResult.totalSuccesses,
-        targetNumber: projectDetails.targetNumber,
-        isExceptional: rollResult.totalSuccesses >= projectDetails.targetNumber + 3,
-        activeCharms
+        successes: rollResult.totalSuccesses, 
+        targetNumber: finalTargetNumber, 
+        isExceptional,
+        activeCharms, 
       });
 
       if (result.isSuccess) {
         handleStateChange('craftingXp', prev => ({
-          sxp: prev.sxp + result.experienceGained.sxp,
+          sxp: prev.sxp + result.experienceGained.sxp + rollResult.sxpFromCharm,
           gxp: prev.gxp + result.experienceGained.gxp,
           wxp: prev.wxp + result.experienceGained.wxp,
         }));
@@ -278,6 +250,10 @@ export default function Home() {
       toast({ variant: "destructive", title: "Error", description: "Failed to calculate the crafting outcome. Please try again." });
     } finally {
       setIsLoading(false);
+      // Reset the Triumph-Forging Eye toggle after the roll is complete
+      if (appState.isTriumphForgingEyeActive) {
+          handleStateChange('isTriumphForgingEyeActive', false);
+      }
     }
   };
 
@@ -287,12 +263,15 @@ export default function Home() {
         setAppState(initialAppState);
         setDiceRoll(null);
         setOutcome(null);
+        setTargetNumber(5);
         toast({ title: "Data Reset", description: "All character data and projects have been reset." });
     }
   }
 
-  const { character, activeCharms, craftingXp, activeProjects, isTriumphForgingEyeActive, divineInspirationUses, isColorblindMode } = appState;
-  
+  const { character, activeCharms, craftingXp, activeProjects, isColorblindMode, isTriumphForgingEyeActive } = appState;
+  const hasTirelessWorkhorse = activeCharms.includes("tireless-workhorse-method");
+  const majorProjectSlots = hasTirelessWorkhorse ? character.essence * 2 : 0;
+
   const addProject = (project: Omit<ActiveProject, 'id' | 'isComplete'>) => {
     handleStateChange('activeProjects', prev => [...prev, { ...project, id: crypto.randomUUID(), isComplete: false }]);
   }
@@ -300,9 +279,6 @@ export default function Home() {
   const removeProject = (projectId: string) => {
     handleStateChange('activeProjects', prev => prev.filter(p => p.id !== projectId));
   }
-
-  const hasTirelessWorkhorse = activeCharms.includes("tireless-workhorse-method") || allCharms.find(c => c.id === "chains-fall-away" && activeCharms.includes(c.id));
-  const majorProjectSlots = hasTirelessWorkhorse ? (character.essence * 2) : 0;
   
   if (!isMounted) {
     // Render a loading state or null on the server and initial client render
@@ -351,14 +327,18 @@ export default function Home() {
                 <DiceRoller
                   character={character}
                   activeCharms={activeCharms}
+                  targetNumber={targetNumber}
+                  setTargetNumber={setTargetNumber}
                   onRoll={handleRoll}
                   isLoading={isLoading}
                   diceRoll={diceRoll}
                   aiOutcome={outcome}
                   activeProjects={activeProjects.filter(p => !p.isComplete)}
-                  isTriumphForgingEyeActive={isTriumphForgingEyeActive}
-                  setTriumphForgingEyeActive={(val) => handleStateChange('isTriumphForgingEyeActive', val)}
+                  willpowerSpent={willpowerSpent}
+                  setWillpowerSpent={setWillpowerSpent}
                   isColorblindMode={isColorblindMode}
+                  isTriumphForgingEyeActive={isTriumphForgingEyeActive}
+                  setIsTriumphForgingEyeActive={(value) => handleStateChange('isTriumphForgingEyeActive', value)}
                 />
               </TabsContent>
               <TabsContent value="journal">
@@ -368,7 +348,6 @@ export default function Home() {
                   maxProjects={majorProjectSlots}
                   onAddProject={addProject}
                   onRemoveProject={removeProject}
-                  onExperienceChange={handleExperienceChange}
                 />
               </TabsContent>
                <TabsContent value="reference">
@@ -379,13 +358,20 @@ export default function Home() {
         </div>
       </main>
       <footer className="text-center mt-12 text-sm text-muted-foreground">
-        <div className="flex justify-center items-center gap-4 mb-4">
-          <Button variant="outline" onClick={resetState}>Reset All Data</Button>
-          <div className="flex items-center space-x-2">
-            <Switch id="colorblind-mode" checked={isColorblindMode} onCheckedChange={(val) => handleStateChange('isColorblindMode', val)} />
-            <Label htmlFor="colorblind-mode" className="flex items-center gap-1"><Eye className="w-4 h-4"/> Colorblind Mode</Label>
-          </div>
-        </div>
+         <div className="flex justify-center items-center gap-8 mb-4">
+            <div className="flex items-center space-x-2">
+              <Switch
+                  id="colorblind-mode"
+                  checked={isColorblindMode}
+                  onCheckedChange={(value) => handleStateChange('isColorblindMode', value)}
+              />
+              <Label htmlFor="colorblind-mode" className="flex items-center gap-2">
+                  <Eye className="w-4 h-4" />
+                  Colorblind Mode
+              </Label>
+            </div>
+            <Button variant="outline" onClick={resetState}>Reset All Data</Button>
+         </div>
         <p>
           Exalted and its concepts are trademarks of Onyx Path Publishing. This
           is an unofficial fan utility.

@@ -92,23 +92,28 @@ export interface Charm {
   subEffects?: Charm[];
 }
 
-export type DieModification = 'reroll' | 'explosion' | 'conversion';
+export type DieModification = 'reroll' | 'explosion' | 'conversion' | 'fmd_source';
 
 export interface DieResult {
     value: number;
     initialValue?: number;
     modification?: DieModification;
     modificationSource?: string;
+    usedForFMD?: boolean;
+    isModified?: boolean; // Flag to show a die has been processed in a chain reaction
+    fmdId?: number;
 }
 
 export interface DiceRoll {
   diceHistories: DieResult[][];
   totalSuccesses: number;
   automaticSuccesses: number;
+  excellencyDice: number;
   targetNumber: number;
   activeCharmNames: string[];
   activeCharmIds: string[];
-  bonusDiceFromDivineInspiration: number;
+  sxpFromCharm: number;
+  bonusDiceFromCharm: number;
 }
 
 export interface CraftingOutcome {
