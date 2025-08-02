@@ -8,36 +8,51 @@ const ANIMATION_DELAY = 100;
 
 const rollDie = (): DieResult => ({ value: Math.floor(Math.random() * 10) + 1 });
 
-const getExplosionSource = (roll: number, activeCharms: string[]): string | undefined => {
-    if (activeCharms.includes("flawless-handiwork-method") && roll === 10) return "Flawless Handiwork Method";
-    if (activeCharms.includes('supreme-masterwork-focus-3') && roll >= 7) return "Supreme Masterwork Focus";
-    if (activeCharms.includes('supreme-masterwork-focus-2') && roll >= 8) return "Supreme Masterwork Focus";
-    if (activeCharms.includes('supreme-masterwork-focus-1') && roll >= 9) return "Supreme Masterwork Focus";
-    return undefined;
-}
 
 export const shouldDieExplode = (die: DieResult, activeCharms: string[]): boolean => {
-  // A die that has already been modified in this chain should not cause another event.
+  // A die that has already been modified (e.g., is the result of a previous explosion) should not cause another explosion.
   if (die.isModified) return false;
 
   const roll = die.value;
-  if (activeCharms.includes("flawless-handiwork-method") && roll === 10) return true;
-  if (activeCharms.includes('supreme-masterwork-focus-3') && roll >= 7) return true;
-  if (activeCharms.includes('supreme-masterwork-focus-2') && roll >= 8) return true;
-  if (activeCharms.includes('supreme-masterwork-focus-1') && roll >= 9) return true;
+
+  if (roll === 10) {
+    return activeCharms.includes("flawless-handiwork-method");
+  }
+  if (roll === 9) {
+    return activeCharms.includes('supreme-masterwork-focus-1');
+  }
+  if (roll === 8) {
+    return activeCharms.includes('supreme-masterwork-focus-2');
+  }
+  if (roll === 7) {
+    return activeCharms.includes('supreme-masterwork-focus-3');
+  }
+  
   return false;
 };
 
-const calculateSuccesses = (roll: number, activeCharms: string[]) => {
-  const smf1 = activeCharms.includes('supreme-masterwork-focus-1');
-  const smf2 = activeCharms.includes('supreme-masterwork-focus-2');
-  const smf3 = activeCharms.includes('supreme-masterwork-focus-3');
+const getExplosionSource = (roll: number, activeCharms: string[]): string | undefined => {
+    if (activeCharms.includes("flawless-handiwork-method") && roll === 10) return "Flawless Handiwork Method";
+    if (activeCharms.includes('supreme-masterwork-focus-1') && roll === 9) return "Supreme Masterwork Focus Lvl 1";
+    if (activeCharms.includes('supreme-masterwork-focus-2') && roll === 8) return "Supreme Masterwork Focus Lvl 2";
+    if (activeCharms.includes('supreme-masterwork-focus-3') && roll === 7) return "Supreme Masterwork Focus Lvl 3";
+    return undefined;
+}
 
+
+const calculateSuccesses = (roll: number, activeCharms: string[]) => {
+  // 10 always counts as 2 successes
   if (roll >= 10) return 2;
-  if (smf3 && roll >= 7) return 2; 
-  if (smf2 && roll >= 8) return 2;
-  if (smf1 && roll >= 9) return 2;
+  
+  // Check for SMF upgrades for 7, 8, 9
+  if (roll === 9 && activeCharms.includes('supreme-masterwork-focus-1')) return 2;
+  if (roll === 8 && activeCharms.includes('supreme-masterwork-focus-2')) return 2;
+  if (roll === 7 && activeCharms.includes('supreme-masterwork-focus-3')) return 2;
+
+  // Otherwise, 7, 8, 9 are 1 success
   if (roll >= 7) return 1;
+  
+  // Anything else is 0 successes
   return 0;
 };
 

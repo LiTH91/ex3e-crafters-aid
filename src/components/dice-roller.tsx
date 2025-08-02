@@ -80,9 +80,10 @@ const getDieStyle = (die: DieResult, isColorblindMode: boolean, activeCharms: st
     return { style: "bg-purple-300 text-black border-purple-500" };
   }
 
-  const isExplosionSource = shouldDieExplode(die, activeCharms);
   // A die is a special success if its value is 10, or if it's the source/result of an explosion/conversion.
+  const isExplosionSource = shouldDieExplode(die, activeCharms);
   const isSpecialSuccess = die.value === 10 || (die.value >= 7 && (isExplosionSource || die.modification === 'conversion' || die.modification === 'explosion'));
+
 
   if (isColorblindMode) {
       if (die.value === 1) return { style: "bg-rose-700 text-white border-rose-900" }; // Vermillion for 1
@@ -111,6 +112,7 @@ const DiceDisplay = ({ diceRoll, isColorblindMode }: { diceRoll: DiceRoll, isCol
                        if (!die) return null;
                        const { style } = getDieStyle(die, isColorblindMode, diceRoll.activeCharmIds);
                        const valueToShow = die.modification === 'reroll' ? die.initialValue : die.value;
+                       const isExplosionTrigger = shouldDieExplode(die, diceRoll.activeCharmIds);
                        
                        return (
                            <div key={`wave-${waveIndex}-roll-${rollIndex}`} className="relative">
@@ -122,11 +124,11 @@ const DiceDisplay = ({ diceRoll, isColorblindMode }: { diceRoll: DiceRoll, isCol
                                        {die.fmdId}
                                    </sup>
                                )}
-                                {(die.modification && die.modification !== 'fmd_source') || die.modificationSource === 'Divine Inspiration Technique' || shouldDieExplode(die, diceRoll.activeCharmIds) ? (
+                                {(die.modification && die.modification !== 'fmd_source') || die.modificationSource === 'Divine Inspiration Technique' || isExplosionTrigger ? (
                                    <Tooltip>
                                        <TooltipTrigger asChild>
                                             <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full p-0.5">
-                                                {shouldDieExplode(die, diceRoll.activeCharmIds) && <Flame className="w-3 h-3" />}
+                                                {isExplosionTrigger && <Flame className="w-3 h-3" />}
                                                 {die.modification === 'explosion' && <Flame className="w-3 h-3" />}
                                                 {die.modification === 'conversion' && <Replace className="w-3 h-3" />}
                                                 {die.modification === 'reroll' && <div className="w-3 h-3" />}
@@ -135,10 +137,10 @@ const DiceDisplay = ({ diceRoll, isColorblindMode }: { diceRoll: DiceRoll, isCol
                                        </TooltipTrigger>
                                        <TooltipContent>
                                            <p>
+                                               {isExplosionTrigger && `Explodes!`}
                                                {die.modification === 'explosion' && `Exploded from a ${die.initialValue}`}
                                                {die.modification === 'conversion' && `Converted to a 10 from a ${die.initialValue} (FMD #${die.fmdId})`}
                                                {die.modification === 'reroll' && `Rerolled a ${die.initialValue}`}
-                                               {shouldDieExplode(die, diceRoll.activeCharmIds) && !die.modification && `Explodes!`}
                                                {die.modificationSource && ` due to ${die.modificationSource}`}
                                            </p>
                                        </TooltipContent>
