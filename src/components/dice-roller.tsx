@@ -113,15 +113,14 @@ const DiceDisplay = ({ diceRoll, isColorblindMode }: { diceRoll: DiceRoll, isCol
                        
                        return (
                            <div key={`wave-${waveIndex}-roll-${rollIndex}`} className="relative">
-                               <div className={`relative flex items-center justify-center w-10 h-10 border-2 rounded-md ${style}`}>
-                                   <span className="text-lg font-bold">{valueToShow}</span>
+                               <div className={`relative flex items-center justify-center w-10 h-10 border-2 rounded-md ${style}`}>\n                                   <span className="text-lg font-bold">{valueToShow}</span>
                                </div>
                                {die.fmdId && (
                                    <sup className="absolute -top-1 -left-1 bg-purple-500 text-white rounded-full h-4 w-4 text-xs flex items-center justify-center">
                                        {die.fmdId}
                                    </sup>
                                )}
-                                {(die.modification && die.modification !== 'fmd_source') || die.modificationSource === 'Divine Inspiration Technique' ? (
+                                {(die.modification && die.modification !== 'fmd_source') || die.modificationSource === 'Divine Inspiration Technique' || shouldDieExplode(die, diceRoll.activeCharmIds) ? (
                                    <Tooltip>
                                        <TooltipTrigger asChild>
                                             <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full p-0.5">
