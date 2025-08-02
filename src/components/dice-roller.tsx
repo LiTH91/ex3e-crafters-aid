@@ -81,21 +81,20 @@ const getDieStyle = (die: DieResult, isColorblindMode: boolean, activeCharms: st
   }
 
   const isExplosionSource = shouldDieExplode(die, activeCharms);
-  const isSpecialSuccess = die.value >= 7 && (isExplosionSource || die.modification === 'conversion' || die.modification === 'explosion');
-
+  const isSpecialSuccess = (die.value >= 7 && (isExplosionSource || die.modification === 'conversion' || die.modification === 'explosion'));
 
   if (isColorblindMode) {
+      if (die.value === 1) return { style: "bg-rose-700 text-white border-rose-900" }; // Vermillion for 1
       if (isSpecialSuccess) return { style: "bg-orange-500 text-white border-orange-700" };
       if (die.value >= 7) return { style: "bg-sky-500 text-white border-sky-700" };
-      if (die.value > 1) return { style: "bg-black text-white border-gray-600" };
-      return { style: "bg-rose-700 text-white border-rose-900" }; // Vermillion for 1
+      return { style: "bg-black text-white border-gray-600" };
   }
 
   // Default color mode
+  if (die.value === 1) return { style: "bg-red-500 text-white border-red-700" };
   if (isSpecialSuccess) return { style: "bg-yellow-400 text-black border-yellow-600" };
   if (die.value >= 7) return { style: "bg-green-500 text-white border-green-700" };
-  if (die.value > 1) return { style: "bg-gray-400 text-black border-gray-600" };
-  return { style: "bg-red-500 text-white border-red-700" };
+  return { style: "bg-gray-400 text-black border-gray-600" };
 };
 
 const DiceDisplay = ({ diceRoll, isColorblindMode }: { diceRoll: DiceRoll, isColorblindMode: boolean }) => (
@@ -542,3 +541,5 @@ export default function DiceRoller({
     </Card>
   );
 }
+
+    
