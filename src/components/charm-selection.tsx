@@ -73,46 +73,53 @@ const CharmSelection = React.memo(({
 
   const handleCharmToggle = (charmId: string, isSubCharm: boolean = false) => {
     let newActiveCharms = [...activeCharms];
-    const baseCharmId = charmId.split('-').slice(0,-1).join('-');
-
+    
+    // Find the base charm and the specific sub-effect if applicable
+    const baseCharm = allCharms.find(c => c.id === charmId || c.subEffects?.some(sub => sub.id === charmId));
+    const subCharm = baseCharm?.subEffects?.find(sub => sub.id === charmId);
+    
     if (newActiveCharms.includes(charmId)) {
-        // Deselecting charm
-        if(charmId.startsWith('supreme-masterwork-focus')) {
-            if(charmId === 'supreme-masterwork-focus-1') newActiveCharms = newActiveCharms.filter(id => !id.startsWith('supreme-masterwork-focus'));
-            else if (charmId === 'supreme-masterwork-focus-2') newActiveCharms = newActiveCharms.filter(id => id !== 'supreme-masterwork-focus-2' && id !== 'supreme-masterwork-focus-3');
-            else if (charmId === 'supreme-masterwork-focus-3') newActiveCharms = newActiveCharms.filter(id => id !== 'supreme-masterwork-focus-3');
-        }
-        else {
-             newActiveCharms = newActiveCharms.filter((id) => id !== charmId);
-        }
-         // If a sub-charm is deselected, also deselect its base if no other sub-charms of it are active
-        if (isSubCharm) {
-            const otherSubCharms = allCharms.find(c => c.id === baseCharmId)?.subEffects?.filter(s => s.id !== charmId) || [];
-            const anyOtherSubIsActive = otherSubCharms.some(s => newActiveCharms.includes(s.id));
-            if (!anyOtherSubIsActive) {
-                newActiveCharms = newActiveCharms.filter(id => id !== baseCharmId);
+        // --- DESELECTING ---
+        newActiveCharms = newActiveCharms.filter(id => id !== charmId);
+
+        // If deselecting a sub-charm, also deselect higher-tier sub-charms
+        if (subCharm && baseCharm?.subEffects) {
+            const subCharmIndex = baseCharm.subEffects.findIndex(s => s.id === charmId);
+            if (subCharmIndex !== -1) {
+                for (let i = subCharmIndex + 1; i < baseCharm.subEffects.length; i++) {
+                    newActiveCharms = newActiveCharms.filter(id => id !== baseCharm.subEffects![i].id);
+                }
             }
         }
-    } else {
-        // Add the charm
-        newActiveCharms.push(charmId);
-        // If it's a sub-charm, also select the base charm and lower-tier ones
-        if(charmId.startsWith('supreme-masterwork-focus')) {
-            if(!newActiveCharms.includes('supreme-masterwork-focus')) newActiveCharms.push('supreme-masterwork-focus');
-            if(charmId === 'supreme-masterwork-focus-3' && !newActiveCharms.includes('supreme-masterwork-focus-2')) newActiveCharms.push('supreme-masterwork-focus-2');
-            if(charmId !== 'supreme-masterwork-focus-1' && !newActiveCharms.includes('supreme-masterwork-focus-1')) newActiveCharms.push('supreme-masterwork-focus-1');
+        
+        // If deselecting the base charm, deselect all its sub-charms
+        if (!subCharm && baseCharm?.subEffects) {
+             baseCharm.subEffects.forEach(sub => {
+                newActiveCharms = newActiveCharms.filter(id => id !== sub.id);
+             });
         }
-         if (isSubCharm) {
-            if(!newActiveCharms.includes(baseCharmId)) newActiveCharms.push(baseCharmId);
+        
+    } else {
+        // --- SELECTING ---
+        newActiveCharms.push(charmId);
+
+        // If selecting a sub-charm, also select its base charm and any lower-tier sub-charms
+        if (subCharm && baseCharm?.subEffects) {
+            if (!newActiveCharms.includes(baseCharm.id)) {
+                newActiveCharms.push(baseCharm.id);
+            }
+            const subCharmIndex = baseCharm.subEffects.findIndex(s => s.id === charmId);
+            for (let i = 0; i < subCharmIndex; i++) {
+                const lowerTierId = baseCharm.subEffects[i].id;
+                if (!newActiveCharms.includes(lowerTierId)) {
+                    newActiveCharms.push(lowerTierId);
+                }
+            }
         }
     }
     setActiveCharms(newActiveCharms);
   };
 
-  const getSubCharm = (charm: Charm, id: string): Charm | undefined => {
-    if (!charm.subEffects) return undefined;
-    return charm.subEffects.find(c => c.id === id);
-  }
 
   const isCharmDisabled = (charm: Charm): boolean => {
     // Cost checks
@@ -157,11 +164,9 @@ const CharmSelection = React.memo(({
         narrativeCharms: charms.filter(c => c.category === 'narrative'),
     }
   }, [searchTerm, sortBy, character.craft, character.essence, experience]);
-
-  const renderSubCharm = (charm: Charm, subCharmId: string, isBaseActive: boolean) => {
-      const subCharm = getSubCharm(charm, subCharmId);
-      if (!subCharm) return null;
-      const isDisabled = isCharmDisabled(charm) || isCharmDisabled(subCharm);
+  
+  const renderSubCharm = (baseCharm: Charm, subCharm: Charm) => {
+      const isDisabled = isCharmDisabled(baseCharm) || isCharmDisabled(subCharm);
       return (
         <div key={subCharm.id} className="flex items-start gap-3">
           <Checkbox 
@@ -171,7 +176,7 @@ const CharmSelection = React.memo(({
             className="mt-1" 
             disabled={isDisabled}
           />
-          <Label htmlFor={subCharm.id} className="grid gap-1.5 leading-none cursor-pointer">
+          <Label htmlFor={subCharm.id} className={`grid gap-1.5 leading-none ${isDisabled ? '' : 'cursor-pointer'}`}>
               <span className="font-bold text-base font-body flex items-center gap-2">{subCharm.name} {subCharm.cost && <Badge variant="secondary">{subCharm.cost}</Badge>}</span>
               <span className="text-sm text-muted-foreground font-body">{subCharm.description}</span>
           </Label>
@@ -244,7 +249,7 @@ const CharmSelection = React.memo(({
                                 </div>
                             </div>
                             <div className="pl-8 mt-3 border-l-2 border-primary/50 space-y-3">
-                               {charm.subEffects.map(subCharm => renderSubCharm(charm, subCharm.id, activeCharms.includes(charm.id)))}
+                               {charm.subEffects.map(subCharm => renderSubCharm(charm, subCharm))}
                             </div>
                           </div>
                         )
