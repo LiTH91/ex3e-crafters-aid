@@ -88,7 +88,7 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
     let keepLooping = true;
     while(keepLooping) {
         
-        onProgress({ diceHistories, totalSuccesses: 0, automaticSuccesses, targetNumber, activeCharmNames: [], activeCharmIds, excellencyDice, sxpFromCharm: 0, bonusDiceFromCharm: 0 });
+        onProgress({ diceHistories, totalSuccesses: 0, automaticSuccesses, targetNumber, activeCharmNames: [], activeCharmIds: activeCharms, excellencyDice, sxpFromCharm: 0, bonusDiceFromCharm: 0 });
         await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY));
 
         const nextWave: DieResult[] = [];
@@ -182,7 +182,7 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
                 newWave.forEach(d => d.modificationSource = "Divine Inspiration Technique");
                 
                 diceHistories.push(newWave);
-                onProgress({ diceHistories, totalSuccesses: 0, automaticSuccesses, targetNumber, activeCharmNames: [], activeCharmIds, excellencyDice, sxpFromCharm: 0, bonusDiceFromCharm });
+                onProgress({ diceHistories, totalSuccesses: 0, automaticSuccesses, targetNumber, activeCharmNames: [], activeCharmIds: activeCharms, excellencyDice, sxpFromCharm: 0, bonusDiceFromCharm });
                 await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY));
 
                 // Check for Holistic Miracle Understanding
