@@ -33,7 +33,7 @@ interface CharmSelectionProps {
   experience: CraftingExperience;
 }
 
-const CharmItem = ({ charm, activeCharms, handleCharmToggle, isDisabled }: { charm: Charm, activeCharms: string[], handleCharmToggle: (charmId: string) => void, isDisabled: boolean }) => (
+const CharmItem = ({ charm, activeCharms, handleCharmToggle, isDisabled }: { charm: Charm, activeCharms: string[], handleCharmToggle: (charmId: string, isSubCharm?: boolean, baseCharmId?: string) => void, isDisabled: boolean }) => (
     <div
         key={charm.id}
         className={`flex items-start gap-3 p-3 rounded-md transition-colors ${isDisabled ? 'opacity-50' : 'hover:bg-secondary'}`}
@@ -71,31 +71,29 @@ const CharmSelection = React.memo(({
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("name");
 
-  const handleCharmToggle = (charmId: string, isSubCharm: boolean = false, baseCharmId?: string) => {
+  const handleCharmToggle = (charmId: string) => {
     let newActiveCharms = [...activeCharms];
+    const isCurrentlyActive = newActiveCharms.includes(charmId);
 
-    if (newActiveCharms.includes(charmId)) {
-        // Deselecting logic
-        if (charmId === 'supreme-masterwork-focus-1') {
-            newActiveCharms = newActiveCharms.filter(id => !id.startsWith('supreme-masterwork-focus'));
-        } else if (charmId === 'supreme-masterwork-focus-2') {
-            newActiveCharms = newActiveCharms.filter(id => id !== 'supreme-masterwork-focus-2' && id !== 'supreme-masterwork-focus-3');
-        } else {
-            newActiveCharms = newActiveCharms.filter((id) => id !== charmId);
+    if (isCurrentlyActive) {
+        // Deselecting a charm
+        newActiveCharms = newActiveCharms.filter(id => id !== charmId);
+
+        // If it's a base charm, also deselect its sub-effects
+        const baseCharm = allCharms.find(c => c.id === charmId);
+        if (baseCharm?.subEffects) {
+            const subEffectIds = baseCharm.subEffects.map(se => se.id);
+            newActiveCharms = newActiveCharms.filter(id => !subEffectIds.includes(id));
         }
+
     } else {
-        // Selecting logic
+        // Selecting a charm
         newActiveCharms.push(charmId);
-        if (isSubCharm && baseCharmId) {
-            if (!newActiveCharms.includes(baseCharmId)) {
-                newActiveCharms.push(baseCharmId);
-            }
-            if (charmId === 'supreme-masterwork-focus-3' && !newActiveCharms.includes('supreme-masterwork-focus-2')) {
-                newActiveCharms.push('supreme-masterwork-focus-2');
-            }
-            if (charmId.startsWith('supreme-masterwork-focus-') && !newActiveCharms.includes('supreme-masterwork-focus-1')) {
-                newActiveCharms.push('supreme-masterwork-focus-1');
-            }
+        
+        // If selecting a sub-effect, ensure the base charm is active
+        const parentCharm = allCharms.find(c => c.subEffects?.some(se => se.id === charmId));
+        if (parentCharm && !newActiveCharms.includes(parentCharm.id)) {
+            newActiveCharms.push(parentCharm.id);
         }
     }
     setActiveCharms(newActiveCharms);
@@ -119,6 +117,14 @@ const CharmSelection = React.memo(({
     // Prerequisites check
     if (charm.minCraft > character.craft) return true;
     if (charm.minEssence > character.essence) return true;
+
+    // A sub-effect cannot be active if its base charm is not active
+    const parentCharm = allCharms.find(c => c.subEffects?.some(se => se.id === charm.id));
+    if (parentCharm && !activeCharms.includes(parentCharm.id)) {
+        // This is commented out to allow selection of sub-effect to auto-select base
+        // return true; 
+    }
+
 
     return false;
   }
@@ -189,30 +195,23 @@ const CharmSelection = React.memo(({
                   <h3 className="font-headline text-lg text-primary px-3">Functional Charms</h3>
                   <Separator />
                   {functionalCharms.map((charm) => {
+                    const isDisabled = isCharmDisabled(charm);
                     if (charm.subEffects && charm.subEffects.length > 0) {
                         return (
-                          <div key={charm.id} className={`p-3 rounded-md transition-colors ${isCharmDisabled(charm) ? 'opacity-50' : ''}`}>
-                             <p className="font-bold text-base font-body flex items-center gap-2">
-                              {charm.name}
-                            </p>
-                            <p className="text-sm text-muted-foreground font-body mb-2">
-                                {charm.description}
-                            </p>
-                            <div className="pl-4 border-l-2 border-primary/50 space-y-3">
-                               {charm.subEffects.map(subCharm => (
-                                 <div key={subCharm.id} className="flex items-start gap-3">
-                                    <Checkbox id={subCharm.id} checked={activeCharms.includes(subCharm.id)} onCheckedChange={() => handleCharmToggle(subCharm.id, true, charm.id)} className="mt-1" disabled={isCharmDisabled(charm) || isCharmDisabled(subCharm)} />
-                                    <Label htmlFor={subCharm.id} className="grid gap-1.5 leading-none cursor-pointer">
-                                        <span className="font-bold text-base font-body flex items-center gap-2">{subCharm.name} {subCharm.cost && <Badge variant="secondary">{subCharm.cost}</Badge>}</span>
-                                        <span className="text-sm text-muted-foreground font-body">{subCharm.description}</span>
-                                    </Label>
-                                 </div>
-                               ))}
+                           <div key={charm.id} className="p-3">
+                            <CharmItem charm={charm} activeCharms={activeCharms} handleCharmToggle={handleCharmToggle} isDisabled={isDisabled} />
+                            <div className="pl-8 pt-3 border-l-2 border-primary/50 ml-2 space-y-3">
+                               {charm.subEffects.map(subCharm => {
+                                 const isSubDisabled = isCharmDisabled(subCharm) || isDisabled || !activeCharms.includes(charm.id);
+                                 return (
+                                     <CharmItem key={subCharm.id} charm={subCharm} activeCharms={activeCharms} handleCharmToggle={handleCharmToggle} isDisabled={isSubDisabled} />
+                                 );
+                               })}
                             </div>
                           </div>
                         )
                     }
-                    return <CharmItem key={charm.id} charm={charm} activeCharms={activeCharms} handleCharmToggle={handleCharmToggle} isDisabled={isCharmDisabled(charm)} />
+                    return <CharmItem key={charm.id} charm={charm} activeCharms={activeCharms} handleCharmToggle={handleCharmToggle} isDisabled={isDisabled} />
                   })}
               </div>
           )}
