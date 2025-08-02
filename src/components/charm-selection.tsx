@@ -71,30 +71,29 @@ const CharmSelection = React.memo(({
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState("name");
 
-  const handleCharmToggle = (charmId: string, isSubCharm: boolean = false) => {
-    const baseCharmId = isSubCharm ? 'supreme-masterwork-focus' : charmId;
-
+  const handleCharmToggle = (charmId: string, isSubCharm: boolean = false, baseCharmId?: string) => {
     let newActiveCharms = [...activeCharms];
 
     if (newActiveCharms.includes(charmId)) {
-        // If it's a sub-charm, deselecting it deselects all higher sub-charms
-        if(charmId === 'supreme-masterwork-focus-1') {
+        // Deselecting logic
+        if (charmId === 'supreme-masterwork-focus-1') {
             newActiveCharms = newActiveCharms.filter(id => !id.startsWith('supreme-masterwork-focus'));
         } else if (charmId === 'supreme-masterwork-focus-2') {
-             newActiveCharms = newActiveCharms.filter(id => id !== 'supreme-masterwork-focus-2' && id !== 'supreme-masterwork-focus-3');
+            newActiveCharms = newActiveCharms.filter(id => id !== 'supreme-masterwork-focus-2' && id !== 'supreme-masterwork-focus-3');
         } else {
-             newActiveCharms = newActiveCharms.filter((id) => id !== charmId);
+            newActiveCharms = newActiveCharms.filter((id) => id !== charmId);
         }
     } else {
-        // Add the charm
+        // Selecting logic
         newActiveCharms.push(charmId);
-        // If it's a sub-charm, also select the base charm and lower-tier ones
-        if(isSubCharm) {
-            if(!newActiveCharms.includes(baseCharmId)) newActiveCharms.push(baseCharmId);
-            if(charmId === 'supreme-masterwork-focus-3' && !newActiveCharms.includes('supreme-masterwork-focus-2')) {
+        if (isSubCharm && baseCharmId) {
+            if (!newActiveCharms.includes(baseCharmId)) {
+                newActiveCharms.push(baseCharmId);
+            }
+            if (charmId === 'supreme-masterwork-focus-3' && !newActiveCharms.includes('supreme-masterwork-focus-2')) {
                 newActiveCharms.push('supreme-masterwork-focus-2');
             }
-             if(charmId !== 'supreme-masterwork-focus-1' && !newActiveCharms.includes('supreme-masterwork-focus-1')) {
+            if (charmId.startsWith('supreme-masterwork-focus-') && !newActiveCharms.includes('supreme-masterwork-focus-1')) {
                 newActiveCharms.push('supreme-masterwork-focus-1');
             }
         }
@@ -102,10 +101,6 @@ const CharmSelection = React.memo(({
     setActiveCharms(newActiveCharms);
   };
 
-  const getSubCharm = (charm: Charm, level: 1 | 2 | 3): Charm | undefined => {
-    if (charm.id !== 'supreme-masterwork-focus' || !charm.subEffects) return undefined;
-    return charm.subEffects.find(c => c.id.endsWith(`-${level}`));
-  }
 
   const isCharmDisabled = (charm: Charm): boolean => {
     // Cost checks
@@ -194,11 +189,7 @@ const CharmSelection = React.memo(({
                   <h3 className="font-headline text-lg text-primary px-3">Functional Charms</h3>
                   <Separator />
                   {functionalCharms.map((charm) => {
-                    if (charm.id === 'supreme-masterwork-focus') {
-                        const level1 = getSubCharm(charm, 1);
-                        const level2 = getSubCharm(charm, 2);
-                        const level3 = getSubCharm(charm, 3);
-                        
+                    if (charm.subEffects && charm.subEffects.length > 0) {
                         return (
                           <div key={charm.id} className={`p-3 rounded-md transition-colors ${isCharmDisabled(charm) ? 'opacity-50' : ''}`}>
                              <p className="font-bold text-base font-body flex items-center gap-2">
@@ -208,33 +199,15 @@ const CharmSelection = React.memo(({
                                 {charm.description}
                             </p>
                             <div className="pl-4 border-l-2 border-primary/50 space-y-3">
-                               {level1 && (
-                                 <div className="flex items-start gap-3">
-                                    <Checkbox id={level1.id} checked={activeCharms.includes(level1.id)} onCheckedChange={() => handleCharmToggle(level1.id, true)} className="mt-1" disabled={isCharmDisabled(charm) || isCharmDisabled(level1)} />
-                                    <Label htmlFor={level1.id} className="grid gap-1.5 leading-none cursor-pointer">
-                                        <span className="font-bold text-base font-body flex items-center gap-2">{level1.name} <Badge variant="secondary">{level1.cost}</Badge></span>
-                                        <span className="text-sm text-muted-foreground font-body">{level1.description}</span>
+                               {charm.subEffects.map(subCharm => (
+                                 <div key={subCharm.id} className="flex items-start gap-3">
+                                    <Checkbox id={subCharm.id} checked={activeCharms.includes(subCharm.id)} onCheckedChange={() => handleCharmToggle(subCharm.id, true, charm.id)} className="mt-1" disabled={isCharmDisabled(charm) || isCharmDisabled(subCharm)} />
+                                    <Label htmlFor={subCharm.id} className="grid gap-1.5 leading-none cursor-pointer">
+                                        <span className="font-bold text-base font-body flex items-center gap-2">{subCharm.name} {subCharm.cost && <Badge variant="secondary">{subCharm.cost}</Badge>}</span>
+                                        <span className="text-sm text-muted-foreground font-body">{subCharm.description}</span>
                                     </Label>
                                  </div>
-                               )}
-                               {level2 && (
-                                 <div className="flex items-start gap-3">
-                                    <Checkbox id={level2.id} checked={activeCharms.includes(level2.id)} onCheckedChange={() => handleCharmToggle(level2.id, true)} className="mt-1" disabled={isCharmDisabled(charm) || isCharmDisabled(level2)} />
-                                    <Label htmlFor={level2.id} className="grid gap-1.5 leading-none cursor-pointer">
-                                        <span className="font-bold text-base font-body flex items-center gap-2">{level2.name} <Badge variant="secondary">{level2.cost}</Badge></span>
-                                        <span className="text-sm text-muted-foreground font-body">{level2.description}</span>
-                                    </Label>
-                                 </div>
-                               )}
-                               {level3 && (
-                                 <div className="flex items-start gap-3">
-                                    <Checkbox id={level3.id} checked={activeCharms.includes(level3.id)} onCheckedChange={() => handleCharmToggle(level3.id, true)} className="mt-1" disabled={isCharmDisabled(charm) || isCharmDisabled(level3)} />
-                                    <Label htmlFor={level3.id} className="grid gap-1.5 leading-none cursor-pointer">
-                                       <span className="font-bold text-base font-body flex items-center gap-2">{level3.name} <Badge variant="secondary">{level3.cost}</Badge></span>
-                                        <span className="text-sm text-muted-foreground font-body">{level3.description}</span>
-                                    </Label>
-                                 </div>
-                               )}
+                               ))}
                             </div>
                           </div>
                         )

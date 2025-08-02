@@ -196,14 +196,24 @@ const essence3Charms: Charm[] = [
     effect: { type: "add_successes", value: 2 },
     category: 'functional',
   },
-  {
-      id: toId("Divine Inspiration Technique"),
-      name: "Divine Inspiration Technique",
-      description: "For every three successes on a Craft roll, gain a bonus die. This effect is recursive.",
-      minCraft: 5,
-      minEssence: 3,
-      effect: { type: "custom" },
-      category: 'functional',
+   {
+    id: toId("Divine Inspiration Technique"),
+    name: "Divine Inspiration Technique",
+    description: "For every three successes on a Craft roll, gain a bonus die. This effect is recursive.",
+    minCraft: 5,
+    minEssence: 3,
+    effect: { type: "custom" },
+    category: 'functional',
+    subEffects: [
+      {
+        id: toId("Holistic Miracle Understanding"),
+        name: "Upgrade: Holistic Miracle Understanding",
+        description: "Enhances Divine Inspiration Technique. If a wave of bonus dice scores 3+ successes, add 3 more bonus dice to the next wave.",
+        minCraft: 5,
+        minEssence: 4,
+        effect: { type: "custom" },
+      }
+    ]
   },
    {
     id: toId("Ever-Ready Innovation Discipline"),
@@ -222,15 +232,6 @@ const essence3Charms: Charm[] = [
 // =================================================================
 
 const essence4Charms: Charm[] = [
-    {
-      id: toId("Holistic Miracle Understanding"),
-      name: "Holistic Miracle Understanding",
-      description: "Enhances Divine Inspiration Technique. If a wave of bonus dice scores 3+ successes, add 3 more bonus dice to the next wave.",
-      minCraft: 5,
-      minEssence: 4,
-      effect: { type: "custom" },
-      category: 'functional',
-  },
   {
     id: toId("World-Defining Artifice"),
     name: "World-Defining Artifice",
