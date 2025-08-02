@@ -73,6 +73,8 @@ interface DiceRollerProps {
 }
 
 const getDieStyle = (die: DieResult, isColorblindMode: boolean, activeCharms: string[]): { style: string } => {
+  const isSpecialSuccess = calculateSuccesses(die.value, activeCharms) === 2;
+
   if (die.modification === 'reroll') {
     return { style: "bg-gray-700 text-white border-gray-900 opacity-50 line-through" };
   }
@@ -80,11 +82,8 @@ const getDieStyle = (die: DieResult, isColorblindMode: boolean, activeCharms: st
     return { style: "bg-purple-300 text-black border-purple-500" };
   }
 
-  // A die is a special success if it counts as 2 successes.
-  const isSpecialSuccess = calculateSuccesses(die.value, activeCharms) === 2;
-
   if (isColorblindMode) {
-      if (die.value === 1) return { style: "bg-rose-700 text-white border-rose-900" }; // Vermillion for 1
+      if (die.value === 1) return { style: "bg-rose-700 text-white border-rose-900" };
       if (isSpecialSuccess) return { style: "bg-orange-500 text-white border-orange-700" };
       if (die.value >= 7) return { style: "bg-sky-500 text-white border-sky-700" };
       return { style: "bg-black text-white border-gray-600" };
@@ -114,7 +113,10 @@ const DiceDisplay = ({ diceRoll, isColorblindMode }: { diceRoll: DiceRoll, isCol
                        
                        return (
                            <div key={`wave-${waveIndex}-roll-${rollIndex}`} className="relative">
-                               <div className={`relative flex items-center justify-center w-10 h-10 border-2 rounded-md ${style}`}>
+                               <div 
+                                className={`relative flex items-center justify-center w-12 h-12 ${style}`}
+                                style={{ clipPath: 'polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%)' }}
+                               >
                                    <span className="text-lg font-bold">{valueToShow}</span>
                                </div>
                                {die.fmdId && (
@@ -543,6 +545,3 @@ export default function DiceRoller({
   );
 }
 
-    
-
-    
