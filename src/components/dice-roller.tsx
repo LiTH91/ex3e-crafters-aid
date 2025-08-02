@@ -5,6 +5,7 @@ import React, { useState, useEffect } from "react";
 import type { DiceRoll, CraftingOutcome, Character, ProjectType, ActiveProject, Charm, DieResult } from "@/lib/types";
 import { PROJECT_TYPES } from "@/lib/types";
 import { allCharms } from "@/lib/charms";
+import { shouldDieExplode } from "@/lib/dice-logic";
 import {
   Card,
   CardContent,
@@ -51,8 +52,6 @@ import { Switch } from "@/components/ui/switch";
 interface DiceRollerProps {
   character: Character;
   activeCharms: string[];
-  targetNumber: number;
-  setTargetNumber: (value: number) => void;
   onRoll: (
     projectDetails: {
       type: ProjectType;
@@ -73,7 +72,7 @@ interface DiceRollerProps {
   setIsTriumphForgingEyeActive: (value: boolean) => void;
 }
 
-const getDieStyle = (die: DieResult, isColorblindMode: boolean): { style: string } => {
+const getDieStyle = (die: DieResult, isColorblindMode: boolean, activeCharms: string[]): { style: string } => {
   if (die.modification === 'reroll') {
     return { style: "bg-gray-700 text-white border-gray-900 opacity-50 line-through" };
   }
@@ -81,13 +80,14 @@ const getDieStyle = (die: DieResult, isColorblindMode: boolean): { style: string
     return { style: "bg-purple-300 text-black border-purple-500" };
   }
 
-  const isSpecialSuccess = die.value >= 7 && (die.modification === 'conversion' || die.modification === 'explosion');
+  const isExplosionSource = shouldDieExplode(die, activeCharms);
+  const isSpecialSuccess = isExplosionSource || die.modification === 'conversion' || die.modification === 'explosion';
 
   if (isColorblindMode) {
-      if (isSpecialSuccess) return { style: "bg-blue-600 text-white border-blue-800" };
+      if (isSpecialSuccess) return { style: "bg-orange-500 text-white border-orange-700" };
       if (die.value >= 7) return { style: "bg-sky-500 text-white border-sky-700" };
-      if (die.value > 1) return { style: "bg-gray-400 text-black border-gray-600" };
-      return { style: "bg-gray-700 text-white border-gray-900" };
+      if (die.value > 1) return { style: "bg-black text-white border-gray-600" };
+      return { style: "bg-rose-700 text-white border-rose-900" }; // Vermillion for 1
   }
 
   // Default color mode
@@ -97,10 +97,10 @@ const getDieStyle = (die: DieResult, isColorblindMode: boolean): { style: string
   return { style: "bg-red-500 text-white border-red-700" };
 };
 
-const DiceDisplay = ({ waves, isColorblindMode }: { waves: DieResult[][], isColorblindMode: boolean }) => (
+const DiceDisplay = ({ diceRoll, isColorblindMode }: { diceRoll: DiceRoll, isColorblindMode: boolean }) => (
     <TooltipProvider>
     <div className="flex flex-col items-center justify-center gap-4 p-4 bg-secondary/30 rounded-lg">
-        {waves.map((wave, waveIndex) => (
+        {diceRoll.diceHistories.map((wave, waveIndex) => (
            <React.Fragment key={`wave-fragment-${waveIndex}`}>
                 {waveIndex > 0 && wave.some(d => d.modificationSource === 'Divine Inspiration Technique') && (
                     <Separator className="my-2 bg-primary/20 w-1/2" />
@@ -108,7 +108,7 @@ const DiceDisplay = ({ waves, isColorblindMode }: { waves: DieResult[][], isColo
                 <div className="flex items-center gap-2 flex-wrap justify-center">
                     {wave.map((die, rollIndex) => {
                        if (!die) return null;
-                       const { style } = getDieStyle(die, isColorblindMode);
+                       const { style } = getDieStyle(die, isColorblindMode, diceRoll.activeCharmIds);
                        const valueToShow = die.modification === 'reroll' ? die.initialValue : die.value;
                        
                        return (
@@ -125,6 +125,7 @@ const DiceDisplay = ({ waves, isColorblindMode }: { waves: DieResult[][], isColo
                                    <Tooltip>
                                        <TooltipTrigger asChild>
                                             <span className="absolute -top-2 -right-2 bg-primary text-primary-foreground rounded-full p-0.5">
+                                                {shouldDieExplode(die, diceRoll.activeCharmIds) && <Flame className="w-3 h-3" />}
                                                 {die.modification === 'explosion' && <Flame className="w-3 h-3" />}
                                                 {die.modification === 'conversion' && <Replace className="w-3 h-3" />}
                                                 {die.modification === 'reroll' && <div className="w-3 h-3" />}
@@ -136,6 +137,7 @@ const DiceDisplay = ({ waves, isColorblindMode }: { waves: DieResult[][], isColo
                                                {die.modification === 'explosion' && `Exploded from a ${die.initialValue}`}
                                                {die.modification === 'conversion' && `Converted to a 10 from a ${die.initialValue} (FMD #${die.fmdId})`}
                                                {die.modification === 'reroll' && `Rerolled a ${die.initialValue}`}
+                                               {shouldDieExplode(die, diceRoll.activeCharmIds) && !die.modification && `Explodes!`}
                                                {die.modificationSource && ` due to ${die.modificationSource}`}
                                            </p>
                                        </TooltipContent>
@@ -213,8 +215,6 @@ const calculateCharmCost = (activeCharmIds: string[], allCharms: Charm[], projec
 export default function DiceRoller({
   character,
   activeCharms,
-  targetNumber,
-  setTargetNumber,
   onRoll,
   isLoading,
   diceRoll,
@@ -227,6 +227,7 @@ export default function DiceRoller({
   setIsTriumphForgingEyeActive,
 }: DiceRollerProps) {
   const [projectType, setProjectType] = useState<ProjectType>("major-project");
+  const [targetNumber, setTargetNumber] = useState(5);
   const [artifactRating, setArtifactRating] = useState(2);
   const [objectivesMet, setObjectivesMet] = useState(1);
   const [assignedProjectId, setAssignedProjectId] = useState<string | undefined>(undefined);
@@ -386,12 +387,10 @@ export default function DiceRoller({
                                 className="flex-1"
                                 disabled={isBrassScalesFallingActive || isTriumphForgingEyeActive}
                             />
-                            <Badge variant="outline" className={`flex items-center gap-2 text-base py-1 px-3 w-32 justify-center ${isBrassScalesFallingActive || isTriumphForgingEyeActive ? 'opacity-50' : ''}`}>
-                                <PlusCircle className="w-4 h-4 text-green-500"/>
+                            <Badge variant="outline" className={`flex items-center gap-2 text-base py-1 px-3 w-32 justify-center ${isBrassScalesFallingActive || isTriumphForgingEyeActive ? 'opacity-50' : ''}`}>\n                                <PlusCircle className="w-4 h-4 text-green-500"/>
                                 <span>{currentExcellencyDice} Dice</span>
                             </Badge>
-                            <Badge variant="outline" className={`flex items-center gap-2 text-base py-1 px-3 w-32 justify-center ${isBrassScalesFallingActive || isTriumphForgingEyeActive ? 'opacity-50' : ''}`}>
-                                <Gem className="w-4 h-4 text-cyan-400"/>
+                            <Badge variant="outline" className={`flex items-center gap-2 text-base py-1 px-3 w-32 justify-center ${isBrassScalesFallingActive || isTriumphForgingEyeActive ? 'opacity-50' : ''}`}>\n                                <Gem className="w-4 h-4 text-cyan-400"/>
                                 <span>{isTriumphForgingEyeActive ? 0 : currentExcellencyDice} Motes</span>
                             </Badge>
                         </div>
@@ -461,7 +460,7 @@ export default function DiceRoller({
             </h3>
             
             {diceRoll.diceHistories.length > 0 && (
-                <DiceDisplay waves={diceRoll.diceHistories} isColorblindMode={isColorblindMode}/>
+                <DiceDisplay diceRoll={diceRoll} isColorblindMode={isColorblindMode}/>
             )}
             <div className="text-center font-bold text-2xl font-headline flex items-center justify-center gap-2">
               {diceRoll.totalSuccesses >= diceRoll.targetNumber ? (

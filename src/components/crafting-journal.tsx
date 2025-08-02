@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import type { ActiveProject, ProjectType } from "@/lib/types";
+import type { ActiveProject, ProjectType, CraftingExperience } from "@/lib/types";
 import { PROJECT_TYPES } from "@/lib/types";
 import {
   Card,
@@ -23,19 +23,34 @@ import {
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { BookOpen, Star, Sun, Moon, PlusCircle, Trash2 } from "lucide-react";
+import { BookOpen, Star, Sun, Moon, PlusCircle, Trash2, Minus, Plus } from "lucide-react";
 
 
 interface CraftingJournalProps {
-  experience: {
-    sxp: number;
-    gxp: number;
-    wxp: number;
-  };
+  experience: CraftingExperience;
   projects: ActiveProject[];
   maxProjects: number;
   onAddProject: (project: Omit<ActiveProject, "id" | "isComplete">) => void;
   onRemoveProject: (projectId: string) => void;
+  onExperienceChange: (updates: Partial<CraftingExperience>) => void;
+}
+
+const ExperienceAdjuster = ({ onAdjust }: { onAdjust: (amount: number) => void }) => {
+    const [amount, setAmount] = useState(1);
+
+    return (
+        <div className="flex items-center justify-center gap-2 mt-2">
+            <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => onAdjust(-amount)}><Minus className="h-4 w-4" /></Button>
+            <Input 
+                type="number" 
+                className="h-8 w-16 text-center" 
+                value={amount} 
+                onChange={e => setAmount(parseInt(e.target.value, 10) || 0)}
+                min={0}
+            />
+            <Button variant="outline" size="icon" className="h-6 w-6" onClick={() => onAdjust(amount)}><Plus className="h-4 w-4" /></Button>
+        </div>
+    )
 }
 
 export default function CraftingJournal({
@@ -44,6 +59,7 @@ export default function CraftingJournal({
   maxProjects,
   onAddProject,
   onRemoveProject,
+  onExperienceChange,
 }: CraftingJournalProps) {
   const [newProjectName, setNewProjectName] = useState("");
   const [newProjectType, setNewProjectType] =
@@ -98,6 +114,7 @@ export default function CraftingJournal({
               <p className="text-sm text-muted-foreground font-body">
                 Silver (SXP)
               </p>
+              <ExperienceAdjuster onAdjust={(amount) => onExperienceChange({ sxp: amount })} />
             </div>
             <div className="p-4 bg-background rounded-lg shadow">
               <div className="flex items-center justify-center gap-2">
@@ -109,6 +126,7 @@ export default function CraftingJournal({
               <p className="text-sm text-muted-foreground font-body">
                 Gold (GXP)
               </p>
+               <ExperienceAdjuster onAdjust={(amount) => onExperienceChange({ gxp: amount })} />
             </div>
             <div className="p-4 bg-background rounded-lg shadow">
               <div className="flex items-center justify-center gap-2">
@@ -120,6 +138,7 @@ export default function CraftingJournal({
               <p className="text-sm text-muted-foreground font-body">
                 White (WXP)
               </p>
+               <ExperienceAdjuster onAdjust={(amount) => onExperienceChange({ wxp: amount })} />
             </div>
           </div>
         </div>

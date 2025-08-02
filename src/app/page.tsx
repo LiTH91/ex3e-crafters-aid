@@ -68,7 +68,6 @@ export default function Home() {
   const [appState, setAppState] = useState<AppState>(initialAppState);
   const [isMounted, setIsMounted] = useState(false); // To prevent hydration errors
 
-  const [targetNumber, setTargetNumber] = useState<number>(5);
   const [diceRoll, setDiceRoll] = useState<DiceRoll | null>(null);
   const [outcome, setOutcome] = useState<CraftingOutcome | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -113,6 +112,15 @@ export default function Home() {
     });
   };
 
+  const handleExperienceChange = (updates: Partial<CraftingExperience>) => {
+    handleStateChange('craftingXp', prev => ({
+        sxp: prev.sxp + (updates.sxp || 0),
+        gxp: prev.gxp + (updates.gxp || 0),
+        wxp: prev.wxp + (updates.wxp || 0),
+    }));
+    toast({ title: "Experience Updated" });
+  }
+
   const handleRoll = async (
     projectDetails: {
       type: ProjectType;
@@ -136,6 +144,7 @@ export default function Home() {
       let gxpCost = 0;
       let wxpCost = 0;
       let tnModifier = 0;
+      let currentTargetNumber = 5; // Default or get from state if managed here
 
       const activeCharmDetails = allCharms.flatMap(charm => {
           const charms = [];
@@ -194,7 +203,7 @@ export default function Home() {
       }));
 
       // --- 3. Perform the Dice Roll using the pure function ---
-      const finalTargetNumber = Math.max(1, targetNumber + tnModifier);
+      const finalTargetNumber = Math.max(1, currentTargetNumber + tnModifier);
       const rollResult = await performDiceRoll({
           character,
           activeCharms,
@@ -263,7 +272,6 @@ export default function Home() {
         setAppState(initialAppState);
         setDiceRoll(null);
         setOutcome(null);
-        setTargetNumber(5);
         toast({ title: "Data Reset", description: "All character data and projects have been reset." });
     }
   }
@@ -327,8 +335,6 @@ export default function Home() {
                 <DiceRoller
                   character={character}
                   activeCharms={activeCharms}
-                  targetNumber={targetNumber}
-                  setTargetNumber={setTargetNumber}
                   onRoll={handleRoll}
                   isLoading={isLoading}
                   diceRoll={diceRoll}
@@ -348,6 +354,7 @@ export default function Home() {
                   maxProjects={majorProjectSlots}
                   onAddProject={addProject}
                   onRemoveProject={removeProject}
+                  onExperienceChange={handleExperienceChange}
                 />
               </TabsContent>
                <TabsContent value="reference">

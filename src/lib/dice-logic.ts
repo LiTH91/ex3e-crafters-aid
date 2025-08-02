@@ -16,7 +16,7 @@ const getExplosionSource = (roll: number, activeCharms: string[]): string | unde
     return undefined;
 }
 
-const shouldDieExplode = (die: DieResult, activeCharms: string[]): boolean => {
+export const shouldDieExplode = (die: DieResult, activeCharms: string[]): boolean => {
   // A die that has already been modified in this chain should not cause another event.
   if (die.isModified) return false;
 
@@ -88,7 +88,7 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
     let keepLooping = true;
     while(keepLooping) {
         
-        onProgress({ diceHistories, totalSuccesses: 0, automaticSuccesses, targetNumber, activeCharmNames: [], activeCharmIds: [], excellencyDice, sxpFromCharm: 0, bonusDiceFromCharm: 0 });
+        onProgress({ diceHistories, totalSuccesses: 0, automaticSuccesses, targetNumber, activeCharmNames: [], activeCharmIds, excellencyDice, sxpFromCharm: 0, bonusDiceFromCharm: 0 });
         await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY));
 
         const nextWave: DieResult[] = [];
@@ -182,7 +182,7 @@ export const performDiceRoll = async (input: DiceRollInput): Promise<DiceRoll> =
                 newWave.forEach(d => d.modificationSource = "Divine Inspiration Technique");
                 
                 diceHistories.push(newWave);
-                onProgress({ diceHistories, totalSuccesses: 0, automaticSuccesses, targetNumber, activeCharmNames: [], activeCharmIds: [], excellencyDice, sxpFromCharm: 0, bonusDiceFromCharm });
+                onProgress({ diceHistories, totalSuccesses: 0, automaticSuccesses, targetNumber, activeCharmNames: [], activeCharmIds, excellencyDice, sxpFromCharm: 0, bonusDiceFromCharm });
                 await new Promise(resolve => setTimeout(resolve, ANIMATION_DELAY));
 
                 // Check for Holistic Miracle Understanding
